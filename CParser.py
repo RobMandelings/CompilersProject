@@ -12,8 +12,8 @@ def serializedATN():
         buf.write("\2\6\2\20\n\2\r\2\16\2\21\3\3\3\3\3\3\3\4\3\4\3\4\3\4")
         buf.write("\3\4\5\4\34\n\4\3\4\3\4\3\4\3\4\3\4\3\4\3\4\3\4\7\4&\n")
         buf.write("\4\f\4\16\4)\13\4\3\5\3\5\3\5\3\5\3\5\3\5\5\5\61\n\5\3")
-        buf.write("\6\3\6\3\7\3\7\3\7\2\3\6\b\2\4\6\b\n\f\2\4\3\2\b\t\3\2")
-        buf.write("\6\7\2\66\2\17\3\2\2\2\4\23\3\2\2\2\6\33\3\2\2\2\b\60")
+        buf.write("\6\3\6\3\7\3\7\3\7\2\3\6\b\2\4\6\b\n\f\2\4\3\2\6\7\3\2")
+        buf.write("\b\t\2\66\2\17\3\2\2\2\4\23\3\2\2\2\6\33\3\2\2\2\b\60")
         buf.write("\3\2\2\2\n\62\3\2\2\2\f\64\3\2\2\2\16\20\5\4\3\2\17\16")
         buf.write("\3\2\2\2\20\21\3\2\2\2\21\17\3\2\2\2\21\22\3\2\2\2\22")
         buf.write("\3\3\2\2\2\23\24\5\6\4\2\24\25\7\3\2\2\25\5\3\2\2\2\26")
@@ -39,11 +39,12 @@ class CParser ( Parser ):
 
     sharedContextCache = PredictionContextCache()
 
-    literalNames = [ "<INVALID>", "';'", "'('", "')'", "'*'", "'/'", "'+'", 
-                     "'-'" ]
+    literalNames = [ "<INVALID>", "';'", "'('", "')'", "'+'", "'-'", "'*'", 
+                     "'/'" ]
 
     symbolicNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                      "MUL", "DIV", "ADD", "SUB", "ID", "DOUBLE", "WS" ]
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "ID", "DOUBLE", "WS" ]
 
     RULE_prog = 0
     RULE_stat = 1
@@ -58,10 +59,10 @@ class CParser ( Parser ):
     T__0=1
     T__1=2
     T__2=3
-    MUL=4
-    DIV=5
-    ADD=6
-    SUB=7
+    T__3=4
+    T__4=5
+    T__5=6
+    T__6=7
     ID=8
     DOUBLE=9
     WS=10
@@ -123,7 +124,7 @@ class CParser ( Parser ):
                 self.state = 15 
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if not ((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << CParser.T__1) | (1 << CParser.ADD) | (1 << CParser.SUB) | (1 << CParser.ID) | (1 << CParser.DOUBLE))) != 0)):
+                if not ((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << CParser.T__1) | (1 << CParser.T__3) | (1 << CParser.T__4) | (1 << CParser.ID) | (1 << CParser.DOUBLE))) != 0)):
                     break
 
         except RecognitionException as re:
@@ -238,7 +239,7 @@ class CParser ( Parser ):
             self.state = 25
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [CParser.ADD, CParser.SUB]:
+            if token in [CParser.T__3, CParser.T__4]:
                 self.state = 21
                 self.add()
                 self.state = 22
@@ -382,11 +383,6 @@ class CParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def ADD(self):
-            return self.getToken(CParser.ADD, 0)
-
-        def SUB(self):
-            return self.getToken(CParser.SUB, 0)
 
         def getRuleIndex(self):
             return CParser.RULE_add
@@ -417,7 +413,7 @@ class CParser ( Parser ):
             self.enterOuterAlt(localctx, 1)
             self.state = 48
             _la = self._input.LA(1)
-            if not(_la==CParser.ADD or _la==CParser.SUB):
+            if not(_la==CParser.T__3 or _la==CParser.T__4):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -436,11 +432,6 @@ class CParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def MUL(self):
-            return self.getToken(CParser.MUL, 0)
-
-        def DIV(self):
-            return self.getToken(CParser.DIV, 0)
 
         def getRuleIndex(self):
             return CParser.RULE_mult
@@ -471,7 +462,7 @@ class CParser ( Parser ):
             self.enterOuterAlt(localctx, 1)
             self.state = 50
             _la = self._input.LA(1)
-            if not(_la==CParser.MUL or _la==CParser.DIV):
+            if not(_la==CParser.T__5 or _la==CParser.T__6):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
