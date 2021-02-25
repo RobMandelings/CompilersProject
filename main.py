@@ -8,7 +8,7 @@ def main(argv):
     lexer = CLexer(input_stream)
     stream = CommonTokenStream(lexer)
     parser = CParser(stream)
-    tree = parser.stat()
+    tree = parser.prog()
 
     print(argv[1])
  

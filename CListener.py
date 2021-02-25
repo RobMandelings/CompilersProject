@@ -8,6 +8,15 @@ else:
 # This class defines a complete listener for a parse tree produced by CParser.
 class CListener(ParseTreeListener):
 
+    # Enter a parse tree produced by CParser#prog.
+    def enterProg(self, ctx:CParser.ProgContext):
+        pass
+
+    # Exit a parse tree produced by CParser#prog.
+    def exitProg(self, ctx:CParser.ProgContext):
+        pass
+
+
     # Enter a parse tree produced by CParser#stat.
     def enterStat(self, ctx:CParser.StatContext):
         pass
@@ -32,15 +41,6 @@ class CListener(ParseTreeListener):
 
     # Exit a parse tree produced by CParser#value.
     def exitValue(self, ctx:CParser.ValueContext):
-        pass
-
-
-    # Enter a parse tree produced by CParser#end_of_line.
-    def enterEnd_of_line(self, ctx:CParser.End_of_lineContext):
-        pass
-
-    # Exit a parse tree produced by CParser#end_of_line.
-    def exitEnd_of_line(self, ctx:CParser.End_of_lineContext):
         pass
 
 

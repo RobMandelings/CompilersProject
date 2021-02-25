@@ -8,22 +8,24 @@ import sys
 def serializedATN():
     with StringIO() as buf:
         buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\f")
-        buf.write("\64\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\3")
-        buf.write("\2\3\2\3\2\3\3\3\3\3\3\3\3\3\3\5\3\27\n\3\3\3\3\3\3\3")
-        buf.write("\3\3\3\3\3\3\3\3\3\3\7\3!\n\3\f\3\16\3$\13\3\3\4\3\4\3")
-        buf.write("\4\3\4\3\4\3\4\5\4,\n\4\3\5\3\5\3\6\3\6\3\7\3\7\3\7\2")
-        buf.write("\3\4\b\2\4\6\b\n\f\2\4\3\2\7\b\3\2\5\6\2\62\2\16\3\2\2")
-        buf.write("\2\4\26\3\2\2\2\6+\3\2\2\2\b-\3\2\2\2\n/\3\2\2\2\f\61")
-        buf.write("\3\2\2\2\16\17\5\4\3\2\17\20\7\t\2\2\20\3\3\2\2\2\21\22")
-        buf.write("\b\3\1\2\22\23\5\n\6\2\23\24\5\6\4\2\24\27\3\2\2\2\25")
-        buf.write("\27\5\6\4\2\26\21\3\2\2\2\26\25\3\2\2\2\27\"\3\2\2\2\30")
-        buf.write("\31\f\5\2\2\31\32\5\f\7\2\32\33\5\4\3\6\33!\3\2\2\2\34")
-        buf.write("\35\f\4\2\2\35\36\5\n\6\2\36\37\5\4\3\5\37!\3\2\2\2 \30")
-        buf.write("\3\2\2\2 \34\3\2\2\2!$\3\2\2\2\" \3\2\2\2\"#\3\2\2\2#")
-        buf.write("\5\3\2\2\2$\"\3\2\2\2%,\7\n\2\2&,\7\13\2\2\'(\7\3\2\2")
-        buf.write("()\5\4\3\2)*\7\4\2\2*,\3\2\2\2+%\3\2\2\2+&\3\2\2\2+\'")
-        buf.write("\3\2\2\2,\7\3\2\2\2-.\7\t\2\2.\t\3\2\2\2/\60\t\2\2\2\60")
-        buf.write("\13\3\2\2\2\61\62\t\3\2\2\62\r\3\2\2\2\6\26 \"+")
+        buf.write("\67\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\3")
+        buf.write("\2\6\2\20\n\2\r\2\16\2\21\3\3\3\3\3\3\3\4\3\4\3\4\3\4")
+        buf.write("\3\4\5\4\34\n\4\3\4\3\4\3\4\3\4\3\4\3\4\3\4\3\4\7\4&\n")
+        buf.write("\4\f\4\16\4)\13\4\3\5\3\5\3\5\3\5\3\5\3\5\5\5\61\n\5\3")
+        buf.write("\6\3\6\3\7\3\7\3\7\2\3\6\b\2\4\6\b\n\f\2\4\3\2\b\t\3\2")
+        buf.write("\6\7\2\66\2\17\3\2\2\2\4\23\3\2\2\2\6\33\3\2\2\2\b\60")
+        buf.write("\3\2\2\2\n\62\3\2\2\2\f\64\3\2\2\2\16\20\5\4\3\2\17\16")
+        buf.write("\3\2\2\2\20\21\3\2\2\2\21\17\3\2\2\2\21\22\3\2\2\2\22")
+        buf.write("\3\3\2\2\2\23\24\5\6\4\2\24\25\7\3\2\2\25\5\3\2\2\2\26")
+        buf.write("\27\b\4\1\2\27\30\5\n\6\2\30\31\5\b\5\2\31\34\3\2\2\2")
+        buf.write("\32\34\5\b\5\2\33\26\3\2\2\2\33\32\3\2\2\2\34\'\3\2\2")
+        buf.write("\2\35\36\f\5\2\2\36\37\5\f\7\2\37 \5\6\4\6 &\3\2\2\2!")
+        buf.write("\"\f\4\2\2\"#\5\n\6\2#$\5\6\4\5$&\3\2\2\2%\35\3\2\2\2")
+        buf.write("%!\3\2\2\2&)\3\2\2\2\'%\3\2\2\2\'(\3\2\2\2(\7\3\2\2\2")
+        buf.write(")\'\3\2\2\2*\61\7\n\2\2+\61\7\13\2\2,-\7\4\2\2-.\5\6\4")
+        buf.write("\2./\7\5\2\2/\61\3\2\2\2\60*\3\2\2\2\60+\3\2\2\2\60,\3")
+        buf.write("\2\2\2\61\t\3\2\2\2\62\63\t\2\2\2\63\13\3\2\2\2\64\65")
+        buf.write("\t\3\2\2\65\r\3\2\2\2\7\21\33%\'\60")
         return buf.getvalue()
 
 
@@ -37,29 +39,29 @@ class CParser ( Parser ):
 
     sharedContextCache = PredictionContextCache()
 
-    literalNames = [ "<INVALID>", "'('", "')'", "'*'", "'/'", "'+'", "'-'", 
-                     "';'" ]
+    literalNames = [ "<INVALID>", "';'", "'('", "')'", "'*'", "'/'", "'+'", 
+                     "'-'" ]
 
-    symbolicNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "MUL", "DIV", 
-                      "ADD", "SUB", "SEMICOLON", "ID", "DOUBLE", "WS" ]
+    symbolicNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "MUL", "DIV", "ADD", "SUB", "ID", "DOUBLE", "WS" ]
 
-    RULE_stat = 0
-    RULE_expr = 1
-    RULE_value = 2
-    RULE_end_of_line = 3
+    RULE_prog = 0
+    RULE_stat = 1
+    RULE_expr = 2
+    RULE_value = 3
     RULE_add = 4
     RULE_mult = 5
 
-    ruleNames =  [ "stat", "expr", "value", "end_of_line", "add", "mult" ]
+    ruleNames =  [ "prog", "stat", "expr", "value", "add", "mult" ]
 
     EOF = Token.EOF
     T__0=1
     T__1=2
-    MUL=3
-    DIV=4
-    ADD=5
-    SUB=6
-    SEMICOLON=7
+    T__2=3
+    MUL=4
+    DIV=5
+    ADD=6
+    SUB=7
     ID=8
     DOUBLE=9
     WS=10
@@ -72,6 +74,66 @@ class CParser ( Parser ):
 
 
 
+    class ProgContext(ParserRuleContext):
+
+        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+
+        def stat(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(CParser.StatContext)
+            else:
+                return self.getTypedRuleContext(CParser.StatContext,i)
+
+
+        def getRuleIndex(self):
+            return CParser.RULE_prog
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterProg" ):
+                listener.enterProg(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitProg" ):
+                listener.exitProg(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitProg" ):
+                return visitor.visitProg(self)
+            else:
+                return visitor.visitChildren(self)
+
+
+
+
+    def prog(self):
+
+        localctx = CParser.ProgContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 0, self.RULE_prog)
+        self._la = 0 # Token type
+        try:
+            self.enterOuterAlt(localctx, 1)
+            self.state = 13 
+            self._errHandler.sync(self)
+            _la = self._input.LA(1)
+            while True:
+                self.state = 12
+                self.stat()
+                self.state = 15 
+                self._errHandler.sync(self)
+                _la = self._input.LA(1)
+                if not ((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << CParser.T__1) | (1 << CParser.ADD) | (1 << CParser.SUB) | (1 << CParser.ID) | (1 << CParser.DOUBLE))) != 0)):
+                    break
+
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.exitRule()
+        return localctx
+
     class StatContext(ParserRuleContext):
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
@@ -81,9 +143,6 @@ class CParser ( Parser ):
         def expr(self):
             return self.getTypedRuleContext(CParser.ExprContext,0)
 
-
-        def SEMICOLON(self):
-            return self.getToken(CParser.SEMICOLON, 0)
 
         def getRuleIndex(self):
             return CParser.RULE_stat
@@ -108,13 +167,13 @@ class CParser ( Parser ):
     def stat(self):
 
         localctx = CParser.StatContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 0, self.RULE_stat)
+        self.enterRule(localctx, 2, self.RULE_stat)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 12
+            self.state = 17
             self.expr(0)
-            self.state = 13
-            self.match(CParser.SEMICOLON)
+            self.state = 18
+            self.match(CParser.T__0)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -172,68 +231,68 @@ class CParser ( Parser ):
         _parentState = self.state
         localctx = CParser.ExprContext(self, self._ctx, _parentState)
         _prevctx = localctx
-        _startState = 2
-        self.enterRecursionRule(localctx, 2, self.RULE_expr, _p)
+        _startState = 4
+        self.enterRecursionRule(localctx, 4, self.RULE_expr, _p)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 20
+            self.state = 25
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [CParser.ADD, CParser.SUB]:
-                self.state = 16
+                self.state = 21
                 self.add()
-                self.state = 17
+                self.state = 22
                 self.value()
                 pass
-            elif token in [CParser.T__0, CParser.ID, CParser.DOUBLE]:
-                self.state = 19
+            elif token in [CParser.T__1, CParser.ID, CParser.DOUBLE]:
+                self.state = 24
                 self.value()
                 pass
             else:
                 raise NoViableAltException(self)
 
             self._ctx.stop = self._input.LT(-1)
-            self.state = 32
+            self.state = 37
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,2,self._ctx)
+            _alt = self._interp.adaptivePredict(self._input,3,self._ctx)
             while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
                 if _alt==1:
                     if self._parseListeners is not None:
                         self.triggerExitRuleEvent()
                     _prevctx = localctx
-                    self.state = 30
+                    self.state = 35
                     self._errHandler.sync(self)
-                    la_ = self._interp.adaptivePredict(self._input,1,self._ctx)
+                    la_ = self._interp.adaptivePredict(self._input,2,self._ctx)
                     if la_ == 1:
                         localctx = CParser.ExprContext(self, _parentctx, _parentState)
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_expr)
-                        self.state = 22
+                        self.state = 27
                         if not self.precpred(self._ctx, 3):
                             from antlr4.error.Errors import FailedPredicateException
                             raise FailedPredicateException(self, "self.precpred(self._ctx, 3)")
-                        self.state = 23
+                        self.state = 28
                         self.mult()
-                        self.state = 24
+                        self.state = 29
                         self.expr(4)
                         pass
 
                     elif la_ == 2:
                         localctx = CParser.ExprContext(self, _parentctx, _parentState)
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_expr)
-                        self.state = 26
+                        self.state = 31
                         if not self.precpred(self._ctx, 2):
                             from antlr4.error.Errors import FailedPredicateException
                             raise FailedPredicateException(self, "self.precpred(self._ctx, 2)")
-                        self.state = 27
+                        self.state = 32
                         self.add()
-                        self.state = 28
+                        self.state = 33
                         self.expr(3)
                         pass
 
              
-                self.state = 34
+                self.state = 39
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,2,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input,3,self._ctx)
 
         except RecognitionException as re:
             localctx.exception = re
@@ -282,78 +341,33 @@ class CParser ( Parser ):
     def value(self):
 
         localctx = CParser.ValueContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 4, self.RULE_value)
+        self.enterRule(localctx, 6, self.RULE_value)
         try:
-            self.state = 41
+            self.state = 46
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [CParser.ID]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 35
+                self.state = 40
                 self.match(CParser.ID)
                 pass
             elif token in [CParser.DOUBLE]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 36
+                self.state = 41
                 self.match(CParser.DOUBLE)
                 pass
-            elif token in [CParser.T__0]:
+            elif token in [CParser.T__1]:
                 self.enterOuterAlt(localctx, 3)
-                self.state = 37
-                self.match(CParser.T__0)
-                self.state = 38
-                self.expr(0)
-                self.state = 39
+                self.state = 42
                 self.match(CParser.T__1)
+                self.state = 43
+                self.expr(0)
+                self.state = 44
+                self.match(CParser.T__2)
                 pass
             else:
                 raise NoViableAltException(self)
 
-        except RecognitionException as re:
-            localctx.exception = re
-            self._errHandler.reportError(self, re)
-            self._errHandler.recover(self, re)
-        finally:
-            self.exitRule()
-        return localctx
-
-    class End_of_lineContext(ParserRuleContext):
-
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
-            super().__init__(parent, invokingState)
-            self.parser = parser
-
-        def SEMICOLON(self):
-            return self.getToken(CParser.SEMICOLON, 0)
-
-        def getRuleIndex(self):
-            return CParser.RULE_end_of_line
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterEnd_of_line" ):
-                listener.enterEnd_of_line(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitEnd_of_line" ):
-                listener.exitEnd_of_line(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitEnd_of_line" ):
-                return visitor.visitEnd_of_line(self)
-            else:
-                return visitor.visitChildren(self)
-
-
-
-
-    def end_of_line(self):
-
-        localctx = CParser.End_of_lineContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 6, self.RULE_end_of_line)
-        try:
-            self.enterOuterAlt(localctx, 1)
-            self.state = 43
-            self.match(CParser.SEMICOLON)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -401,7 +415,7 @@ class CParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 45
+            self.state = 48
             _la = self._input.LA(1)
             if not(_la==CParser.ADD or _la==CParser.SUB):
                 self._errHandler.recoverInline(self)
@@ -455,7 +469,7 @@ class CParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 47
+            self.state = 50
             _la = self._input.LA(1)
             if not(_la==CParser.MUL or _la==CParser.DIV):
                 self._errHandler.recoverInline(self)
@@ -475,7 +489,7 @@ class CParser ( Parser ):
     def sempred(self, localctx:RuleContext, ruleIndex:int, predIndex:int):
         if self._predicates == None:
             self._predicates = dict()
-        self._predicates[1] = self.expr_sempred
+        self._predicates[2] = self.expr_sempred
         pred = self._predicates.get(ruleIndex, None)
         if pred is None:
             raise Exception("No predicate with index:" + str(ruleIndex))

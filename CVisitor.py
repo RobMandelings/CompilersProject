@@ -9,6 +9,11 @@ else:
 
 class CVisitor(ParseTreeVisitor):
 
+    # Visit a parse tree produced by CParser#prog.
+    def visitProg(self, ctx:CParser.ProgContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CParser#stat.
     def visitStat(self, ctx:CParser.StatContext):
         return self.visitChildren(ctx)
@@ -21,11 +26,6 @@ class CVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CParser#value.
     def visitValue(self, ctx:CParser.ValueContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CParser#end_of_line.
-    def visitEnd_of_line(self, ctx:CParser.End_of_lineContext):
         return self.visitChildren(ctx)
 
 
