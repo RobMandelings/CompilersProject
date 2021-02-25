@@ -5,7 +5,6 @@ from AST import AST
 from CLexer import CLexer
 from CParser import CParser
 
-# TODO order of operations
 def main(argv):
     input_stream = FileStream(argv[1])
     lexer = CLexer(input_stream)

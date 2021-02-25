@@ -1,8 +1,9 @@
-# Generated from C.g4 by ANTLR 4.7.2
+# Generated from C.g4 by ANTLR 4.9.1
 from antlr4 import *
 from io import StringIO
 from typing.io import TextIO
 import sys
+
 
 
 def serializedATN():
@@ -20,9 +21,9 @@ def serializedATN():
         buf.write("\3\2\2\2\2\23\3\2\2\2\2\25\3\2\2\2\3\27\3\2\2\2\5\31\3")
         buf.write("\2\2\2\7\33\3\2\2\2\t\35\3\2\2\2\13\37\3\2\2\2\r!\3\2")
         buf.write("\2\2\17#\3\2\2\2\21&\3\2\2\2\23\61\3\2\2\2\25>\3\2\2\2")
-        buf.write("\27\30\7=\2\2\30\4\3\2\2\2\31\32\7*\2\2\32\6\3\2\2\2\33")
-        buf.write("\34\7+\2\2\34\b\3\2\2\2\35\36\7-\2\2\36\n\3\2\2\2\37 ")
-        buf.write("\7/\2\2 \f\3\2\2\2!\"\7,\2\2\"\16\3\2\2\2#$\7\61\2\2$")
+        buf.write("\27\30\7=\2\2\30\4\3\2\2\2\31\32\7-\2\2\32\6\3\2\2\2\33")
+        buf.write("\34\7/\2\2\34\b\3\2\2\2\35\36\7,\2\2\36\n\3\2\2\2\37 ")
+        buf.write("\7\61\2\2 \f\3\2\2\2!\"\7*\2\2\"\16\3\2\2\2#$\7+\2\2$")
         buf.write("\20\3\2\2\2%\'\t\2\2\2&%\3\2\2\2\'(\3\2\2\2(&\3\2\2\2")
         buf.write("()\3\2\2\2)-\3\2\2\2*,\t\3\2\2+*\3\2\2\2,/\3\2\2\2-+\3")
         buf.write("\2\2\2-.\3\2\2\2.\22\3\2\2\2/-\3\2\2\2\60\62\t\3\2\2\61")
@@ -57,7 +58,7 @@ class CLexer(Lexer):
     modeNames = [ "DEFAULT_MODE" ]
 
     literalNames = [ "<INVALID>",
-            "';'", "'('", "')'", "'+'", "'-'", "'*'", "'/'" ]
+            "';'", "'+'", "'-'", "'*'", "'/'", "'('", "')'" ]
 
     symbolicNames = [ "<INVALID>",
             "ID", "DOUBLE", "WS" ]
@@ -69,7 +70,7 @@ class CLexer(Lexer):
 
     def __init__(self, input=None, output:TextIO = sys.stdout):
         super().__init__(input, output)
-        self.checkVersion("4.7.2")
+        self.checkVersion("4.9.1")
         self._interp = LexerATNSimulator(self, self.atn, self.decisionsToDFA, PredictionContextCache())
         self._actions = None
         self._predicates = None

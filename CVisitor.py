@@ -1,4 +1,4 @@
-# Generated from C.g4 by ANTLR 4.7.2
+# Generated from C.g4 by ANTLR 4.9.1
 from antlr4 import *
 if __name__ is not None and "." in __name__:
     from .CParser import CParser
@@ -24,18 +24,18 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#value.
-    def visitValue(self, ctx:CParser.ValueContext):
+    # Visit a parse tree produced by CParser#addExpr.
+    def visitAddExpr(self, ctx:CParser.AddExprContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#add.
-    def visitAdd(self, ctx:CParser.AddContext):
+    # Visit a parse tree produced by CParser#multExpr.
+    def visitMultExpr(self, ctx:CParser.MultExprContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#mult.
-    def visitMult(self, ctx:CParser.MultContext):
+    # Visit a parse tree produced by CParser#finalExpr.
+    def visitFinalExpr(self, ctx:CParser.FinalExprContext):
         return self.visitChildren(ctx)
 
 

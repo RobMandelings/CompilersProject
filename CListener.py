@@ -1,4 +1,4 @@
-# Generated from C.g4 by ANTLR 4.7.2
+# Generated from C.g4 by ANTLR 4.9.1
 from antlr4 import *
 if __name__ is not None and "." in __name__:
     from .CParser import CParser
@@ -35,30 +35,32 @@ class CListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CParser#value.
-    def enterValue(self, ctx:CParser.ValueContext):
+    # Enter a parse tree produced by CParser#addExpr.
+    def enterAddExpr(self, ctx:CParser.AddExprContext):
         pass
 
-    # Exit a parse tree produced by CParser#value.
-    def exitValue(self, ctx:CParser.ValueContext):
-        pass
-
-
-    # Enter a parse tree produced by CParser#add.
-    def enterAdd(self, ctx:CParser.AddContext):
-        pass
-
-    # Exit a parse tree produced by CParser#add.
-    def exitAdd(self, ctx:CParser.AddContext):
+    # Exit a parse tree produced by CParser#addExpr.
+    def exitAddExpr(self, ctx:CParser.AddExprContext):
         pass
 
 
-    # Enter a parse tree produced by CParser#mult.
-    def enterMult(self, ctx:CParser.MultContext):
+    # Enter a parse tree produced by CParser#multExpr.
+    def enterMultExpr(self, ctx:CParser.MultExprContext):
         pass
 
-    # Exit a parse tree produced by CParser#mult.
-    def exitMult(self, ctx:CParser.MultContext):
+    # Exit a parse tree produced by CParser#multExpr.
+    def exitMultExpr(self, ctx:CParser.MultExprContext):
         pass
 
 
+    # Enter a parse tree produced by CParser#finalExpr.
+    def enterFinalExpr(self, ctx:CParser.FinalExprContext):
+        pass
+
+    # Exit a parse tree produced by CParser#finalExpr.
+    def exitFinalExpr(self, ctx:CParser.FinalExprContext):
+        pass
+
+
+
+del CParser
