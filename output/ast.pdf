@@ -1,0 +1,12 @@
+// Abstract Syntax Tree
+digraph {
+	node1 [label="+"]
+	node1 -> node2
+	node2 [label=5]
+	node2 -> node3
+	node3 [label="*"]
+	node3 -> node4
+	node4 [label=6]
+	node4 -> node5
+	node5 [label=7]
+}
