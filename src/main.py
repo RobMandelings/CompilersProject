@@ -3,8 +3,8 @@ from antlr4 import *
 
 from graphviz import Digraph
 from CLexer import CLexer
-from src.ast.AST import Counter
 from src.ast.CSTtoASTConverter import *
+from src.ast.ASTVisitor import ASTVisitorDot
 
 
 def main(argv):
@@ -15,11 +15,12 @@ def main(argv):
     tree = parser.prog()
 
     ast = createASTFromConcreteSyntaxTree(tree)
-    dot = Digraph(comment='Abstract Syntax Tree')
-    ast.createDot(dot, Counter())
+    ast_visitor_dot = ASTVisitorDot()
+    ast.accept(ast_visitor_dot)
 
-    dot.render('output/ast.gv', view=True)
+    ast_visitor_dot.graph.render('output/ast.gv', view=True)
     print(argv[1])
- 
+
+
 if __name__ == '__main__':
     main(sys.argv)

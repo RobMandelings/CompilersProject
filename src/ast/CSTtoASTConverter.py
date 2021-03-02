@@ -1,8 +1,7 @@
 from antlr4.tree.Tree import TerminalNodeImpl
 
 from src.CParser import *
-from src.ast.AST import Token, BinaryOp
-from src.ast.ASTLeaf import ASTLeaf
+from src.ast.AST import Token, BinaryOperationAST, ASTLeaf
 
 
 def createASTFromConcreteSyntaxTree(cst):
@@ -25,8 +24,8 @@ def createASTFromConcreteSyntaxTree(cst):
             if isBinaryExpression(cst):
 
                 token = Token(cst.children[1])
-                return BinaryOp(token, createASTFromConcreteSyntaxTree(cst.children[0]),
-                                createASTFromConcreteSyntaxTree(cst.children[2]))
+                return BinaryOperationAST(token, createASTFromConcreteSyntaxTree(cst.children[0]),
+                                          createASTFromConcreteSyntaxTree(cst.children[2]))
 
 
 def containsTerminalAsChild(cst):

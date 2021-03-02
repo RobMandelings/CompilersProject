@@ -1,6 +1,6 @@
 from enum import Enum, auto
 from antlr4.tree.Tree import TerminalNodeImpl
-from graphviz import Digraph
+from . import ASTVisitor
 
 
 class AST:
@@ -12,12 +12,38 @@ class AST:
     def isRoot(self):
         return self.parent is None
 
-    """
-    Generic method to create the dot string
-    """
+    def accept(self, visitor):
+        raise NotImplementedError('Generic method')
+
+
+class BinaryOperationAST(AST):
+
+    def __init__(self, token, left, right):
+        super().__init__(token)
+        self.left = left
+        self.right = right
+        self.left.parent = self
+        self.right.parent = self
+
+    def accept(self, visitor):
+        assert isinstance(visitor, ASTVisitor.ASTVisitor)
+        visitor.visitASTBinaryOp(self)
+        self.left.accept(visitor)
+        self.right.accept(visitor)
+
+
+class ASTLeaf(AST):
+
+    def accept(self, visitor):
+        assert isinstance(visitor, ASTVisitor.ASTVisitor)
+        visitor.visitASTLeaf(self)
+
+    def __init__(self, token):
+        super().__init__(token)
 
     def createDot(self, current_dot, counter):
-        raise NotImplementedError("This is an abstract method")
+        counter.value += 1
+        current_dot.node('node' + str(counter.value), self.token.content)
 
 
 class Token:
@@ -41,23 +67,6 @@ class Token:
             return NodeCategory.SUB_OPERATOR
 
 
-class BinaryOp(AST):
-
-    def __init__(self, token, left, right):
-        super().__init__(token)
-        self.left = left
-        self.right = right
-
-    def createDot(self, current_dot, counter):
-        counter.value += 1
-        old_counter_value = counter.value
-        current_dot.node('node' + str(counter.value), self.token.content)
-        current_dot.edge('node' + str(old_counter_value), 'node' + str(counter.value + 1))
-        self.left.createDot(current_dot, counter)
-        current_dot.edge('node' + str(old_counter_value), 'node' + str(counter.value + 1))
-        self.right.createDot(current_dot, counter)
-
-
 class NodeCategory(Enum):
     ADD_OPERATOR = auto()
     SUB_OPERATOR = auto()
@@ -66,9 +75,3 @@ class NodeCategory(Enum):
     ID = auto()
     DOUBLE = auto()
     INT = auto()
-
-
-class Counter:
-
-    def __init__(self):
-        self.value = 0
