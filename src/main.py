@@ -4,7 +4,7 @@ from antlr4 import *
 from graphviz import Digraph
 from CLexer import CLexer
 from src.ast.CSTtoASTConverter import *
-from src.ast.ASTVisitor import ASTVisitorDot
+from src.ast.ASTVisitors import ASTVisitorDot
 
 
 def main(argv):

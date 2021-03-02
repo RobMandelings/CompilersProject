@@ -1,7 +1,7 @@
 from antlr4.tree.Tree import TerminalNodeImpl
 
 from src.CParser import *
-from src.ast.AST import Token, BinaryOperationAST, ASTLeaf
+from src.ast.ASTs import Token, ASTBinaryOperation, ASTLeaf
 
 
 def createASTFromConcreteSyntaxTree(cst):
@@ -24,7 +24,7 @@ def createASTFromConcreteSyntaxTree(cst):
             if isBinaryExpression(cst):
 
                 token = Token(cst.children[1])
-                return BinaryOperationAST(token, createASTFromConcreteSyntaxTree(cst.children[0]),
+                return ASTBinaryOperation(token, createASTFromConcreteSyntaxTree(cst.children[0]),
                                           createASTFromConcreteSyntaxTree(cst.children[2]))
 
 

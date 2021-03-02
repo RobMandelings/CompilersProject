@@ -1,6 +1,6 @@
 from enum import Enum, auto
 from antlr4.tree.Tree import TerminalNodeImpl
-from . import ASTVisitor
+from . import ASTVisitors
 
 
 class AST:
@@ -16,7 +16,7 @@ class AST:
         raise NotImplementedError('Generic method')
 
 
-class BinaryOperationAST(AST):
+class ASTBinaryOperation(AST):
 
     def __init__(self, token, left, right):
         super().__init__(token)
@@ -26,7 +26,7 @@ class BinaryOperationAST(AST):
         self.right.parent = self
 
     def accept(self, visitor):
-        assert isinstance(visitor, ASTVisitor.ASTVisitor)
+        assert isinstance(visitor, ASTVisitors.ASTVisitor)
         visitor.visitASTBinaryOp(self)
         self.left.accept(visitor)
         self.right.accept(visitor)
@@ -35,7 +35,7 @@ class BinaryOperationAST(AST):
 class ASTLeaf(AST):
 
     def accept(self, visitor):
-        assert isinstance(visitor, ASTVisitor.ASTVisitor)
+        assert isinstance(visitor, ASTVisitors.ASTVisitor)
         visitor.visitASTLeaf(self)
 
     def __init__(self, token):
