@@ -2,10 +2,10 @@ from antlr4.tree.Tree import TerminalNodeImpl
 
 from src.antlr4_gen.CLexer import CLexer
 from src.antlr4_gen.CParser import *
-from src.ast.ASTs import Token, ASTBinaryOperation, ASTLeaf
+from src.ast.ASTs import Token, ASTBinaryOperation, ASTLeaf, ASTVariable
 
 
-def createASTFromConcreteSyntaxTree(cst, lexer):
+def createASTFromConcreteSyntaxTree(cst, lexer: CLexer):
     assert isinstance(cst, ParserRuleContext)
     assert isinstance(lexer, CLexer)
 
@@ -19,12 +19,16 @@ def createASTFromConcreteSyntaxTree(cst, lexer):
 
         print(cst)
 
-        if isinstance(cst, CParser.StatContext):
+        if isinstance(cst, CParser.StatementContext):
             return createASTFromConcreteSyntaxTree(cst.children[0], lexer)
+        # TODO maybe improve so that the children don't have hard coded locations in case the grammar changes.
+        #  Create a find_child function or something to find a child based on some name.
+        elif isinstance(cst, CParser.VarDeclarationContext):
+            return ASTVariable(Token(cst.children[1], lexer), createASTFromConcreteSyntaxTree(cst.children[0], lexer),
+                               createASTFromConcreteSyntaxTree(cst.children[3], lexer))
         else:
 
             if isBinaryExpression(cst):
-
                 token = Token(cst.children[1], lexer)
                 return ASTBinaryOperation(token, createASTFromConcreteSyntaxTree(cst.children[0], lexer),
                                           createASTFromConcreteSyntaxTree(cst.children[2], lexer))

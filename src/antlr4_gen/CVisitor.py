@@ -1,48 +1,51 @@
 # Generated from C.g4 by ANTLR 4.9.1
 from antlr4 import *
+
 if __name__ is not None and "." in __name__:
     from .CParser import CParser
 else:
     from CParser import CParser
 
+
 # This class defines a complete generic visitor for a parse tree produced by CParser.
 
 class CVisitor(ParseTreeVisitor):
 
-    # Visit a parse tree produced by CParser#prog.
-    def visitProg(self, ctx:CParser.ProgContext):
+    # Visit a parse tree produced by CParser#program.
+    def visitProgram(self, ctx: CParser.ProgramContext):
         return self.visitChildren(ctx)
 
-
-    # Visit a parse tree produced by CParser#stat.
-    def visitStat(self, ctx:CParser.StatContext):
+    # Visit a parse tree produced by CParser#statement.
+    def visitStatement(self, ctx: CParser.StatementContext):
         return self.visitChildren(ctx)
 
+    # Visit a parse tree produced by CParser#varDeclaration.
+    def visitVarDeclaration(self, ctx: CParser.VarDeclarationContext):
+        return self.visitChildren(ctx)
 
     # Visit a parse tree produced by CParser#expr.
-    def visitExpr(self, ctx:CParser.ExprContext):
+    def visitExpr(self, ctx: CParser.ExprContext):
         return self.visitChildren(ctx)
-
 
     # Visit a parse tree produced by CParser#compareExpr.
-    def visitCompareExpr(self, ctx:CParser.CompareExprContext):
+    def visitCompareExpr(self, ctx: CParser.CompareExprContext):
         return self.visitChildren(ctx)
-
 
     # Visit a parse tree produced by CParser#addExpr.
-    def visitAddExpr(self, ctx:CParser.AddExprContext):
+    def visitAddExpr(self, ctx: CParser.AddExprContext):
         return self.visitChildren(ctx)
-
 
     # Visit a parse tree produced by CParser#multExpr.
-    def visitMultExpr(self, ctx:CParser.MultExprContext):
+    def visitMultExpr(self, ctx: CParser.MultExprContext):
         return self.visitChildren(ctx)
-
 
     # Visit a parse tree produced by CParser#finalExpr.
-    def visitFinalExpr(self, ctx:CParser.FinalExprContext):
+    def visitFinalExpr(self, ctx: CParser.FinalExprContext):
         return self.visitChildren(ctx)
 
+    # Visit a parse tree produced by CParser#typeDeclaration.
+    def visitTypeDeclaration(self, ctx: CParser.TypeDeclarationContext):
+        return self.visitChildren(ctx)
 
 
 del CParser
