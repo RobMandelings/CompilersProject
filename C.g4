@@ -1,6 +1,18 @@
 grammar C;
-prog: stat+;
-stat: expr ';';
+program: statement+;
+statement:
+    varDeclaration
+    | varAssignment
+    | expr ';'
+    ;
+varDeclaration:
+    // Declaration and initialization
+    typeDeclaration varAssignment
+    typeDeclaration ID ';'
+    ;
+varAssignment:
+    ID '=' expr ';'
+    ;
 expr: compareExpr;
 compareExpr:
     compareExpr '>' addExpr
@@ -23,7 +35,14 @@ finalExpr: ID
      | INTEGER
      | '(' expr ')'
      ;
-ID  :   [a-zA-Z]+ [0-9]* ;      // match identifiers
+typeDeclaration:
+    | 'const' typeDeclaration
+    // TODO instead of 'const int' also support 'int const'?
+    | 'int'
+    | 'char'
+    | 'float'
+    ;
+ID  :   [a-zA-Z_]+ [0-9_]* ;      // match identifiers
 INTEGER: [0-9]+ ;
 DOUBLE :   [0-9]+'.'[0-9]+ ;
 WS : [ \r\t\n]+ -> skip ;
