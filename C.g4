@@ -28,6 +28,13 @@ addExpr:
 multExpr:
     multExpr '*' finalExpr
     | multExpr '/' finalExpr
+    | unaryExpr
+    ;
+unaryExpr:
+    '*' finalExpr
+    | '&' finalExpr
+    | '+' finalExpr
+    | '-' finalExpr
     | finalExpr
     ;
 finalExpr: ID

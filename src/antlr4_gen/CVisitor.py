@@ -49,6 +49,11 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CParser#unaryExpr.
+    def visitUnaryExpr(self, ctx:CParser.UnaryExprContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CParser#finalExpr.
     def visitFinalExpr(self, ctx:CParser.FinalExprContext):
         return self.visitChildren(ctx)

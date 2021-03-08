@@ -80,6 +80,15 @@ class CListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CParser#unaryExpr.
+    def enterUnaryExpr(self, ctx:CParser.UnaryExprContext):
+        pass
+
+    # Exit a parse tree produced by CParser#unaryExpr.
+    def exitUnaryExpr(self, ctx:CParser.UnaryExprContext):
+        pass
+
+
     # Enter a parse tree produced by CParser#finalExpr.
     def enterFinalExpr(self, ctx:CParser.FinalExprContext):
         pass

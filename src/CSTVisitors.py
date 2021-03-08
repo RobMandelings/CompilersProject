@@ -70,4 +70,9 @@ class CSTVisitorToDot(CVisitor):
 
     def visitTerminal(self, node):
         self.toDotCurrent(node, "node")
-        super().visitTerminal(node)
+        return super().visitTerminal(node)
+
+    def visitUnaryExpr(self, ctx: CParser.UnaryExprContext):
+        self.toDotCurrent(ctx, "UnaryExpr")
+        return super().visitUnaryExpr(ctx)
+
