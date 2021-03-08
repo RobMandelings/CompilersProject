@@ -35,6 +35,15 @@ class CListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CParser#varAssignment.
+    def enterVarAssignment(self, ctx:CParser.VarAssignmentContext):
+        pass
+
+    # Exit a parse tree produced by CParser#varAssignment.
+    def exitVarAssignment(self, ctx:CParser.VarAssignmentContext):
+        pass
+
+
     # Enter a parse tree produced by CParser#expr.
     def enterExpr(self, ctx:CParser.ExprContext):
         pass
@@ -80,12 +89,30 @@ class CListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CParser#typeDeclaration.
-    def enterTypeDeclaration(self, ctx:CParser.TypeDeclarationContext):
+    # Enter a parse tree produced by CParser#typeDeclaration1.
+    def enterTypeDeclaration1(self, ctx:CParser.TypeDeclaration1Context):
         pass
 
-    # Exit a parse tree produced by CParser#typeDeclaration.
-    def exitTypeDeclaration(self, ctx:CParser.TypeDeclarationContext):
+    # Exit a parse tree produced by CParser#typeDeclaration1.
+    def exitTypeDeclaration1(self, ctx:CParser.TypeDeclaration1Context):
+        pass
+
+
+    # Enter a parse tree produced by CParser#typeDeclaration2.
+    def enterTypeDeclaration2(self, ctx:CParser.TypeDeclaration2Context):
+        pass
+
+    # Exit a parse tree produced by CParser#typeDeclaration2.
+    def exitTypeDeclaration2(self, ctx:CParser.TypeDeclaration2Context):
+        pass
+
+
+    # Enter a parse tree produced by CParser#constDeclaration.
+    def enterConstDeclaration(self, ctx:CParser.ConstDeclarationContext):
+        pass
+
+    # Exit a parse tree produced by CParser#constDeclaration.
+    def exitConstDeclaration(self, ctx:CParser.ConstDeclarationContext):
         pass
 
 

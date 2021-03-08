@@ -1,17 +1,17 @@
 grammar C;
 program: statement+;
 statement:
-    varDeclaration
-    | varAssignment
+    varDeclaration ';'
+    | varAssignment ';'
     | expr ';'
     ;
 varDeclaration:
     // Declaration and initialization
-    typeDeclaration varAssignment
-    typeDeclaration ID ';'
+    typeDeclaration1 varAssignment
+    | typeDeclaration1 ID
     ;
 varAssignment:
-    ID '=' expr ';'
+    ID '=' expr
     ;
 expr: compareExpr;
 compareExpr:
@@ -35,12 +35,18 @@ finalExpr: ID
      | INTEGER
      | '(' expr ')'
      ;
-typeDeclaration:
-    | 'const' typeDeclaration
+typeDeclaration1:
     // TODO instead of 'const int' also support 'int const'?
-    | 'int'
+    constDeclaration typeDeclaration2
+    | typeDeclaration2
+    ;
+typeDeclaration2:
+    'int'
     | 'char'
     | 'float'
+    ;
+constDeclaration:
+    'const'
     ;
 ID  :   [a-zA-Z_]+ [0-9_]* ;      // match identifiers
 INTEGER: [0-9]+ ;

@@ -4,14 +4,44 @@ from . import ASTVisitors
 from ..antlr4_gen.CLexer import CLexer
 
 
-class Token:
+class TokenType(Enum):
+    PROGRAM = auto()
+    STATEMENT = auto()
 
-    def __init__(self, cst, lexer):
+    ADD_OPERATOR = auto()
+    SUB_OPERATOR = auto()
+    MULT_OPERATOR = auto()
+    DIV_OPERATOR = auto()
+    GREATER_THAN_OP = auto()
+    LESS_THAN_OP = auto()
+    EQUALS_OP = auto()
+    ASSIGNMENT_OP = auto()
 
-        assert isinstance(cst, TerminalNodeImpl)
+    IDENTIFIER = auto()
+
+    DOUBLE_LITERAL = auto()
+    INT_LITERAL = auto()
+
+    TYPE_DECLARATION = auto()
+    VARIABLE_DECLARATION = auto()
+    INT_TYPE = auto()
+    FLOAT_TYPE = auto()
+    CHAR_TYPE = auto()
+    CONST_TYPE = auto()
+
+
+class ASTToken:
+
+    def __init__(self, cst, lexer, token_type: TokenType = None):
+
         assert isinstance(lexer, CLexer)
-        self.tokenType = self.get_token_type_from_cst(cst, lexer)
-        self.content = cst.symbol.text
+        if token_type is None:
+            self.tokenType = self.get_token_type_from_cst(cst, lexer)
+            self.content = cst.symbol.text
+        else:
+            self.tokenType = token_type
+            self.content = self.tokenType.name
+
 
     @staticmethod
     def get_token_type_from_cst(cst, lexer):
@@ -33,6 +63,8 @@ class Token:
             return TokenType.LESS_THAN_OP
         elif symbol_text == '==':
             return TokenType.EQUALS_OP
+        elif symbol_text == '=':
+            return TokenType.ASSIGNMENT_OP
         elif symbol_text == 'int':
             return TokenType.INT_TYPE
         elif symbol_text == 'float':
@@ -53,26 +85,9 @@ class Token:
             raise NotImplementedError("The token type could not be deduced from the symbol '" + symbol_text + "'.")
 
 
-class TokenType(Enum):
-    ADD_OPERATOR = auto()
-    SUB_OPERATOR = auto()
-    MULT_OPERATOR = auto()
-    DIV_OPERATOR = auto()
-    GREATER_THAN_OP = auto()
-    LESS_THAN_OP = auto()
-    EQUALS_OP = auto()
-    IDENTIFIER = auto()
-    DOUBLE_LITERAL = auto()
-    INT_LITERAL = auto()
-    INT_TYPE = auto()
-    FLOAT_TYPE = auto()
-    CHAR_TYPE = auto()
-    CONST_TYPE = auto()
-
-
 class AST:
 
-    def __init__(self, token):
+    def __init__(self, token: ASTToken):
         self.parent = None
         self.token = token
 
@@ -81,6 +96,35 @@ class AST:
 
     def accept(self, visitor):
         raise NotImplementedError('Generic method')
+
+
+class ASTInternal(AST):
+
+    def __init__(self, token: ASTToken):
+        super().__init__(token)
+        self.children = list()
+
+    def addChild(self, child: AST):
+        child.parent = self
+        self.children.append(child)
+
+
+class ASTProgram(ASTInternal):
+
+    def accept(self, visitor: ASTVisitors.ASTVisitor):
+        visitor.visitASTProgram(self)
+        for child in self.children:
+            assert isinstance(child, AST)
+            child.accept(visitor)
+
+
+class ASTStatement(ASTInternal):
+
+    def accept(self, visitor: ASTVisitors.ASTVisitor):
+        visitor.visitASTStatement(self)
+        for child in self.children:
+            assert isinstance(child, AST)
+            child.accept(visitor)
 
 
 """
@@ -97,8 +141,7 @@ class ASTBinaryOperation(AST):
         self.left.parent = self
         self.right.parent = self
 
-    def accept(self, visitor):
-        assert isinstance(visitor, ASTVisitors.ASTVisitor)
+    def accept(self, visitor: ASTVisitors.ASTVisitor):
         visitor.visitASTBinaryOp(self)
         self.left.accept(visitor)
         self.right.accept(visitor)
@@ -106,30 +149,38 @@ class ASTBinaryOperation(AST):
 
 class ASTLeaf(AST):
 
-    def __init__(self, token: Token):
+    def __init__(self, token: ASTToken):
         super().__init__(token)
 
     def accept(self, visitor):
         assert isinstance(visitor, ASTVisitors.ASTVisitor)
         visitor.visitASTLeaf(self)
 
-    def createDot(self, current_dot, counter):
-        counter.value += 1
-        current_dot.node('node' + str(counter.value), self.token.content)
+
+class ASTType(ASTInternal):
+
+    def __init__(self, token: ASTToken):
+        super().__init__(token)
+
+    def accept(self, visitor):
+        assert isinstance(visitor, ASTVisitors.ASTVisitor)
+        visitor.visitASTType(self)
+        for child in self.children:
+            assert isinstance(child, AST)
+            child.accept(visitor)
 
 
-class ASTVariable(AST):
+class ASTVariableDeclaration(AST):
 
-    def __init__(self, identifier: Token, variable_type: ASTLeaf, value: AST):
-        assert identifier.tokenType == TokenType.IDENTIFIER
-        super().__init__(identifier)
-        self.variable = variable_type
-        self.value = value
+    def __init__(self, variable_type: ASTType, variable: AST, token):
+        super().__init__(token)
+        self.variable_type = variable_type
+        self.variable = variable
+        self.variable_type.parent = self
         self.variable.parent = self
-        self.value.parent = self
 
     def accept(self, visitor):
         assert isinstance(visitor, ASTVisitors.ASTVisitor)
         visitor.visitASTBinaryOp(self)
+        self.variable_type.accept(visitor)
         self.variable.accept(visitor)
-        self.value.accept(visitor)

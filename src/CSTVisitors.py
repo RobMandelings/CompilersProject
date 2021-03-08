@@ -52,9 +52,21 @@ class CSTVisitorToDot(CVisitor):
         self.toDotCurrent(ctx, "FinalExprContext")
         return super().visitFinalExpr(ctx)
 
-    def visitTypeDeclaration(self, ctx: CParser.TypeDeclarationContext):
-        self.toDotCurrent(ctx, "TypeDeclarationContext")
-        return super().visitTypeDeclaration(ctx)
+    def visitTypeDeclaration1(self, ctx: CParser.TypeDeclaration1Context):
+        self.toDotCurrent(ctx, "TypeDeclaration1")
+        return super().visitTypeDeclaration1(ctx)
+
+    def visitTypeDeclaration2(self, ctx: CParser.TypeDeclaration2Context):
+        self.toDotCurrent(ctx, "TypeDeclaration2")
+        return super().visitTypeDeclaration2(ctx)
+
+    def visitConstDeclaration(self, ctx: CParser.ConstDeclarationContext):
+        self.toDotCurrent(ctx, "ConstDeclaration")
+        return super().visitConstDeclaration(ctx)
+
+    def visitVarAssignment(self, ctx: CParser.VarAssignmentContext):
+        self.toDotCurrent(ctx, "VarAssignment")
+        return super().visitVarAssignment(ctx)
 
     def visitTerminal(self, node):
         self.toDotCurrent(node, "node")

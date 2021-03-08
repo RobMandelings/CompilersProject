@@ -1,8 +1,3 @@
-import sys
-from antlr4 import *
-
-from graphviz import Digraph
-from antlr4_gen.CLexer import CLexer
 from CSTVisitors import CSTVisitorToDot
 from src.ast.CSTtoASTConverter import *
 from src.ast.ASTVisitors import ASTVisitorDot
