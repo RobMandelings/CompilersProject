@@ -24,6 +24,11 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CParser#compareExpr.
+    def visitCompareExpr(self, ctx:CParser.CompareExprContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CParser#addExpr.
     def visitAddExpr(self, ctx:CParser.AddExprContext):
         return self.visitChildren(ctx)

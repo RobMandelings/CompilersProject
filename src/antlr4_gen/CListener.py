@@ -35,6 +35,15 @@ class CListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CParser#compareExpr.
+    def enterCompareExpr(self, ctx:CParser.CompareExprContext):
+        pass
+
+    # Exit a parse tree produced by CParser#compareExpr.
+    def exitCompareExpr(self, ctx:CParser.CompareExprContext):
+        pass
+
+
     # Enter a parse tree produced by CParser#addExpr.
     def enterAddExpr(self, ctx:CParser.AddExprContext):
         pass
