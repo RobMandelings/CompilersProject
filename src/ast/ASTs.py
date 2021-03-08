@@ -8,6 +8,12 @@ class TokenType(Enum):
     PROGRAM = auto()
     STATEMENT = auto()
 
+    UNARY_EXPRESSION = auto()
+    UNARY_PLUS_OPERATOR = auto()
+    UNARY_MINUS_OPERATOR = auto()
+    DEREFERENCE_OPERATOR = auto()
+    ADDRESS_OPERATOR = auto()
+
     ADD_OPERATOR = auto()
     SUB_OPERATOR = auto()
     MULT_OPERATOR = auto()
@@ -34,14 +40,12 @@ class ASTToken:
 
     def __init__(self, cst, lexer, token_type: TokenType = None):
 
-        assert isinstance(lexer, CLexer)
         if token_type is None:
             self.tokenType = self.get_token_type_from_cst(cst, lexer)
             self.content = cst.symbol.text
         else:
             self.tokenType = token_type
             self.content = self.tokenType.name
-
 
     @staticmethod
     def get_token_type_from_cst(cst, lexer):
@@ -143,6 +147,20 @@ class ASTBinaryOperation(AST):
 
     def accept(self, visitor: ASTVisitors.ASTVisitor):
         visitor.visitASTBinaryOp(self)
+        self.left.accept(visitor)
+        self.right.accept(visitor)
+
+
+class ASTUnaryExpression(AST):
+    def __init__(self, left, right):
+        super().__init__(ASTToken(None, None, TokenType.UNARY_EXPRESSION))
+        self.left = left
+        self.right = right
+        self.left.parent = self
+        self.right.parent = self
+
+    def accept(self, visitor: ASTVisitors.ASTVisitor):
+        visitor.visitASTUnaryExpression(self)
         self.left.accept(visitor)
         self.right.accept(visitor)
 

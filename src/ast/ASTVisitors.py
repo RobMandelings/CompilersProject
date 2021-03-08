@@ -18,6 +18,9 @@ class ASTVisitor:
     def visitASTStatement(self, ast):
         raise NotImplementedError('This method is meant to be generic and thus cannot be called')
 
+    def visitASTUnaryExpression(self, ast):
+        raise NotImplementedError('This method is meant to be generic and thus cannot be called')
+
 
 class ASTVisitorDot(ASTVisitor):
 
@@ -26,6 +29,11 @@ class ASTVisitorDot(ASTVisitor):
         self.graph = Digraph('Abstract Syntax Tree')
 
     def visitASTBinaryOp(self, ast):
+        self.graph.node(str(id(ast)), ast.token.content)
+        if ast.parent is not None:
+            self.graph.edge(str(id(ast.parent)), str(id(ast)))
+
+    def visitASTUnaryExpression(self, ast):
         self.graph.node(str(id(ast)), ast.token.content)
         if ast.parent is not None:
             self.graph.edge(str(id(ast.parent)), str(id(ast)))

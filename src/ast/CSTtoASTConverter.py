@@ -21,8 +21,8 @@ def createASTFromConcreteSyntaxTree(cst, lexer: CLexer):
     #  Create a find_child function or something to find a child based on some name.
     elif isinstance(cst, CParser.VarDeclarationContext):
         return_value = ASTVariableDeclaration(createASTFromConcreteSyntaxTree(cst.children[0], lexer),
-                                             createASTFromConcreteSyntaxTree(cst.children[1], lexer),
-                                             ASTToken(cst, lexer, TokenType.VARIABLE_DECLARATION))
+                                              createASTFromConcreteSyntaxTree(cst.children[1], lexer),
+                                              ASTToken(cst, lexer, TokenType.VARIABLE_DECLARATION))
     elif isinstance(cst, CParser.TypeDeclaration1Context):
         ast_type = ASTType(ASTToken(cst, lexer, TokenType.TYPE_DECLARATION))
         for child in cst.children:
@@ -41,7 +41,23 @@ def createASTFromConcreteSyntaxTree(cst, lexer: CLexer):
             if isBinaryExpression(cst):
                 token = ASTToken(cst.children[1], lexer)
                 return_value = ASTBinaryOperation(token, createASTFromConcreteSyntaxTree(cst.children[0], lexer),
-                                                 createASTFromConcreteSyntaxTree(cst.children[2], lexer))
+                                                  createASTFromConcreteSyntaxTree(cst.children[2], lexer))
+            elif isUnaryExpression(cst):
+                assert isinstance(cst.children[0], TerminalNodeImpl)
+                symbol_text = cst.children[0].symbol.text
+                operator = None
+                if symbol_text == '+':
+                    operator = TokenType.UNARY_PLUS_OPERATOR
+                elif symbol_text == '-':
+                    operator = TokenType.UNARY_MINUS_OPERATOR
+                elif symbol_text == '*':
+                    operator = TokenType.DEREFERENCE_OPERATOR
+                elif symbol_text == '&':
+                    operator = TokenType.ADDRESS_OPERATOR
+                unary_operator_token = ASTToken(cst, lexer, operator)
+                unary_operator_token.content = symbol_text
+                return_value = ASTUnaryExpression(ASTLeaf(unary_operator_token),
+                                                  createASTFromConcreteSyntaxTree(cst.children[1], lexer))
             elif isBracketExpression(cst):
                 return_value = createASTFromConcreteSyntaxTree(cst.children[1], lexer)
 
@@ -61,6 +77,13 @@ def containsTerminalAsChild(cst):
 
 def isBinaryExpression(cst: ParserRuleContext):
     if len(cst.children) == 3 and isinstance(cst.children[1], TerminalNodeImpl):
+        return True
+
+    return False
+
+
+def isUnaryExpression(cst: ParserRuleContext):
+    if len(cst.children) == 2 and isinstance(cst.children[0], TerminalNodeImpl):
         return True
 
     return False
