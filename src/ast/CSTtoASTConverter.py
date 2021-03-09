@@ -24,10 +24,12 @@ def createASTFromConcreteSyntaxTree(cst, lexer: CLexer):
         ast_variable_declaration = ASTInternal(ASTToken(TokenType.VARIABLE_DECLARATION))
         appendChildASTsToAST(ast_variable_declaration, cst, lexer)
         return ast_variable_declaration
-    elif isinstance(cst, CParser.TypeDeclaration1Context):
-        ast_type_declaration1 = ASTInternal(ASTToken(TokenType.TYPE_DECLARATION))
-        appendChildASTsToAST(ast_type_declaration1, cst, lexer)
-        return ast_type_declaration1
+    elif isinstance(cst, CParser.TypeDeclaration1Context) or isinstance(cst, CParser.TypeDeclaration2Context):
+        ast_children = list()
+        for child in cst.children:
+            ast_children.append(createASTFromConcreteSyntaxTree(child, lexer))
+
+        return ast_children
     elif isinstance(cst, TerminalNodeImpl):
         token = getTokenFromTerminalNode(cst, lexer)
         if token is None:

@@ -27,7 +27,6 @@ class TokenType(Enum):
     DOUBLE_LITERAL = auto()
     INT_LITERAL = auto()
 
-    TYPE_DECLARATION = auto()
     VARIABLE_DECLARATION = auto()
     INT_TYPE = auto()
     FLOAT_TYPE = auto()
@@ -39,11 +38,11 @@ class ASTToken:
 
     def __init__(self, token_type, content=None):
 
-        self.tokenType = token_type
+        self.token_type = token_type
         if content is not None:
             self.content = content
         else:
-            self.content = self.tokenType.name.lower().replace("_", " ")
+            self.content = self.token_type.name.lower().replace("_", " ")
 
 
 class AST:
@@ -71,10 +70,15 @@ class ASTInternal(AST):
             child.accept(visitor)
         visitor.visitASTInternal(self)
 
-    def addChild(self, child: AST):
+    def addChild(self, child):
         assert child is not None
-        child.parent = self
-        self.children.append(child)
+
+        if isinstance(child, list):
+            for sub_child in child:
+                self.addChild(sub_child)
+        else:
+            child.parent = self
+            self.children.append(child)
 
 
 class ASTLeaf(AST):
