@@ -26,3 +26,17 @@ class ASTVisitorDot(ASTVisitor):
 
     def visitASTInternal(self, ast):
         self.addToDotNode(ast)
+
+
+class ASTVisitorSemanticAnalysis(ASTVisitor):
+
+    def __init__(self):
+        super().__init__()
+        # Todo
+        self.symbol_table = None
+
+    def visitASTLeaf(self, ast):
+        pass
+
+    def visitASTInternal(self, ast):
+        pass

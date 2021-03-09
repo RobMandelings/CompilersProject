@@ -1,6 +1,7 @@
 grammar C;
-program: statement+;
-statement:
+program: instructions;
+instructions: instruction+;
+instruction:
     varDeclaration ';'
     | varAssignment ';'
     | expr ';'

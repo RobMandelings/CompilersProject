@@ -4,7 +4,8 @@ from .ASTVisitors import ASTVisitor
 
 class TokenType(Enum):
     PROGRAM = auto()
-    STATEMENT = auto()
+    INSTRUCTIONS = auto()
+    INSTRUCTION = auto()
 
     UNARY_EXPRESSION = auto()
     UNARY_PLUS_OPERATOR = auto()

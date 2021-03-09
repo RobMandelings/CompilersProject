@@ -12,10 +12,14 @@ def createASTFromConcreteSyntaxTree(cst, lexer: CLexer):
         ast_program = ASTInternal(ASTToken(TokenType.PROGRAM))
         appendChildASTsToAST(ast_program, cst, lexer)
         return ast_program
-    elif isinstance(cst, CParser.StatementContext):
-        ast_statement = ASTInternal(ASTToken(TokenType.STATEMENT))
-        appendChildASTsToAST(ast_statement, cst, lexer)
-        return ast_statement
+    elif isinstance(cst, CParser.InstructionsContext):
+        ast_instructions = ASTInternal(ASTToken(TokenType.INSTRUCTIONS))
+        appendChildASTsToAST(ast_instructions, cst, lexer)
+        return ast_instructions
+    elif isinstance(cst, CParser.InstructionContext):
+        ast_instruction = ASTInternal(ASTToken(TokenType.INSTRUCTION))
+        appendChildASTsToAST(ast_instruction, cst, lexer)
+        return ast_instruction
     elif isinstance(cst, CParser.VarDeclarationContext):
         ast_variable_declaration = ASTInternal(ASTToken(TokenType.VARIABLE_DECLARATION))
         appendChildASTsToAST(ast_variable_declaration, cst, lexer)
