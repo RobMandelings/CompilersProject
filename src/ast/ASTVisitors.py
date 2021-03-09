@@ -50,9 +50,9 @@ class ASTVisitorDot(ASTVisitor):
 
     def visitASTProgram(self, ast):
         assert ast.parent is None
-        self.graph.node(str(id(ast)), "Program")
+        self.graph.node(str(id(ast)), ast.token.content)
 
     def visitASTStatement(self, ast):
-        self.graph.node(str(id(ast)), "Statement")
+        self.graph.node(str(id(ast)), ast.token.content)
         if ast.parent is not None:
             self.graph.edge(str(id(ast.parent)), str(id(ast)))

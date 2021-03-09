@@ -18,10 +18,10 @@ class TokenType(Enum):
     SUB_OPERATOR = auto()
     MULT_OPERATOR = auto()
     DIV_OPERATOR = auto()
-    GREATER_THAN_OP = auto()
-    LESS_THAN_OP = auto()
-    EQUALS_OP = auto()
-    ASSIGNMENT_OP = auto()
+    GREATER_THAN_OPERATOR = auto()
+    LESS_THAN_OPERATOR = auto()
+    EQUALS_OPERATOR = auto()
+    ASSIGNMENT_OPERATOR = auto()
 
     IDENTIFIER = auto()
 
@@ -62,13 +62,13 @@ class ASTToken:
         elif symbol_text == '-':
             return TokenType.SUB_OPERATOR
         elif symbol_text == '>':
-            return TokenType.GREATER_THAN_OP
+            return TokenType.GREATER_THAN_OPERATOR
         elif symbol_text == '<':
-            return TokenType.LESS_THAN_OP
+            return TokenType.LESS_THAN_OPERATOR
         elif symbol_text == '==':
-            return TokenType.EQUALS_OP
+            return TokenType.EQUALS_OPERATOR
         elif symbol_text == '=':
-            return TokenType.ASSIGNMENT_OP
+            return TokenType.ASSIGNMENT_OPERATOR
         elif symbol_text == 'int':
             return TokenType.INT_TYPE
         elif symbol_text == 'float':
@@ -108,6 +108,11 @@ class ASTInternal(AST):
         super().__init__(token)
         self.children = list()
 
+    def accept(self, visitor: ASTVisitors.ASTVisitor):
+        for child in self.children:
+            assert isinstance(child, AST)
+            child.accept(visitor)
+
     def addChild(self, child: AST):
         child.parent = self
         self.children.append(child)
@@ -116,19 +121,15 @@ class ASTInternal(AST):
 class ASTProgram(ASTInternal):
 
     def accept(self, visitor: ASTVisitors.ASTVisitor):
+        super().accept(visitor)
         visitor.visitASTProgram(self)
-        for child in self.children:
-            assert isinstance(child, AST)
-            child.accept(visitor)
 
 
 class ASTStatement(ASTInternal):
 
     def accept(self, visitor: ASTVisitors.ASTVisitor):
+        super().accept(visitor)
         visitor.visitASTStatement(self)
-        for child in self.children:
-            assert isinstance(child, AST)
-            child.accept(visitor)
 
 
 """
@@ -146,9 +147,9 @@ class ASTBinaryOperation(AST):
         self.right.parent = self
 
     def accept(self, visitor: ASTVisitors.ASTVisitor):
-        visitor.visitASTBinaryOp(self)
         self.left.accept(visitor)
         self.right.accept(visitor)
+        visitor.visitASTBinaryOp(self)
 
 
 class ASTUnaryExpression(AST):
@@ -160,9 +161,9 @@ class ASTUnaryExpression(AST):
         self.right.parent = self
 
     def accept(self, visitor: ASTVisitors.ASTVisitor):
-        visitor.visitASTUnaryExpression(self)
         self.left.accept(visitor)
         self.right.accept(visitor)
+        visitor.visitASTUnaryExpression(self)
 
 
 class ASTLeaf(AST):
@@ -170,7 +171,7 @@ class ASTLeaf(AST):
     def __init__(self, token: ASTToken):
         super().__init__(token)
 
-    def accept(self, visitor):
+    def accept(self, visitor: ASTVisitors.ASTVisitor):
         assert isinstance(visitor, ASTVisitors.ASTVisitor)
         visitor.visitASTLeaf(self)
 
@@ -180,12 +181,9 @@ class ASTType(ASTInternal):
     def __init__(self, token: ASTToken):
         super().__init__(token)
 
-    def accept(self, visitor):
-        assert isinstance(visitor, ASTVisitors.ASTVisitor)
+    def accept(self, visitor: ASTVisitors.ASTVisitor):
+        super().accept(visitor)
         visitor.visitASTType(self)
-        for child in self.children:
-            assert isinstance(child, AST)
-            child.accept(visitor)
 
 
 class ASTVariableDeclaration(AST):
