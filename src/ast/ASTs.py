@@ -1,7 +1,5 @@
 from enum import Enum, auto
-from antlr4.tree.Tree import TerminalNodeImpl
-from . import ASTVisitors
-from ..antlr4_gen.CLexer import CLexer
+from .ASTVisitors import ASTVisitor
 
 
 class TokenType(Enum):
@@ -38,55 +36,13 @@ class TokenType(Enum):
 
 class ASTToken:
 
-    def __init__(self, cst, lexer, token_type: TokenType = None):
+    def __init__(self, token_type, content=None):
 
-        if token_type is None:
-            self.tokenType = self.get_token_type_from_cst(cst, lexer)
-            self.content = cst.symbol.text
+        self.tokenType = token_type
+        if content is not None:
+            self.content = content
         else:
-            self.tokenType = token_type
-            self.content = self.tokenType.name
-
-    @staticmethod
-    def get_token_type_from_cst(cst, lexer):
-        assert isinstance(cst, TerminalNodeImpl)
-        assert isinstance(lexer, CLexer)
-        symbol_text = cst.getSymbol().text
-        # Literals are easy to check
-        if symbol_text == '*':
-            return TokenType.MULT_OPERATOR
-        elif symbol_text == '/':
-            return TokenType.DIV_OPERATOR
-        elif symbol_text == '+':
-            return TokenType.ADD_OPERATOR
-        elif symbol_text == '-':
-            return TokenType.SUB_OPERATOR
-        elif symbol_text == '>':
-            return TokenType.GREATER_THAN_OPERATOR
-        elif symbol_text == '<':
-            return TokenType.LESS_THAN_OPERATOR
-        elif symbol_text == '==':
-            return TokenType.EQUALS_OPERATOR
-        elif symbol_text == '=':
-            return TokenType.ASSIGNMENT_OPERATOR
-        elif symbol_text == 'int':
-            return TokenType.INT_TYPE
-        elif symbol_text == 'float':
-            return TokenType.FLOAT_TYPE
-        elif symbol_text == 'char':
-            return TokenType.CHAR_TYPE
-        elif symbol_text == 'const':
-            return TokenType.CONST_TYPE
-        # These 'symbolic' tokens are recognized by a regular expression so we can check if the ID corresponds to one
-        # of the parsers' token IDs
-        elif cst.getSymbol().type == lexer.INTEGER:
-            return TokenType.INT_LITERAL
-        elif cst.getSymbol().type == lexer.DOUBLE:
-            return TokenType.DOUBLE_LITERAL
-        elif cst.getSymbol().type == lexer.ID:
-            return TokenType.IDENTIFIER
-        else:
-            raise NotImplementedError("The token type could not be deduced from the symbol '" + symbol_text + "'.")
+            self.content = self.tokenType.name.lower().replace("_", " ")
 
 
 class AST:
@@ -108,62 +64,16 @@ class ASTInternal(AST):
         super().__init__(token)
         self.children = list()
 
-    def accept(self, visitor: ASTVisitors.ASTVisitor):
+    def accept(self, visitor: ASTVisitor):
         for child in self.children:
             assert isinstance(child, AST)
             child.accept(visitor)
+        visitor.visitASTInternal(self)
 
     def addChild(self, child: AST):
+        assert child is not None
         child.parent = self
         self.children.append(child)
-
-
-class ASTProgram(ASTInternal):
-
-    def accept(self, visitor: ASTVisitors.ASTVisitor):
-        super().accept(visitor)
-        visitor.visitASTProgram(self)
-
-
-class ASTStatement(ASTInternal):
-
-    def accept(self, visitor: ASTVisitors.ASTVisitor):
-        super().accept(visitor)
-        visitor.visitASTStatement(self)
-
-
-"""
-Structure to keep track of binary operations such as +, -, *, / and >, <, ==
-"""
-
-
-class ASTBinaryOperation(AST):
-
-    def __init__(self, token, left, right):
-        super().__init__(token)
-        self.left = left
-        self.right = right
-        self.left.parent = self
-        self.right.parent = self
-
-    def accept(self, visitor: ASTVisitors.ASTVisitor):
-        self.left.accept(visitor)
-        self.right.accept(visitor)
-        visitor.visitASTBinaryOp(self)
-
-
-class ASTUnaryExpression(AST):
-    def __init__(self, left, right):
-        super().__init__(ASTToken(None, None, TokenType.UNARY_EXPRESSION))
-        self.left = left
-        self.right = right
-        self.left.parent = self
-        self.right.parent = self
-
-    def accept(self, visitor: ASTVisitors.ASTVisitor):
-        self.left.accept(visitor)
-        self.right.accept(visitor)
-        visitor.visitASTUnaryExpression(self)
 
 
 class ASTLeaf(AST):
@@ -171,32 +81,6 @@ class ASTLeaf(AST):
     def __init__(self, token: ASTToken):
         super().__init__(token)
 
-    def accept(self, visitor: ASTVisitors.ASTVisitor):
-        assert isinstance(visitor, ASTVisitors.ASTVisitor)
+    def accept(self, visitor: ASTVisitor):
+        assert isinstance(visitor, ASTVisitor)
         visitor.visitASTLeaf(self)
-
-
-class ASTType(ASTInternal):
-
-    def __init__(self, token: ASTToken):
-        super().__init__(token)
-
-    def accept(self, visitor: ASTVisitors.ASTVisitor):
-        super().accept(visitor)
-        visitor.visitASTType(self)
-
-
-class ASTVariableDeclaration(AST):
-
-    def __init__(self, variable_type: ASTType, variable: AST, token):
-        super().__init__(token)
-        self.variable_type = variable_type
-        self.variable = variable
-        self.variable_type.parent = self
-        self.variable.parent = self
-
-    def accept(self, visitor):
-        assert isinstance(visitor, ASTVisitors.ASTVisitor)
-        visitor.visitASTBinaryOp(self)
-        self.variable_type.accept(visitor)
-        self.variable.accept(visitor)
