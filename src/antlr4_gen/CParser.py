@@ -440,6 +440,7 @@ class CParser ( Parser ):
             self.state = 56
             self.expr()
         except RecognitionException as re:
+
             localctx.exception = re
             self._errHandler.reportError(self, re)
             self._errHandler.recover(self, re)
