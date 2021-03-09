@@ -1,1 +1,1 @@
-int i = *y;
+int i = 6
