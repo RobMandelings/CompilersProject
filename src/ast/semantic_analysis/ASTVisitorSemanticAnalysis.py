@@ -2,6 +2,14 @@ from src.ast.semantic_analysis.SymbolTable import *
 from src.ast.ASTs import *
 
 
+class SemanticError(Exception):
+    pass
+
+
+class AlreadyDeclaredError(SemanticError):
+    pass
+
+
 class ASTVisitorSemanticAnalysis(ASTVisitor):
 
     def __init__(self):
@@ -42,7 +50,8 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
             symbol_table.insert_symbol(
                 SymbolTableElement(ast.var_name.get_token_content(), VariableSymbolType(ast.type_attributes)))
         else:
-            print("Variable with name '" + ast.var_name.get_token_content() + "' has been declared twice!")
+            raise AlreadyDeclaredError(
+                "Variable with name '" + ast.var_name.get_token_content() + "' has already been declared in this scope!")
 
     def visit_ast_variable_declaration_and_init(self, ast: ASTVariableDeclarationAndInit):
         pass
