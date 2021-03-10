@@ -2,6 +2,7 @@ from CSTVisitors import CSTVisitorToDot
 from src.ast.CSTtoASTConverter import *
 from src.ast.ASTVisitors import ASTVisitorDot
 from src.syntacticalAnalysis import CSTErrorListener
+from src.ast.semantic_analysis.ASTVisitorSemanticAnalysis import ASTVisitorSemanticAnalysis
 
 
 # TODO support for unary operations ('-5' for example)
@@ -26,6 +27,9 @@ def main(argv):
         ast = createASTFromConcreteSyntaxTree(tree, lexer)
         ast_visitor_dot = ASTVisitorDot()
         ast.accept(ast_visitor_dot)
+
+        ast_visitor_semantic_analysis = ASTVisitorSemanticAnalysis()
+        ast.accept(ast_visitor_semantic_analysis)
 
         ast_visitor_dot.graph.render('output/ast.gv', view=False)
         print(argv[1])

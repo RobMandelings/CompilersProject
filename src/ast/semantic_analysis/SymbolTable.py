@@ -17,9 +17,8 @@ class SymbolType:
 
 class VariableSymbolType(SymbolType):
 
-    def __init__(self, type_specifier: DataType, type_attributes: list):
+    def __init__(self, type_attributes: list):
         super().__init__()
-        self.type_specifier = type_specifier
         self.type_attributes = type_attributes
 
 
@@ -36,18 +35,23 @@ class SymbolTable:
         self.parent = None
         self.symbols = dict()
 
-    def lookupLocal(self, symbol: str):
+    def lookup_local(self, symbol: str):
         lookup = self.symbols[symbol]
         assert lookup is None or isinstance(lookup, SymbolTableElement)
         return lookup
 
-    def lookup(self, symbol):
-        lookup_local = self.symbols[symbol]
-        if lookup_local is None:
+    def lookup(self, symbol: str):
+        if symbol in self.symbols:
+            lookup_local = self.symbols[symbol]
+            return lookup_local
+        else:
             if self.parent is not None:
                 assert isinstance(self.parent, SymbolTable)
                 return self.parent.lookup(symbol)
             else:
                 return None
-        else:
-            return lookup_local
+
+    def insert_symbol(self, symbol: SymbolTableElement):
+        assert self.lookup(symbol.symbol_name) is None
+        self.symbols[symbol.symbol_name] = symbol
+        assert self.lookup(symbol.symbol_name) is not None

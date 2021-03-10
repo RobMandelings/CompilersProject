@@ -4,7 +4,7 @@ from src.antlr4_gen.CLexer import CLexer
 from src.antlr4_gen.CParser import *
 from src.ast.ASTs import *
 
-
+# TODO Improve to use a visitor pattern of the cst instead
 def createASTFromConcreteSyntaxTree(cst, lexer: CLexer):
     assert isinstance(lexer, CLexer)
 
@@ -21,9 +21,25 @@ def createASTFromConcreteSyntaxTree(cst, lexer: CLexer):
         appendChildASTsToAST(ast_instruction, cst, lexer)
         return ast_instruction
     elif isinstance(cst, CParser.VarDeclarationContext):
-        ast_variable_declaration = ASTInternal(ASTToken(TokenType.VARIABLE_DECLARATION))
-        appendChildASTsToAST(ast_variable_declaration, cst, lexer)
-        return ast_variable_declaration
+
+        type_attributes = createASTFromConcreteSyntaxTree(cst.children[0], lexer)
+        assert isinstance(type_attributes, list)
+
+        if isinstance(cst.children[1], CParser.VarInitContext):
+
+            name_and_value = createASTFromConcreteSyntaxTree(cst.children[1], lexer)
+            assert isinstance(name_and_value, list) and len(name_and_value) == 2
+
+            return ASTVariableDeclarationAndInit(type_attributes, name_and_value[0], name_and_value[1])
+        else:
+
+            name = createASTFromConcreteSyntaxTree(cst.children[1], lexer)
+            return ASTVariableDeclaration(type_attributes, name)
+    elif isinstance(cst, CParser.VarInitContext):
+        children_to_return = list()
+        children_to_return.append(createASTFromConcreteSyntaxTree(cst.children[0], lexer))
+        children_to_return.append(createASTFromConcreteSyntaxTree(cst.children[2], lexer))
+        return children_to_return
     elif isinstance(cst, CParser.TypeDeclaration1Context) or isinstance(cst, CParser.TypeDeclaration2Context):
         ast_children = list()
         for child in cst.children:
@@ -108,21 +124,21 @@ def isBinaryExpression(cst: ParserRuleContext):
         token_type = None
         symbol_text = cst.children[1].getSymbol().text
         if symbol_text == '+':
-            token_type = TokenType.ADD_OPERATOR
+            token_type = TokenType.ADD_EXPRESSION
         elif symbol_text == '-':
-            token_type = TokenType.SUB_OPERATOR
+            token_type = TokenType.SUB_EXPRESSION
         elif symbol_text == '/':
-            token_type = TokenType.DIV_OPERATOR
+            token_type = TokenType.DIV_EXPRESSION
         elif symbol_text == '*':
-            token_type = TokenType.MULT_OPERATOR
+            token_type = TokenType.MULT_EXPRESSION
         elif symbol_text == '>':
-            token_type = TokenType.MULT_OPERATOR
+            token_type = TokenType.MULT_EXPRESSION
         elif symbol_text == '<':
-            token_type = TokenType.MULT_OPERATOR
+            token_type = TokenType.MULT_EXPRESSION
         elif symbol_text == '==':
-            token_type = TokenType.MULT_OPERATOR
+            token_type = TokenType.MULT_EXPRESSION
         elif symbol_text == '=':
-            token_type = TokenType.MULT_OPERATOR
+            token_type = TokenType.MULT_EXPRESSION
         assert token_type is not None
         return True, ASTToken(token_type, symbol_text)
 
