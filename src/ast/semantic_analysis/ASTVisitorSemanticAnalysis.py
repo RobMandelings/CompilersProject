@@ -48,10 +48,10 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
 
         if symbol_table.lookup(ast.var_name.get_token_content()) is None:
             symbol_table.insert_symbol(
-                SymbolTableElement(ast.var_name.get_token_content(), VariableSymbolType(ast.type_attributes)))
+                SymbolTableElement(ast.var_name.get_token_content(), VariableSymbol(ast.type_attributes)))
         else:
             raise AlreadyDeclaredError(
-                "Variable with name '" + ast.var_name.get_token_content() + "' has already been declared in this scope!")
+                "Variable with name '" + str(ast.var_name) + "' has already been declared in this scope!")
 
     def visit_ast_variable_declaration_and_init(self, ast: ASTVariableDeclarationAndInit):
         pass
