@@ -144,4 +144,4 @@ class ASTVariableDeclarationAndInit(ASTVariableDeclaration):
             attribute.accept(visitor)
         self.var_name.accept(visitor)
         self.value.accept(visitor)
-        visitor.visit_ast_variable_declaration(self)
+        visitor.visit_ast_variable_declaration_and_init(self)

@@ -54,4 +54,11 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
                 "Variable with name '" + str(ast.var_name) + "' has already been declared in this scope!")
 
     def visit_ast_variable_declaration_and_init(self, ast: ASTVariableDeclarationAndInit):
-        pass
+        self.visit_ast_variable_declaration(ast)
+        variablesymbol = self.get_last_symbol_table().lookup(ast.var_name.get_token_content()).symbol
+        assert isinstance(variablesymbol, VariableSymbol)
+        try:
+            variablesymbol.set_value(ast.value.get_token_content())
+        except ValueNotAllowedError as e:
+            print("An error occurred during semantical analysis")
+            print(e)
