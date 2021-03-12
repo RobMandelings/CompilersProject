@@ -1,4 +1,0 @@
-int i = 6;
-
-const int a = 28.999;
-char c = 'a';

@@ -149,24 +149,31 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
                 "WARN: narrowing result of expression from datatype '" +
                 resulting_data_type_visitor.resulting_data_type.name + "' to datatype '" + declared_data_type.name + "'")
 
-    def visit_ast_assignment(self, binExpr: ASTBinaryExpression):
-        assert binExpr.token.token_type == TokenType.ASSIGNMENT_EXPRESSION
+    def check_rvalue_assignment(self, bin_expr: ASTBinaryExpression):
+        # TODO Needs to be improved with derefencing and all that stuff
+        assert bin_expr.token.token_type == TokenType.ASSIGNMENT_EXPRESSION
+
+        if bin_expr.left.token.token_type == TokenType.CHAR_LITERAL or bin_expr.left.token.token_type == TokenType.INT_LITERAL or bin_expr.left.token.token_type == TokenType.FLOAT_LITERAL:
+            raise SemanticError("Assignment to an rValue (value is " + bin_expr.left.get_token_content() + ")")
+
+    def visit_ast_assignment(self, bin_expr: ASTBinaryExpression):
+        assert bin_expr.token.token_type == TokenType.ASSIGNMENT_EXPRESSION
         symbol_table = self.get_last_symbol_table()
         invalid_var_usage = ASTVisitorUnavailableVariableUsage(symbol_table)
-        binExpr.left.accept(invalid_var_usage)
-        invalid_var_usage.visit_ast_binary_expression(binExpr.right)
+        bin_expr.left.accept(invalid_var_usage)
+        invalid_var_usage.visit_ast_binary_expression(bin_expr.right)
         if len(invalid_var_usage.unitialized_variables_used) == 0 and len(
                 invalid_var_usage.undeclared_variables_used) == 0:
-            symbol = symbol_table.lookup(binExpr.left.get_token_content()).symbol
+            symbol = symbol_table.lookup(bin_expr.left.get_token_content()).symbol
             assert isinstance(symbol, VariableSymbol)
             if not symbol.is_const:
 
-                self.check_for_narrowing_result(binExpr.left.token.token_type, binExpr)
+                self.check_for_narrowing_result(bin_expr.left.token.token_type, bin_expr)
 
-                symbol.current_value = binExpr.right
+                symbol.current_value = bin_expr.right
 
             else:
-                raise SemanticError("Cannot assign value to const variable '" + binExpr.left.get_token_content() + "'")
+                raise SemanticError("Cannot assign value to const variable '" + bin_expr.left.get_token_content() + "'")
         else:
 
             error_text = ""
