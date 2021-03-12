@@ -1,4 +1,4 @@
 int i = 6;
 
-int a;
-c = 5 + a;
+const int a = 5.3;
+a = 5 + 3;

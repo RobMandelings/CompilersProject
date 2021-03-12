@@ -6,6 +6,8 @@ from src.ast.ASTs import *
 
 
 # TODO Improve to use a visitor pattern of the cst instead
+
+
 def createASTFromConcreteSyntaxTree(cst, lexer: CLexer):
     assert isinstance(lexer, CLexer)
 
@@ -100,7 +102,7 @@ def getTokenFromTerminalNode(cst: TerminalNodeImpl, lexer: CLexer):
     elif cst.getSymbol().type == lexer.INTEGER:
         token_type = TokenType.INT_LITERAL
     elif cst.getSymbol().type == lexer.DOUBLE:
-        token_type = TokenType.DOUBLE_LITERAL
+        token_type = TokenType.FLOAT_LITERAL
     elif cst.getSymbol().type == lexer.ID:
         token_type = TokenType.IDENTIFIER
     else:

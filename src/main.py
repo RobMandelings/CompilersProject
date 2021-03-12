@@ -2,7 +2,7 @@ from CSTVisitors import CSTVisitorToDot
 from src.ast.CSTtoASTConverter import *
 from src.ast.ASTVisitorDot import ASTVisitorDot
 from src.syntacticalAnalysis import CSTErrorListener
-from src.ast.semantic_analysis.ASTVisitorSemanticAnalysis import ASTVisitorSemanticAnalysis
+from src.ast.semantic_analysis.ASTVisitorSemanticAnalysis import ASTVisitorSemanticAnalysis, SemanticError
 
 
 # TODO support for unary operations ('-5' for example)
@@ -23,13 +23,18 @@ def main(argv):
         tree.accept(cst_visitor_to_dot)
         cst_visitor_to_dot.graph.render('output/cst.gv', view=False)
 
-
         ast = createASTFromConcreteSyntaxTree(tree, lexer)
         ast_visitor_dot = ASTVisitorDot()
         ast.accept(ast_visitor_dot)
 
         ast_visitor_semantic_analysis = ASTVisitorSemanticAnalysis()
-        ast.accept(ast_visitor_semantic_analysis)
+        try:
+            ast.accept(ast_visitor_semantic_analysis)
+        except SemanticError as e:
+            print("A semantic error occurred: ")
+            print(e)
+            print("Stopping the compiler...")
+            sys.exit(0)
 
         ast_visitor_dot.graph.render('output/ast.gv', view=False)
         print(argv[1])
@@ -37,7 +42,6 @@ def main(argv):
     except SyntaxError:
         print("Exiting program...", file=sys.stderr)
         sys.exit()
-
 
 
 if __name__ == '__main__':

@@ -22,7 +22,74 @@ class IncompatibleTypesError(Exception):
     pass
 
 
-class ASTVisitorInvalidVariableUsage(ASTVisitor):
+def divide_type_attributes(type_attributes: list):
+    """
+    Separates the type attributes from the list into a tuple of specific type specifier and type qualifier(s)
+    Returns: tuple (data_type, is_const)
+    """
+    data_type = None
+    is_const = False
+    for attribute in type_attributes:
+        assert isinstance(attribute, AST)
+        if DataType.get_data_type_from_name(attribute.get_token_content()) is not None:
+            assert data_type is None, "There are multiple datatypes defined. " \
+                                      "This should not be possible as it should have halted with a syntax error"
+            data_type = DataType.get_data_type_from_name(attribute.get_token_content())
+        elif attribute.get_token_content() == 'const':
+            is_const = True
+        else:
+            NotImplementedError('This attribute is not supported yet')
+    assert data_type is not None and is_const is not None
+
+    return data_type, is_const
+
+
+class ASTVisitorResultingDataType(ASTVisitor):
+    """
+    This visitor is used whenever the semantic analysis visitor needs to decide what the data type of the result
+    of a (binary) expression is.
+
+    PRE-CONDITION: all variables within the tree should exist and be defined. This can be checked using the unavailable variable usage visitor
+    """
+
+    def __init__(self, last_symbol_table: SymbolTable):
+        self.last_symbol_table = last_symbol_table
+        # This becomes the actual data type after doing some lookups of the
+        # variables and their data types and the literals entered as well
+        self.resulting_data_type = None
+        assert last_symbol_table is not None
+
+    def update_current_data_type(self, other_data_type):
+        """
+        Checks if the other data type given is richer than the current type and replaces it, otherwise do nothing
+        """
+
+        # TODO raise a semantic error if the data types are incomparable
+
+        if self.resulting_data_type is None:
+            self.resulting_data_type = other_data_type
+        else:
+            if is_richer_than(other_data_type, self.resulting_data_type):
+                self.resulting_data_type = other_data_type
+
+    def visit_ast_leaf(self, ast):
+        if ast.token.token_type == TokenType.IDENTIFIER:
+            table_element = self.last_symbol_table.lookup(ast.get_token_content())
+            assert isinstance(table_element, SymbolTableElement)
+            assert isinstance(table_element.symbol, VariableSymbol)
+            assert table_element.symbol.current_value
+            self.update_current_data_type(table_element.symbol.data_type)
+        elif ast.token.token_type == TokenType.INT_LITERAL:
+            self.update_current_data_type(DataType.INT)
+        elif ast.token.token_type == TokenType.FLOAT_LITERAL:
+            self.update_current_data_type(DataType.FLOAT)
+        elif ast.token.token_type == TokenType.CHAR_LITERAL:
+            self.update_current_data_type(DataType.CHAR)
+        else:
+            raise NotImplementedError("Token type '" + str(ast.token.token_type) + "' not recognized")
+
+
+class ASTVisitorUnavailableVariableUsage(ASTVisitor):
     """
     Used by the semantical analysis visitor to check if a certain AST contains an unitialized variable
     """
@@ -69,61 +136,37 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
         assert isinstance(symbol_table, SymbolTable)
         return symbol_table
 
-    @staticmethod
-    def types_compatible(data_type: DataType, token_type: TokenType, value):
-        """
-        Returns true if the given data type and token type are compatible.
-        If convertible, does a conversion to the data type first and then returns a (bool, newValue) pair
-        If not convertible, returns false
-        """
-        if data_type == DataType.INT:
-            if token_type == TokenType.INT_LITERAL or token_type == TokenType.DOUBLE_LITERAL:
-                return True
-        elif data_type == DataType.FLOAT:
-            if token_type == TokenType.INT_LITERAL:
-                return True
-            elif token_type == TokenType.DOUBLE_LITERAL:
-                return True
-        elif data_type == DataType.CHAR:
-            if token_type == TokenType.INT_LITERAL:
-                return True
+    def check_for_narrowing_result(self, declared_data_type: DataType, ast: AST):
+        resulting_data_type_visitor = ASTVisitorResultingDataType(self.get_last_symbol_table())
+        ast.accept(resulting_data_type_visitor)
+        assert resulting_data_type_visitor.resulting_data_type is not None
 
-        return False
+        # This is the data type that was declared in the input program
 
-    def do_type_conversion(self, destination_data_type: DataType, value: AST):
-        """
+        if declared_data_type != resulting_data_type_visitor.resulting_data_type and not is_richer_than(
+                declared_data_type, resulting_data_type_visitor.resulting_data_type):
+            print(
+                "WARN: narrowing result of expression from datatype '" +
+                resulting_data_type_visitor.resulting_data_type.name + "' to datatype '" + declared_data_type.name)
 
-        """
-
-    def set_value_if_possible(self, symbol: Symbol, value: AST):
-        if not isinstance(symbol, VariableSymbol):
-            # TODO maybe for functions it's different
-            raise IncompatibleTypesError(
-                "The symbol is not of type VariableSymbol, so we can't assign it to such a value")
-        else:
-
-            compatible = self.types_compatible(symbol.data_type, value.token.token_type,
-                                               value.get_token_content())
-
-            if compatible:
-                symbol.current_value = value
-            else:
-                raise IncompatibleTypesError("Types are incompatible: trying to set a variable of data type " + str(
-                    symbol.data_type) + " to a value of type " + value.token.token_type + " (content: " + value.get_token_content() + ")")
-
-    def visit_ast_assignment(self, ast: ASTBinaryExpression):
-        assert ast.token.token_type == TokenType.ASSIGNMENT_EXPRESSION
+    def visit_ast_assignment(self, binExpr: ASTBinaryExpression):
+        assert binExpr.token.token_type == TokenType.ASSIGNMENT_EXPRESSION
         symbol_table = self.get_last_symbol_table()
-        invalid_var_usage = ASTVisitorInvalidVariableUsage(symbol_table)
-        invalid_var_usage.visit_ast_leaf(ast.left)
-        invalid_var_usage.visitor_ast_binary_expression(ast.right)
+        invalid_var_usage = ASTVisitorUnavailableVariableUsage(symbol_table)
+        binExpr.left.accept(invalid_var_usage)
+        invalid_var_usage.visit_ast_binary_expression(binExpr.right)
         if len(invalid_var_usage.unitialized_variables_used) == 0 and len(
                 invalid_var_usage.undeclared_variables_used) == 0:
-            try:
-                # We know that there are no undeclared or uninitialied variables found, so there must exist a symbol element
-                self.set_value_if_possible(symbol_table.lookup(ast.left.get_token_content()).symbol, ast.right)
-            except IncompatibleTypesError:
-                raise
+            symbol = symbol_table.lookup(binExpr.left.get_token_content()).symbol
+            assert isinstance(symbol, VariableSymbol)
+            if not symbol.is_const:
+
+                self.check_for_narrowing_result(binExpr.left.token.token_type, binExpr)
+
+                symbol.current_value = binExpr.right
+
+            else:
+                raise SemanticError("Cannot assign value to const variable '" + binExpr.left.get_token_content() + "'")
         else:
 
             error_text = ""
@@ -138,7 +181,7 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
 
             raise SemanticError(error_text)
 
-    def visitor_ast_binary_expression(self, ast: ASTBinaryExpression):
+    def visit_ast_binary_expression(self, ast: ASTBinaryExpression):
         if ast.get_token().token_type == TokenType.ASSIGNMENT_EXPRESSION:
             self.visit_ast_assignment(ast)
 
@@ -146,8 +189,9 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
         symbol_table = self.get_last_symbol_table()
 
         if symbol_table.lookup(ast.var_name.get_token_content()) is None:
+            data_type, is_const = divide_type_attributes(ast.type_attributes)
             symbol_table.insert_symbol(
-                SymbolTableElement(ast.var_name.get_token_content(), VariableSymbol(ast.type_attributes)))
+                SymbolTableElement(ast.var_name.get_token_content(), VariableSymbol(data_type, is_const)))
         else:
             raise AlreadyDeclaredError(
                 "Variable with name '" + str(ast.var_name) + "' has already been declared in this scope!")
@@ -157,7 +201,10 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
         variable_symbol = self.get_last_symbol_table().lookup(ast.var_name.get_token_content()).symbol
         assert isinstance(variable_symbol, VariableSymbol)
         try:
-            self.set_value_if_possible(variable_symbol, ast.value)
+
+            data_type, is_const = divide_type_attributes(ast.type_attributes)
+            self.check_for_narrowing_result(data_type, ast.value)
+
+            variable_symbol.current_value = ast.value
         except IncompatibleTypesError as e:
-            print("An error occurred during semantical analysis:")
-            print(e)
+            raise e

@@ -22,8 +22,8 @@ class ASTVisitorDot(ASTVisitor):
         super().visit_ast_internal(ast)
         self.add_to_dot_node(ast)
 
-    def visitor_ast_binary_expression(self, ast):
-        super().visitor_ast_binary_expression(ast)
+    def visit_ast_binary_expression(self, ast):
+        super().visit_ast_binary_expression(ast)
         self.add_to_dot_node(ast)
 
     def visit_ast_variable_declaration(self, ast):

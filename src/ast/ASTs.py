@@ -28,8 +28,9 @@ class TokenType(Enum):
 
     IDENTIFIER = auto()
 
-    DOUBLE_LITERAL = auto()
+    CHAR_LITERAL = auto()
     INT_LITERAL = auto()
+    FLOAT_LITERAL = auto()
 
     VARIABLE_DECLARATION = auto()
     VARIABLE_DECLARATION_AND_INIT = auto()
@@ -118,7 +119,7 @@ class ASTBinaryExpression(AST):
         return self.get_token_content()
 
     def accept(self, visitor: ASTVisitor):
-        visitor.visitor_ast_binary_expression(self)
+        visitor.visit_ast_binary_expression(self)
 
 
 class ASTVariableDeclaration(AST):
@@ -126,7 +127,6 @@ class ASTVariableDeclaration(AST):
     def __init__(self, type_attributes: list, name: ASTLeaf):
         super().__init__(ASTToken(TokenType.VARIABLE_DECLARATION))
         self.type_attributes = list()
-        # Performs a recursion to make sure the list only consists of ast elements within instead of other lists
         self.set_type_attributes(type_attributes)
         for attribute in self.type_attributes:
             attribute.parent = self
@@ -138,6 +138,9 @@ class ASTVariableDeclaration(AST):
         return self.get_token_content()
 
     def set_type_attributes(self, type_attributes: list):
+        """
+        Performs a recursion to make sure the list only consists of ast elements within instead of other lists
+        """
         for attribute in type_attributes:
             if isinstance(attribute, list):
                 self.set_type_attributes(attribute)

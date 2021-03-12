@@ -9,7 +9,7 @@ class ASTVisitor:
         for child in ast.children:
             child.accept(self)
 
-    def visitor_ast_binary_expression(self, ast):
+    def visit_ast_binary_expression(self, ast):
         ast.left.accept(self)
         ast.right.accept(self)
 

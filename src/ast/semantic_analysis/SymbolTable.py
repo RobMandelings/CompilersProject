@@ -1,6 +1,6 @@
 from enum import Enum, auto
 
-from src.ast.ASTs import AST
+from src.ast.ASTs import AST, TokenType
 
 
 class DataType(Enum):
@@ -22,6 +22,24 @@ class DataType(Enum):
             return None
 
 
+def convert_token_type_to_data_type(token_type: TokenType):
+    if token_type == TokenType.CHAR_TYPE:
+        return DataType.CHAR
+    elif token_type == TokenType.INT_TYPE:
+        return DataType.INT
+    elif token_type == TokenType.FLOAT_TYPE:
+        return DataType.FLOAT
+    else:
+        raise NotImplementedError("Cannot convert the given tokentype ' " + str(token_type) + "' to a datatype")
+
+
+def is_richer_than(datatype1: DataType, datatype2: DataType):
+    """
+    Must be placed outside the DataType class because it would not be fully 'defined' when setting the expected parameter types, weird stuff
+    """
+    return datatype1.value > datatype2.value
+
+
 class Symbol:
 
     def __init__(self):
@@ -30,26 +48,11 @@ class Symbol:
 
 class VariableSymbol(Symbol):
 
-    def __init__(self, attributes: list):
+    def __init__(self, data_type: DataType, is_const):
         super().__init__()
-        self.data_type = None
-        self.is_const = False
+        self.data_type = data_type
+        self.is_const = is_const
         self.current_value = None
-        self.init_member_variables(attributes)
-        print("Hello")
-
-    def init_member_variables(self, attributes: list):
-        for attribute in attributes:
-            assert isinstance(attribute, AST)
-            if DataType.get_data_type_from_name(attribute.get_token_content()) is not None:
-                assert self.data_type is None, "There are multiple datatypes defined. " \
-                                               "This should not be possible as it should have halted with a syntax error"
-                self.data_type = DataType.get_data_type_from_name(attribute.get_token_content())
-            elif attribute.get_token_content() == 'const':
-                self.is_const = True
-            else:
-                NotImplementedError('This attribute is not supported yet')
-        assert self.data_type is not None and self.is_const is not None
 
     def get_data_type(self):
         assert isinstance(self.data_type, DataType)
