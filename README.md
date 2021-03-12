@@ -14,4 +14,4 @@ From the slides, it will be easier to compiler into llvm
 
 (for example)
 
-### Implement assignments to rvalues as well
+### Implement char data type
