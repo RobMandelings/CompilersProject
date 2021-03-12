@@ -18,6 +18,12 @@ class IncompatibleTypesError(Exception):
     pass
 
 
+class ASTVisitorUnititializedVariable(ASTVisitor):
+    """
+    Used by the semantical analysis vistor to check
+    """
+
+
 class ASTVisitorSemanticAnalysis(ASTVisitor):
 
     def __init__(self):
@@ -41,48 +47,44 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
         assert isinstance(symbol_table, SymbolTable)
         return symbol_table
 
-    def compatible_types_or_convert(self, data_type: DataType, token_type: TokenType, value):
+    @staticmethod
+    def types_compatible(data_type: DataType, token_type: TokenType, value):
         """
         Returns true if the given data type and token type are compatible.
         If convertible, does a conversion to the data type first and then returns a (bool, newValue) pair
         If not convertible, returns false
         """
         if data_type == DataType.INT:
-            if token_type == TokenType.INT_LITERAL:
-                return True, None
-            elif token_type == TokenType.DOUBLE_LITERAL:
-                return True, int(value)
+            if token_type == TokenType.INT_LITERAL or token_type == TokenType.DOUBLE_LITERAL:
+                return True
         elif data_type == DataType.FLOAT:
             if token_type == TokenType.INT_LITERAL:
-                return True, None
+                return True
             elif token_type == TokenType.DOUBLE_LITERAL:
-                return True, None
+                return True
         elif data_type == DataType.CHAR:
             if token_type == TokenType.INT_LITERAL:
-                return True, None
+                return True
 
-        return False, None
+        return False
 
     def do_type_conversion(self, destination_data_type: DataType, value: AST):
         """
 
         """
 
-    def set_value_if_possible(self, symbol: Symbol, value: ASTLeaf):
+    def set_value_if_possible(self, symbol: Symbol, value: AST):
         if not isinstance(symbol, VariableSymbol):
             # TODO maybe for functions it's different
             raise IncompatibleTypesError(
                 "The symbol is not of type VariableSymbol, so we can't assign it to such a value")
         else:
 
-            compatible, new_value = self.compatible_types_or_convert(symbol.data_type, value.token.token_type,
-                                                                     value.get_token_content())
+            compatible = self.types_compatible(symbol.data_type, value.token.token_type,
+                                               value.get_token_content())
 
             if compatible:
-                if new_value is None:
-                    symbol.current_value = value.get_token_content()
-                else:
-                    symbol.current_value = new_value
+                symbol.current_value = value
             else:
                 raise IncompatibleTypesError("Types are incompatible: trying to set a variable of data type " + str(
                     symbol.data_type) + " to a value of type " + value.token.token_type + " (content: " + value.get_token_content() + ")")

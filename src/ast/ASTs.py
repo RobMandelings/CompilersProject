@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from .ASTVisitors import ASTVisitor
+from .ASTVisitor import ASTVisitor
 
 
 class NoBinaryExpressionError(Exception):
@@ -89,9 +89,6 @@ class ASTInternal(AST):
         self.children = list()
 
     def accept(self, visitor: ASTVisitor):
-        for child in self.children:
-            assert isinstance(child, AST)
-            child.accept(visitor)
         visitor.visit_ast_internal(self)
 
     def addChild(self, child):
@@ -111,6 +108,8 @@ class ASTBinaryExpression(AST):
         super().__init__(token)
         self.left = left
         self.right = right
+        self.left.parent = self
+        self.right.parent = self
         assert isinstance(self.left, AST) and isinstance(self.right, AST)
         if self.token.token_type == TokenType.ASSIGNMENT_EXPRESSION:
             assert isinstance(self.left, ASTLeaf) and self.left.token.token_type == TokenType.IDENTIFIER
@@ -119,8 +118,6 @@ class ASTBinaryExpression(AST):
         return self.get_token_content()
 
     def accept(self, visitor: ASTVisitor):
-        self.left.accept(visitor)
-        self.right.accept(visitor)
         visitor.visitor_ast_binary_expression(self)
 
 
@@ -148,9 +145,6 @@ class ASTVariableDeclaration(AST):
                 self.type_attributes.append(attribute)
 
     def accept(self, visitor: ASTVisitor):
-        for attribute in self.type_attributes:
-            attribute.accept(visitor)
-        self.var_name.accept(visitor)
         visitor.visit_ast_variable_declaration(self)
 
 
@@ -163,8 +157,4 @@ class ASTVariableDeclarationAndInit(ASTVariableDeclaration):
         self.value.parent = self
 
     def accept(self, visitor):
-        for attribute in self.type_attributes:
-            attribute.accept(visitor)
-        self.var_name.accept(visitor)
-        self.value.accept(visitor)
         visitor.visit_ast_variable_declaration_and_init(self)
