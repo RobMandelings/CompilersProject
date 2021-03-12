@@ -62,4 +62,6 @@ constDeclaration:
 ID  :   [a-zA-Z_]+ [0-9_]* ;      // match identifiers
 INTEGER: [0-9]+ ;
 DOUBLE :   [0-9]+'.'[0-9]+ ;
+LineComment: '//' ~[\r\n]* -> channel(HIDDEN);
+BlockComment: '/*' .*? '*/' -> channel(HIDDEN);
 WS : [ \r\t\n]+ -> skip ;

@@ -17,7 +17,9 @@ T__15=16
 ID=17
 INTEGER=18
 DOUBLE=19
-WS=20
+LineComment=20
+BlockComment=21
+WS=22
 ';'=1
 '='=2
 '>'=3
