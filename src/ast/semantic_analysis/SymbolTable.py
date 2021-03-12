@@ -3,15 +3,10 @@ from enum import Enum, auto
 from src.ast.ASTs import AST
 
 
-class ValueNotAllowedError(Exception):
-    pass
-
-
 class DataType(Enum):
     CHAR = auto()
     INT = auto()
     FLOAT = auto()
-    DOUBLE = auto()
 
     @staticmethod
     def get_data_type_from_name(name: str):
@@ -63,18 +58,6 @@ class VariableSymbol(Symbol):
     def is_const(self):
         assert isinstance(self.is_const, bool)
         return self.is_const
-
-    def set_value(self, value):
-        if self.data_type == DataType.INT and isinstance(value, int):
-            self.current_value = value
-        elif self.data_type == DataType.FLOAT and (isinstance(value, float) or isinstance(value, int)):
-            self.current_value = value
-        elif self.data_type == DataType.DOUBLE and (isinstance(value, float) or isinstance(value, int)):
-            self.current_value = value
-        elif self.data_type == DataType.CHAR and isinstance(value, int):
-            self.current_value = value
-        else:
-            raise ValueNotAllowedError("Cannot set value of variable: data type is " + self.data_type.name + " and value '" + str(value) + "' trying to set is of type " + str(type(value)))
 
 
 class SymbolTableElement:

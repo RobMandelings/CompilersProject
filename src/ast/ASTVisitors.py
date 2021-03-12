@@ -1,19 +1,30 @@
 from graphviz import Digraph
+import abc
 
+
+# TODO import asts to get some 'expected' types as parameters
 
 class ASTVisitor:
 
+    @abc.abstractmethod
     def visit_ast_leaf(self, ast):
-        raise NotImplementedError('This method is meant to be generic and thus cannot be called')
+        pass
 
+    @abc.abstractmethod
     def visit_ast_internal(self, ast):
-        raise NotImplementedError('This method is meant to be generic and thus cannot be called')
+        pass
 
+    @abc.abstractmethod
+    def visitor_ast_binary_expression(self, ast):
+        pass
+
+    @abc.abstractmethod
     def visit_ast_variable_declaration(self, ast):
-        raise NotImplementedError('This method is meant to be generic and thus cannot be called')
+        pass
 
+    @abc.abstractmethod
     def visit_ast_variable_declaration_and_init(self, ast):
-        raise NotImplementedError('This method is meant to be generic and thus cannot be called')
+        pass
 
 
 class ASTVisitorDot(ASTVisitor):
@@ -33,22 +44,11 @@ class ASTVisitorDot(ASTVisitor):
     def visit_ast_internal(self, ast):
         self.add_to_dot_node(ast)
 
+    def visitor_ast_binary_expression(self, ast):
+        self.add_to_dot_node(ast)
+
     def visit_ast_variable_declaration(self, ast):
         self.add_to_dot_node(ast)
 
     def visit_ast_variable_declaration_and_init(self, ast):
         self.add_to_dot_node(ast)
-
-
-class ASTVisitorSemanticAnalysis(ASTVisitor):
-
-    def __init__(self):
-        super().__init__()
-        # Todo
-        self.symbol_table = None
-
-    def visit_ast_leaf(self, ast):
-        pass
-
-    def visit_ast_internal(self, ast):
-        pass

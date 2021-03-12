@@ -2,6 +2,10 @@ from enum import Enum, auto
 from .ASTVisitors import ASTVisitor
 
 
+class NoBinaryExpressionError(Exception):
+    pass
+
+
 class TokenType(Enum):
     PROGRAM = auto()
     INSTRUCTIONS = auto()
@@ -99,6 +103,25 @@ class ASTInternal(AST):
         else:
             child.parent = self
             self.children.append(child)
+
+
+class ASTBinaryExpression(AST):
+
+    def __init__(self, token: ASTToken, left: AST, right: AST):
+        super().__init__(token)
+        self.left = left
+        self.right = right
+        assert isinstance(self.left, AST) and isinstance(self.right, AST)
+        if self.token.token_type == TokenType.ASSIGNMENT_EXPRESSION:
+            assert isinstance(self.left, ASTLeaf) and self.left.token.token_type == TokenType.IDENTIFIER
+
+    def __str__(self):
+        return self.get_token_content()
+
+    def accept(self, visitor: ASTVisitor):
+        self.left.accept(visitor)
+        self.right.accept(visitor)
+        visitor.visitor_ast_binary_expression(self)
 
 
 class ASTVariableDeclaration(AST):

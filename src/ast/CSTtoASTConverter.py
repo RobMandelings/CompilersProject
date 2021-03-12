@@ -4,6 +4,7 @@ from src.antlr4_gen.CLexer import CLexer
 from src.antlr4_gen.CParser import *
 from src.ast.ASTs import *
 
+
 # TODO Improve to use a visitor pattern of the cst instead
 def createASTFromConcreteSyntaxTree(cst, lexer: CLexer):
     assert isinstance(lexer, CLexer)
@@ -63,9 +64,9 @@ def createASTFromConcreteSyntaxTree(cst, lexer: CLexer):
             binary_expression, binary_operator_token = isBinaryExpression(cst)
             unary_expression, unary_operator_token = isUnaryExpression(cst)
             if binary_expression:
-                ast_binary_expression = ASTInternal(binary_operator_token)
-                ast_binary_expression.addChild(createASTFromConcreteSyntaxTree(cst.children[0], lexer))
-                ast_binary_expression.addChild(createASTFromConcreteSyntaxTree(cst.children[2], lexer))
+                ast_binary_expression = ASTBinaryExpression(binary_operator_token,
+                                                            createASTFromConcreteSyntaxTree(cst.children[0], lexer),
+                                                            createASTFromConcreteSyntaxTree(cst.children[2], lexer))
                 return ast_binary_expression
             elif unary_expression:
                 ast_unary_expression = ASTInternal(ASTToken(TokenType.UNARY_EXPRESSION))
@@ -132,13 +133,13 @@ def isBinaryExpression(cst: ParserRuleContext):
         elif symbol_text == '*':
             token_type = TokenType.MULT_EXPRESSION
         elif symbol_text == '>':
-            token_type = TokenType.MULT_EXPRESSION
+            token_type = TokenType.GREATER_THAN_EXPRESSION
         elif symbol_text == '<':
-            token_type = TokenType.MULT_EXPRESSION
+            token_type = TokenType.LESS_THAN_EXPRESSION
         elif symbol_text == '==':
-            token_type = TokenType.MULT_EXPRESSION
+            token_type = TokenType.EQUALS_EXPRESSION
         elif symbol_text == '=':
-            token_type = TokenType.MULT_EXPRESSION
+            token_type = TokenType.ASSIGNMENT_EXPRESSION
         assert token_type is not None
         return True, ASTToken(token_type, symbol_text)
 
