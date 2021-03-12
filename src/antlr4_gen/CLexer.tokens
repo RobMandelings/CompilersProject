@@ -18,7 +18,8 @@ ID=17
 INTEGER=18
 DOUBLE=19
 LineComment=20
-WS=21
+BlockComment=21
+WS=22
 ';'=1
 '='=2
 '>'=3
