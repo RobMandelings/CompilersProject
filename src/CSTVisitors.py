@@ -72,6 +72,10 @@ class CSTVisitorToDot(CVisitor):
         self.toDotCurrent(ctx)
         return super().visitVarAssignment(ctx)
 
+    def visitVarInit(self, ctx: CParser.VarInitContext):
+        self.toDotCurrent(ctx)
+        return super().visitVarInit(ctx)
+
     def visitTerminal(self, node):
         self.toDotCurrent(node)
         return super().visitTerminal(node)

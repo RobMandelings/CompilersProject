@@ -44,6 +44,15 @@ class CListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CParser#varInit.
+    def enterVarInit(self, ctx:CParser.VarInitContext):
+        pass
+
+    # Exit a parse tree produced by CParser#varInit.
+    def exitVarInit(self, ctx:CParser.VarInitContext):
+        pass
+
+
     # Enter a parse tree produced by CParser#varAssignment.
     def enterVarAssignment(self, ctx:CParser.VarAssignmentContext):
         pass

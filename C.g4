@@ -8,8 +8,11 @@ instruction:
     ;
 varDeclaration:
     // Declaration and initialization
-    typeDeclaration1 varAssignment
+    typeDeclaration1 varInit
     | typeDeclaration1 ID
+    ;
+varInit:
+    ID '=' expr
     ;
 varAssignment:
     ID '=' expr
