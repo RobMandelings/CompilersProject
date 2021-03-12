@@ -147,7 +147,7 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
                 declared_data_type, resulting_data_type_visitor.resulting_data_type):
             print(
                 "WARN: narrowing result of expression from datatype '" +
-                resulting_data_type_visitor.resulting_data_type.name + "' to datatype '" + declared_data_type.name)
+                resulting_data_type_visitor.resulting_data_type.name + "' to datatype '" + declared_data_type.name + "'")
 
     def visit_ast_assignment(self, binExpr: ASTBinaryExpression):
         assert binExpr.token.token_type == TokenType.ASSIGNMENT_EXPRESSION
