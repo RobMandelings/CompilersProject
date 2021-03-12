@@ -1,4 +1,4 @@
 int i = 6;
 
-int c;
-c = 5;
+int a;
+c = 5 + a;

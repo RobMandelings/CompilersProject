@@ -14,14 +14,36 @@ class UndeclaredError(SemanticError):
     pass
 
 
+class UninitializedError(SemanticError):
+    pass
+
+
 class IncompatibleTypesError(Exception):
     pass
 
 
-class ASTVisitorUnititializedVariable(ASTVisitor):
+class ASTVisitorInvalidVariableUsage(ASTVisitor):
     """
-    Used by the semantical analysis vistor to check
+    Used by the semantical analysis visitor to check if a certain AST contains an unitialized variable
     """
+
+    def __init__(self, last_symbol_table: SymbolTable):
+        """ The symbol table at the top of the stack in the semantical analysis vistor"""
+        self.last_symbol_table = last_symbol_table
+        self.unitialized_variables_used = list()
+        self.undeclared_variables_used = list()
+        assert last_symbol_table is not None
+
+    def visit_ast_leaf(self, ast):
+        if ast.token.token_type == TokenType.IDENTIFIER:
+            table_element = self.last_symbol_table.lookup(ast.get_token_content())
+            if not table_element:
+                self.undeclared_variables_used.append(ast)
+            else:
+                assert isinstance(table_element, SymbolTableElement)
+                assert isinstance(table_element.symbol, VariableSymbol)
+                if not table_element.symbol.current_value:
+                    self.unitialized_variables_used.append(ast)
 
 
 class ASTVisitorSemanticAnalysis(ASTVisitor):
@@ -92,21 +114,29 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
     def visit_ast_assignment(self, ast: ASTBinaryExpression):
         assert ast.token.token_type == TokenType.ASSIGNMENT_EXPRESSION
         symbol_table = self.get_last_symbol_table()
-        symbol_element = symbol_table.lookup(ast.left.get_token_content())
-        if not symbol_element:
-            raise UndeclaredError(
-                "The symbol_element with name '" + ast.left.get_token_content() + "' is undeclared: not found in the symbol table")
-        else:
+        invalid_var_usage = ASTVisitorInvalidVariableUsage(symbol_table)
+        invalid_var_usage.visit_ast_leaf(ast.left)
+        invalid_var_usage.visitor_ast_binary_expression(ast.right)
+        if len(invalid_var_usage.unitialized_variables_used) == 0 and len(
+                invalid_var_usage.undeclared_variables_used) == 0:
             try:
-                self.set_value_if_possible(symbol_element.symbol, ast.right)
+                # We know that there are no undeclared or uninitialied variables found, so there must exist a symbol element
+                self.set_value_if_possible(symbol_table.lookup(ast.left.get_token_content()).symbol, ast.right)
             except IncompatibleTypesError:
                 raise
+        else:
 
-    def visit_ast_leaf(self, ast: ASTLeaf):
-        pass
+            error_text = ""
 
-    def visit_ast_internal(self, ast: ASTInternal):
-        pass
+            if len(invalid_var_usage.unitialized_variables_used) != 0:
+                for variable in invalid_var_usage.unitialized_variables_used:
+                    error_text += "Variable with name '" + variable.get_token_content() + "' used in an expression is found but is unitialized! \n"
+
+            if len(invalid_var_usage.undeclared_variables_used) != 0:
+                for variable in invalid_var_usage.undeclared_variables_used:
+                    error_text += "Variable with name '" + variable.get_token_content() + "' is undeclared: not found in the symbol table \n"
+
+            raise SemanticError(error_text)
 
     def visitor_ast_binary_expression(self, ast: ASTBinaryExpression):
         if ast.get_token().token_type == TokenType.ASSIGNMENT_EXPRESSION:
