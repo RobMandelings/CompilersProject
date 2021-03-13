@@ -4,9 +4,9 @@ from src.ast.ASTs import AST, TokenType
 
 
 class DataType(Enum):
-    CHAR = auto()
-    INT = auto()
-    FLOAT = auto()
+    CHAR = 0
+    INT = 1
+    FLOAT = 2
 
     @staticmethod
     def get_data_type_from_name(name: str):
@@ -37,6 +37,8 @@ def is_richer_than(datatype1: DataType, datatype2: DataType):
     """
     Must be placed outside the DataType class because it would not be fully 'defined' when setting the expected parameter types, weird stuff
     """
+    assert isinstance(datatype1, DataType), "Given datatype1 is not an instance of DataType"
+    assert isinstance(datatype2, DataType), "Given datatype2 is not an instance of DataType"
     return datatype1.value > datatype2.value
 
 

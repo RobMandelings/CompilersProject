@@ -219,10 +219,9 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
         self.check_const_assignment(bin_expr)
 
         # Warn in case the result will be narrowed down into another data type
-        self.check_for_narrowing_result(bin_expr.left.get_token_type(), bin_expr)
-
         variable = symbol_table.lookup(bin_expr.left.get_token_content()).symbol
         assert isinstance(variable, VariableSymbol)
+        self.check_for_narrowing_result(variable.data_type, bin_expr)
 
         variable.current_value = bin_expr.right
 
