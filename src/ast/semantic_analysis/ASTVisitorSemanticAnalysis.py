@@ -147,9 +147,17 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
             # If its an identifier, a variable must be looked up in the symbol table
             variable = self.get_last_symbol_table().lookup_variable(value)
             value = variable.current_value
-            return value
+            if variable.data_type == DataType.CHAR:
+                return ord(value)
+
         elif ast.get_token_type() == TokenType.CHAR_LITERAL:
-            raise NotImplementedError("Not implemented yet")
+            value = value.replace("\'", "")
+            char = list()
+            for c in value:
+                char.append(c)
+
+            assert len(char) == 1, "Character defined consists of multiple characters. This should not be possible"
+            return ord(char[0])
         elif ast.get_token_type() == TokenType.INT_LITERAL:
             return int(value)
         elif ast.get_token_type() == TokenType.FLOAT_LITERAL:
@@ -200,7 +208,7 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
             raise NotImplementedError("This should not be possible")
 
         if declared_data_type == DataType.CHAR:
-            raise NotImplementedError("This should not be possible")
+            result = chr(result)
         elif declared_data_type == DataType.INT:
             result = int(result)
         elif declared_data_type == DataType.FLOAT:
@@ -318,3 +326,4 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
         self.check_for_narrowing_result(data_type, ast.value)
 
         variable_symbol.current_value = self.calculate_result(data_type, ast.value)
+        print(variable_symbol.current_value)
