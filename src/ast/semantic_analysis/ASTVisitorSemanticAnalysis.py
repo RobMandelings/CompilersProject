@@ -140,6 +140,75 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
         assert isinstance(symbol_table, SymbolTable)
         return symbol_table
 
+    def get_leaf_result(self, ast: ASTLeaf):
+        value = ast.get_token_content()
+
+        if ast.get_token_type() == TokenType.IDENTIFIER:
+            # If its an identifier, a variable must be looked up in the symbol table
+            variable = self.get_last_symbol_table().lookup_variable(value)
+            value = variable.current_value
+            return value
+        elif ast.get_token_type() == TokenType.CHAR_LITERAL:
+            raise NotImplementedError("Not implemented yet")
+        elif ast.get_token_type() == TokenType.INT_LITERAL:
+            return int(value)
+        elif ast.get_token_type() == TokenType.FLOAT_LITERAL:
+            return float(value)
+        else:
+            raise NotImplementedError("This should not be possible")
+
+    def calculate_binary_expr_result(self, ast: ASTBinaryExpression):
+
+        if isinstance(ast.left, ASTLeaf):
+            left_value = self.get_leaf_result(ast.left)
+        elif isinstance(ast.left, ASTBinaryExpression):
+            left_value = self.calculate_binary_expr_result(ast.left)
+        else:
+            raise NotImplementedError("This should not be possible")
+
+        if isinstance(ast.right, ASTLeaf):
+            right_value = self.get_leaf_result(ast.right)
+        elif isinstance(ast.right, ASTBinaryExpression):
+            right_value = self.calculate_binary_expr_result(ast.right)
+        else:
+            raise NotImplementedError("This should not be possible")
+
+        if ast.get_token_type() == TokenType.ADD_EXPRESSION:
+            return left_value + right_value
+        elif ast.get_token_type() == TokenType.SUB_EXPRESSION:
+            return left_value - right_value
+        elif ast.get_token_type() == TokenType.MULT_EXPRESSION:
+            return left_value * right_value
+        elif ast.get_token_type() == TokenType.DIV_EXPRESSION:
+            return left_value / right_value
+        elif ast.get_token_type() == TokenType.EQUALS_EXPRESSION:
+            # TODO check: does it work for floats? Or should we use something like epsilon for this
+            return left_value == right_value
+        elif ast.get_token_type() == TokenType.GREATER_THAN_EXPRESSION:
+            return left_value > right_value
+        elif ast.get_token_type() == TokenType.LESS_THAN_EXPRESSION:
+            return left_value < right_value
+        else:
+            raise NotImplementedError("Should not be possible")
+
+    def calculate_result(self, declared_data_type: DataType, ast: AST):
+        if isinstance(ast, ASTBinaryExpression):
+            result = self.calculate_binary_expr_result(ast)
+        elif isinstance(ast, ASTLeaf):
+            result = self.get_leaf_result(ast)
+        else:
+            raise NotImplementedError("This should not be possible")
+
+        if declared_data_type == DataType.CHAR:
+            raise NotImplementedError("This should not be possible")
+        elif declared_data_type == DataType.INT:
+            result = int(result)
+        elif declared_data_type == DataType.FLOAT:
+            result = float(result)
+
+        assert result is not None
+        return result
+
     def check_for_narrowing_result(self, declared_data_type: DataType, ast: AST):
         """
         Checks if the result would be narrowed down into another data type (e.g. float to int). If so, warn to the log
@@ -223,7 +292,7 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
         assert isinstance(variable, VariableSymbol)
         self.check_for_narrowing_result(variable.data_type, bin_expr)
 
-        variable.current_value = bin_expr.right
+        variable.current_value = self.calculate_result(variable.data_type, bin_expr.right)
 
     def visit_ast_binary_expression(self, ast: ASTBinaryExpression):
         if ast.get_token().token_type == TokenType.ASSIGNMENT_EXPRESSION:
@@ -244,11 +313,8 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
         self.visit_ast_variable_declaration(ast)
         variable_symbol = self.get_last_symbol_table().lookup(ast.var_name.get_token_content()).symbol
         assert isinstance(variable_symbol, VariableSymbol)
-        try:
 
-            data_type, is_const = divide_type_attributes(ast.type_attributes)
-            self.check_for_narrowing_result(data_type, ast.value)
+        data_type, is_const = divide_type_attributes(ast.type_attributes)
+        self.check_for_narrowing_result(data_type, ast.value)
 
-            variable_symbol.current_value = ast.value
-        except IncompatibleTypesError as e:
-            raise e
+        variable_symbol.current_value = self.calculate_result(data_type, ast.value)

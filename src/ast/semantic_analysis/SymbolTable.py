@@ -94,6 +94,18 @@ class SymbolTable:
             else:
                 return None
 
+    def lookup_variable(self, symbol: str):
+        """
+        Looks up a variable in the symbol table
+        PRE-CONDITION: the symbol name given for lookup should result in a symbol which is actually a VariableSymbol.
+        The semantic error checks should be executed before using this
+        """
+        symbol_table_element = self.lookup(symbol)
+        assert isinstance(symbol_table_element, SymbolTableElement)
+        variable = symbol_table_element.symbol
+        assert isinstance(variable, VariableSymbol)
+        return variable
+
     def insert_symbol(self, symbol: SymbolTableElement):
         assert self.lookup(symbol.symbol_name) is None
         self.symbols[symbol.symbol_name] = symbol
