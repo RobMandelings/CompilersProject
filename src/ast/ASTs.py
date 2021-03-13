@@ -1,54 +1,5 @@
-from enum import Enum, auto
+from .ASTToken import ASTToken, TokenType
 from .ASTVisitor import ASTVisitor
-
-
-class NoBinaryExpressionError(Exception):
-    pass
-
-
-class TokenType(Enum):
-    PROGRAM = auto()
-    INSTRUCTIONS = auto()
-    INSTRUCTION = auto()
-
-    UNARY_EXPRESSION = auto()
-    UNARY_PLUS_OPERATOR = auto()
-    UNARY_MINUS_OPERATOR = auto()
-    DEREFERENCE_OPERATOR = auto()
-    ADDRESS_OPERATOR = auto()
-
-    ADD_EXPRESSION = auto()
-    SUB_EXPRESSION = auto()
-    MULT_EXPRESSION = auto()
-    DIV_EXPRESSION = auto()
-    GREATER_THAN_EXPRESSION = auto()
-    LESS_THAN_EXPRESSION = auto()
-    EQUALS_EXPRESSION = auto()
-    ASSIGNMENT_EXPRESSION = auto()
-
-    IDENTIFIER = auto()
-
-    CHAR_LITERAL = auto()
-    INT_LITERAL = auto()
-    FLOAT_LITERAL = auto()
-
-    VARIABLE_DECLARATION = auto()
-    VARIABLE_DECLARATION_AND_INIT = auto()
-    INT_TYPE = auto()
-    FLOAT_TYPE = auto()
-    CHAR_TYPE = auto()
-    CONST_TYPE = auto()
-
-
-class ASTToken:
-
-    def __init__(self, token_type, content=None):
-
-        self.token_type = token_type
-        if content is not None:
-            self.content = content
-        else:
-            self.content = self.token_type.name.lower().replace("_", " ")
 
 
 class AST:
@@ -57,7 +8,7 @@ class AST:
         self.parent = None
         self.token = token
 
-    def isRoot(self):
+    def is_root(self):
         return self.parent is None
 
     def accept(self, visitor):
@@ -66,6 +17,11 @@ class AST:
     def get_token(self):
         assert isinstance(self.token, ASTToken)
         return self.token
+
+    def get_token_type(self):
+        assert isinstance(self.token, ASTToken)
+        assert isinstance(self.token.token_type, TokenType)
+        return self.token.token_type
 
     def get_token_content(self):
         token_content = self.get_token().content
@@ -92,12 +48,12 @@ class ASTInternal(AST):
     def accept(self, visitor: ASTVisitor):
         visitor.visit_ast_internal(self)
 
-    def addChild(self, child):
+    def add_child(self, child):
         assert child is not None
 
         if isinstance(child, list):
             for sub_child in child:
-                self.addChild(sub_child)
+                self.add_child(sub_child)
         else:
             child.parent = self
             self.children.append(child)

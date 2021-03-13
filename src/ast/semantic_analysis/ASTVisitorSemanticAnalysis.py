@@ -132,11 +132,19 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
             self.symbol_table_stack.append(new_symbol_table)
 
     def get_last_symbol_table(self):
+        """
+        Retrieve the symbol table that was last created (top of the stack)
+        This corresponds the scope you are currently in
+        """
         symbol_table = self.symbol_table_stack[-1]
         assert isinstance(symbol_table, SymbolTable)
         return symbol_table
 
     def check_for_narrowing_result(self, declared_data_type: DataType, ast: AST):
+        """
+        Checks if the result would be narrowed down into another data type (e.g. float to int). If so, warn to the log
+        PRE-CONDITION: All variables need to be declared and initialized in order for lookups to work
+        """
         resulting_data_type_visitor = ASTVisitorResultingDataType(self.get_last_symbol_table())
         ast.accept(resulting_data_type_visitor)
         assert resulting_data_type_visitor.resulting_data_type is not None
@@ -156,37 +164,67 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
         if bin_expr.left.token.token_type == TokenType.CHAR_LITERAL or bin_expr.left.token.token_type == TokenType.INT_LITERAL or bin_expr.left.token.token_type == TokenType.FLOAT_LITERAL:
             raise SemanticError("Assignment to an rValue (value is " + bin_expr.left.get_token_content() + ")")
 
-    def visit_ast_assignment(self, bin_expr: ASTBinaryExpression):
-        assert bin_expr.token.token_type == TokenType.ASSIGNMENT_EXPRESSION
-        symbol_table = self.get_last_symbol_table()
-        invalid_var_usage = ASTVisitorUnavailableVariableUsage(symbol_table)
-        bin_expr.left.accept(invalid_var_usage)
-        invalid_var_usage.visit_ast_binary_expression(bin_expr.right)
-        if len(invalid_var_usage.unitialized_variables_used) == 0 and len(
-                invalid_var_usage.undeclared_variables_used) == 0:
-            symbol = symbol_table.lookup(bin_expr.left.get_token_content()).symbol
-            assert isinstance(symbol, VariableSymbol)
-            if not symbol.is_const:
+    def check_unavailable_variable_usage(self, expr: AST):
+        """
+        Checks if unavailable variables are used in an operation (undeclared variables, uninitialized variables)
+        Throws an exception if this is the case
+        """
+        assert isinstance(expr, ASTBinaryExpression) or expr.get_token_type() == TokenType.UNARY_EXPRESSION
 
-                self.check_for_narrowing_result(bin_expr.left.token.token_type, bin_expr)
+        unavailable_var_usage = ASTVisitorUnavailableVariableUsage(self.get_last_symbol_table())
 
-                symbol.current_value = bin_expr.right
-
-            else:
-                raise SemanticError("Cannot assign value to const variable '" + bin_expr.left.get_token_content() + "'")
+        if isinstance(expr, ASTBinaryExpression):
+            expr.left.accept(unavailable_var_usage)
+            expr.right.accept(unavailable_var_usage)
         else:
+            raise NotImplementedError("Not yet implemented for unary expressions")
+
+        if len(unavailable_var_usage.unitialized_variables_used) != 0 or len(
+                unavailable_var_usage.undeclared_variables_used) != 0:
 
             error_text = ""
 
-            if len(invalid_var_usage.unitialized_variables_used) != 0:
-                for variable in invalid_var_usage.unitialized_variables_used:
+            if len(unavailable_var_usage.unitialized_variables_used) != 0:
+                for variable in unavailable_var_usage.unitialized_variables_used:
                     error_text += "Variable with name '" + variable.get_token_content() + "' used in an expression is found but is unitialized! \n"
 
-            if len(invalid_var_usage.undeclared_variables_used) != 0:
-                for variable in invalid_var_usage.undeclared_variables_used:
+            if len(unavailable_var_usage.undeclared_variables_used) != 0:
+                for variable in unavailable_var_usage.undeclared_variables_used:
                     error_text += "Variable with name '" + variable.get_token_content() + "' is undeclared: not found in the symbol table \n"
 
             raise SemanticError(error_text)
+
+    def check_const_assignment(self, bin_expr: ASTBinaryExpression):
+        """
+        Checks if a variable being assigned a new value is const, and if so, raise a semantic error
+        PRE-CONDITION: Variable must exist (check must have gone before)
+        """
+        assert bin_expr.token.token_type == TokenType.ASSIGNMENT_EXPRESSION
+
+        symbol_element = self.get_last_symbol_table().lookup(bin_expr.left.get_token_content())
+        assert symbol_element
+        assert symbol_element.symbol and isinstance(symbol_element.symbol, VariableSymbol)
+
+        variable = symbol_element.symbol
+
+        if variable.is_const:
+            raise SemanticError("Cannot assign value to const variable '" + bin_expr.left.get_token_content() + "'")
+
+    def visit_ast_assignment(self, bin_expr: ASTBinaryExpression):
+        assert bin_expr.token.token_type == TokenType.ASSIGNMENT_EXPRESSION
+        symbol_table = self.get_last_symbol_table()
+
+        # Do some semantic checks. If all checks don't raise any errors, continue on with the new value
+        self.check_unavailable_variable_usage(bin_expr)
+        self.check_const_assignment(bin_expr)
+
+        # Warn in case the result will be narrowed down into another data type
+        self.check_for_narrowing_result(bin_expr.left.get_token_type(), bin_expr)
+
+        variable = symbol_table.lookup(bin_expr.left.get_token_content()).symbol
+        assert isinstance(variable, VariableSymbol)
+
+        variable.current_value = bin_expr.right
 
     def visit_ast_binary_expression(self, ast: ASTBinaryExpression):
         if ast.get_token().token_type == TokenType.ASSIGNMENT_EXPRESSION:

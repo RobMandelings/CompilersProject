@@ -72,8 +72,8 @@ def create_ast_from_concrete_syntax_tree(cst, lexer: CLexer):
                 return ast_binary_expression
             elif unary_expression:
                 ast_unary_expression = ASTInternal(ASTToken(TokenType.UNARY_EXPRESSION))
-                ast_unary_expression.addChild(ASTLeaf(unary_operator_token))
-                ast_unary_expression.addChild(create_ast_from_concrete_syntax_tree(cst.children[1], lexer))
+                ast_unary_expression.add_child(ASTLeaf(unary_operator_token))
+                ast_unary_expression.add_child(create_ast_from_concrete_syntax_tree(cst.children[1], lexer))
                 return ast_unary_expression
             elif is_bracket_expression(cst):
                 return create_ast_from_concrete_syntax_tree(cst.children[1], lexer)
@@ -83,7 +83,7 @@ def append_child_asts_to_ast(ast: ASTInternal, cst, lexer: CLexer):
     for child in cst.children:
         new_child = create_ast_from_concrete_syntax_tree(child, lexer)
         if new_child is not None:
-            ast.addChild(new_child)
+            ast.add_child(new_child)
 
 
 def get_token_from_terminal_node(cst: TerminalNodeImpl, lexer: CLexer):

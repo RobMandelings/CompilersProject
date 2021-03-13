@@ -23,7 +23,7 @@ def main(argv):
         tree.accept(cst_visitor_to_dot)
         cst_visitor_to_dot.graph.render('output/cst.gv', view=False)
 
-        ast = createASTFromConcreteSyntaxTree(tree, lexer)
+        ast = create_ast_from_concrete_syntax_tree(tree, lexer)
         ast_visitor_dot = ASTVisitorDot()
         ast.accept(ast_visitor_dot)
 
