@@ -27,6 +27,8 @@ def main(argv):
         ast_visitor_dot = ASTVisitorDot()
         ast.accept(ast_visitor_dot)
 
+        ast_visitor_dot.graph.render('output/ast.gv', view=False)
+
         ast_visitor_semantic_analysis = ASTVisitorSemanticAnalysis()
         try:
             ast.accept(ast_visitor_semantic_analysis)
@@ -35,8 +37,6 @@ def main(argv):
             print(e)
             print("Stopping the compiler...")
             sys.exit(0)
-
-        ast_visitor_dot.graph.render('output/ast.gv', view=False)
         print(argv[1])
 
     except SyntaxError:

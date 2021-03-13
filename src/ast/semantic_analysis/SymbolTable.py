@@ -50,19 +50,22 @@ class Symbol:
 
 class VariableSymbol(Symbol):
 
-    def __init__(self, data_type: DataType, is_const):
+    def __init__(self, data_type: DataType, const, initialized):
         super().__init__()
         self.data_type = data_type
-        self.is_const = is_const
-        self.current_value = None
+        self.const = const
+        self.initialized = initialized
 
     def get_data_type(self):
         assert isinstance(self.data_type, DataType)
         return self.data_type
 
     def is_const(self):
-        assert isinstance(self.is_const, bool)
-        return self.is_const
+        assert isinstance(self.const, bool)
+        return self.const
+
+    def is_initialized(self):
+        return self.initialized
 
 
 class SymbolTableElement:
