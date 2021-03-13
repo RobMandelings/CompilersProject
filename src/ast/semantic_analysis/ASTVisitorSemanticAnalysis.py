@@ -149,6 +149,8 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
             value = variable.current_value
             if variable.data_type == DataType.CHAR:
                 return ord(value)
+            else:
+                return value
 
         elif ast.get_token_type() == TokenType.CHAR_LITERAL:
             value = value.replace("\'", "")
