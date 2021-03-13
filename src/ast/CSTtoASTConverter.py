@@ -67,8 +67,10 @@ def create_ast_from_concrete_syntax_tree(cst, lexer: CLexer):
             unary_expression, unary_operator_token = is_unary_expression(cst)
             if binary_expression:
                 ast_binary_expression = ASTBinaryExpression(binary_operator_token,
-                                                            create_ast_from_concrete_syntax_tree(cst.children[0], lexer),
-                                                            create_ast_from_concrete_syntax_tree(cst.children[2], lexer))
+                                                            create_ast_from_concrete_syntax_tree(cst.children[0],
+                                                                                                 lexer),
+                                                            create_ast_from_concrete_syntax_tree(cst.children[2],
+                                                                                                 lexer))
                 return ast_binary_expression
             elif unary_expression:
                 ast_unary_expression = ASTInternal(ASTToken(TokenType.UNARY_EXPRESSION))
@@ -99,6 +101,8 @@ def get_token_from_terminal_node(cst: TerminalNodeImpl, lexer: CLexer):
         token_type = TokenType.CONST_TYPE
     # These 'symbolic' tokens are recognized by a regular expression so we can check if the ID corresponds to one
     # of the parsers' token IDs
+    elif cst.getSymbol().type == lexer.CHAR:
+        token_type = TokenType.CHAR_LITERAL
     elif cst.getSymbol().type == lexer.INTEGER:
         token_type = TokenType.INT_LITERAL
     elif cst.getSymbol().type == lexer.DOUBLE:
@@ -108,7 +112,6 @@ def get_token_from_terminal_node(cst: TerminalNodeImpl, lexer: CLexer):
     else:
         return None
 
-    assert token_type is not None
     return ASTToken(token_type, symbol_text)
 
 
