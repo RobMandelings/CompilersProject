@@ -8,85 +8,85 @@ from src.ast.ASTs import *
 # TODO Improve to use a visitor pattern of the cst instead
 
 
-def createASTFromConcreteSyntaxTree(cst, lexer: CLexer):
+def create_ast_from_concrete_syntax_tree(cst, lexer: CLexer):
     assert isinstance(lexer, CLexer)
 
     if isinstance(cst, CParser.ProgramContext):
         ast_program = ASTInternal(ASTToken(TokenType.PROGRAM))
-        appendChildASTsToAST(ast_program, cst, lexer)
+        append_child_asts_to_ast(ast_program, cst, lexer)
         return ast_program
     elif isinstance(cst, CParser.InstructionsContext):
         ast_instructions = ASTInternal(ASTToken(TokenType.INSTRUCTIONS))
-        appendChildASTsToAST(ast_instructions, cst, lexer)
+        append_child_asts_to_ast(ast_instructions, cst, lexer)
         return ast_instructions
     elif isinstance(cst, CParser.InstructionContext):
         ast_instruction = ASTInternal(ASTToken(TokenType.INSTRUCTION))
-        appendChildASTsToAST(ast_instruction, cst, lexer)
+        append_child_asts_to_ast(ast_instruction, cst, lexer)
         return ast_instruction
     elif isinstance(cst, CParser.VarDeclarationContext):
 
-        type_attributes = createASTFromConcreteSyntaxTree(cst.children[0], lexer)
+        type_attributes = create_ast_from_concrete_syntax_tree(cst.children[0], lexer)
         assert isinstance(type_attributes, list)
 
         if isinstance(cst.children[1], CParser.VarInitContext):
 
-            name_and_value = createASTFromConcreteSyntaxTree(cst.children[1], lexer)
+            name_and_value = create_ast_from_concrete_syntax_tree(cst.children[1], lexer)
             assert isinstance(name_and_value, list) and len(name_and_value) == 2
 
             return ASTVariableDeclarationAndInit(type_attributes, name_and_value[0], name_and_value[1])
         else:
 
-            name = createASTFromConcreteSyntaxTree(cst.children[1], lexer)
+            name = create_ast_from_concrete_syntax_tree(cst.children[1], lexer)
             return ASTVariableDeclaration(type_attributes, name)
     elif isinstance(cst, CParser.VarInitContext):
         children_to_return = list()
-        children_to_return.append(createASTFromConcreteSyntaxTree(cst.children[0], lexer))
-        children_to_return.append(createASTFromConcreteSyntaxTree(cst.children[2], lexer))
+        children_to_return.append(create_ast_from_concrete_syntax_tree(cst.children[0], lexer))
+        children_to_return.append(create_ast_from_concrete_syntax_tree(cst.children[2], lexer))
         return children_to_return
     elif isinstance(cst, CParser.TypeDeclaration1Context) or isinstance(cst, CParser.TypeDeclaration2Context):
         ast_children = list()
         for child in cst.children:
-            ast_children.append(createASTFromConcreteSyntaxTree(child, lexer))
+            ast_children.append(create_ast_from_concrete_syntax_tree(child, lexer))
 
         return ast_children
     elif isinstance(cst, TerminalNodeImpl):
-        token = getTokenFromTerminalNode(cst, lexer)
+        token = get_token_from_terminal_node(cst, lexer)
         if token is None:
             print("Token is none for terminal: " + cst.symbol.text + ", no ast is created for this node")
             return None
         else:
-            return ASTLeaf(getTokenFromTerminalNode(cst, lexer))
+            return ASTLeaf(get_token_from_terminal_node(cst, lexer))
     else:
 
         if len(cst.children) == 1:
             # Just pass to the child
-            return createASTFromConcreteSyntaxTree(cst.children[0], lexer)
+            return create_ast_from_concrete_syntax_tree(cst.children[0], lexer)
         else:
 
-            binary_expression, binary_operator_token = isBinaryExpression(cst)
-            unary_expression, unary_operator_token = isUnaryExpression(cst)
+            binary_expression, binary_operator_token = is_binary_expression(cst)
+            unary_expression, unary_operator_token = is_unary_expression(cst)
             if binary_expression:
                 ast_binary_expression = ASTBinaryExpression(binary_operator_token,
-                                                            createASTFromConcreteSyntaxTree(cst.children[0], lexer),
-                                                            createASTFromConcreteSyntaxTree(cst.children[2], lexer))
+                                                            create_ast_from_concrete_syntax_tree(cst.children[0], lexer),
+                                                            create_ast_from_concrete_syntax_tree(cst.children[2], lexer))
                 return ast_binary_expression
             elif unary_expression:
                 ast_unary_expression = ASTInternal(ASTToken(TokenType.UNARY_EXPRESSION))
                 ast_unary_expression.addChild(ASTLeaf(unary_operator_token))
-                ast_unary_expression.addChild(createASTFromConcreteSyntaxTree(cst.children[1], lexer))
+                ast_unary_expression.addChild(create_ast_from_concrete_syntax_tree(cst.children[1], lexer))
                 return ast_unary_expression
-            elif isBracketExpression(cst):
-                return createASTFromConcreteSyntaxTree(cst.children[1], lexer)
+            elif is_bracket_expression(cst):
+                return create_ast_from_concrete_syntax_tree(cst.children[1], lexer)
 
 
-def appendChildASTsToAST(ast: ASTInternal, cst, lexer: CLexer):
+def append_child_asts_to_ast(ast: ASTInternal, cst, lexer: CLexer):
     for child in cst.children:
-        new_child = createASTFromConcreteSyntaxTree(child, lexer)
+        new_child = create_ast_from_concrete_syntax_tree(child, lexer)
         if new_child is not None:
             ast.addChild(new_child)
 
 
-def getTokenFromTerminalNode(cst: TerminalNodeImpl, lexer: CLexer):
+def get_token_from_terminal_node(cst: TerminalNodeImpl, lexer: CLexer):
     symbol_text = cst.getSymbol().text
     token_type = None
     if symbol_text == 'int':
@@ -112,7 +112,7 @@ def getTokenFromTerminalNode(cst: TerminalNodeImpl, lexer: CLexer):
     return ASTToken(token_type, symbol_text)
 
 
-def containsTerminalAsChild(cst):
+def contains_terminal_as_child(cst):
     assert isinstance(cst, ParserRuleContext)
 
     for child in cst.children:
@@ -122,7 +122,7 @@ def containsTerminalAsChild(cst):
     return False
 
 
-def isBinaryExpression(cst: ParserRuleContext):
+def is_binary_expression(cst: ParserRuleContext):
     if len(cst.children) == 3 and isinstance(cst.children[1], TerminalNodeImpl):
         token_type = None
         symbol_text = cst.children[1].getSymbol().text
@@ -148,7 +148,7 @@ def isBinaryExpression(cst: ParserRuleContext):
     return False, None
 
 
-def isUnaryExpression(cst: ParserRuleContext):
+def is_unary_expression(cst: ParserRuleContext):
     if len(cst.children) == 2 and isinstance(cst.children[0], TerminalNodeImpl):
         token_type = None
         symbol_text = cst.children[0].getSymbol().text
@@ -166,16 +166,16 @@ def isUnaryExpression(cst: ParserRuleContext):
     return False, None
 
 
-def isBracketExpression(cst: ParserRuleContext):
+def is_bracket_expression(cst: ParserRuleContext):
     if len(cst.children) == 3:
-        if isBracket(cst.children[0]) and isinstance(cst.children[1], CParser.ExprContext) and isBracket(
+        if is_bracket(cst.children[0]) and isinstance(cst.children[1], CParser.ExprContext) and is_bracket(
                 cst.children[2]):
             return True
 
     return False
 
 
-def isBracket(cst):
+def is_bracket(cst):
     if isinstance(cst, TerminalNodeImpl):
         if cst.symbol.text == "(" or ")":
             return True
