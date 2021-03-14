@@ -70,4 +70,17 @@ class LLVMBuilder:
         return end_of_file
 
     def to_file(self, filename: str):
-        pass
+
+        size = len(filename)
+        output_file = filename[:size - 1]
+        output_file = output_file + "ll"
+        f = open(output_file, "w+")
+
+        f.write(self._generate_begin_of_file())
+
+        for instruction in self.instructions:
+            f.write(instruction + "\n")
+
+        f.write(self._generate_end_of_file())
+
+        f.close()
