@@ -8,15 +8,14 @@ class TokenType(Enum):
     INSTRUCTION = auto()
     PRINTF_INSTRUCTION = auto()
 
-    UNARY_EXPRESSION = auto()
-    UNARY_PLUS_OPERATOR = auto()
-    UNARY_MINUS_OPERATOR = auto()
-    DEREFERENCE_OPERATOR = auto()
-    ADDRESS_OPERATOR = auto()
+    UNARY_PLUS_EXPRESSION = auto()
+    UNARY_MINUS_EXPRESSION = auto()
+    DEREFERENCE_EXPRESSION = auto()
+    ADDRESS_EXPRESSION = auto()
 
     ADD_EXPRESSION = auto()
     SUB_EXPRESSION = auto()
-    MULT_EXPRESSION = auto()
+    MUL_EXPRESSION = auto()
     DIV_EXPRESSION = auto()
     GREATER_THAN_EXPRESSION = auto()
     LESS_THAN_EXPRESSION = auto()
@@ -62,7 +61,7 @@ class ASTToken:
                 token_type == TokenType.ADD_EXPRESSION or
                 token_type == TokenType.SUB_EXPRESSION or
                 token_type == TokenType.DIV_EXPRESSION or
-                token_type == TokenType.MULT_EXPRESSION or
+                token_type == TokenType.MUL_EXPRESSION or
                 token_type == TokenType.GREATER_THAN_EXPRESSION or
                 token_type == TokenType.LESS_THAN_EXPRESSION or
                 token_type == TokenType.EQUALS_EXPRESSION or

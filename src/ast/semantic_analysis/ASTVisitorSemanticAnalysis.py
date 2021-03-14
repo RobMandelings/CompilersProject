@@ -73,7 +73,7 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
             if is_richer_than(other_data_type, self.resulting_data_type):
                 self.resulting_data_type = other_data_type
 
-    def visit_ast_leaf(self, ast):
+    def visit_ast_literal(self, ast: ASTLiteral):
         if ast.token.token_type == TokenType.IDENTIFIER:
             variable = self.last_symbol_table.lookup_variable(ast.get_token_content())
             assert variable.is_initialized()
@@ -85,7 +85,7 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
         elif ast.token.token_type == TokenType.CHAR_LITERAL:
             self.update_current_data_type(DataType.CHAR)
         else:
-            raise NotImplementedError("Token type '" + str(ast.token.token_type) + "' not recognized")
+            raise NotImplementedError(f"Token type '{ast.token.token_type}' not recognized as literal")
 
 
 class ASTVisitorUndeclaredVariableUsed(ASTBaseVisitor):
@@ -220,30 +220,27 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         if variable.const:
             raise SemanticError("Cannot assign value to const variable '" + bin_expr.left.get_token_content() + "'")
 
-    def visit_ast_assignment(self, bin_expr: ASTBinaryExpression):
-        assert bin_expr.token.token_type == TokenType.ASSIGNMENT_EXPRESSION
-        symbol_table = self.get_last_symbol_table()
-
-        # Do some semantic checks. If all checks don't raise any errors, continue on with the new value
-        self.check_undeclared_variable_usage(bin_expr.right)
-        self.check_undeclared_variable_usage(bin_expr.left)
-        self.check_uninitialized_variable_usage(bin_expr.right)
-
-        variable = symbol_table.lookup_variable(bin_expr.left.get_token_content())
-        if not variable.is_initialized():
-            variable.initialized = True
-
-        self.check_const_assignment(bin_expr)
-
-        # Warn in case the result will be narrowed down into another data type
-        self.check_for_narrowing_result(variable.data_type, bin_expr)
-
     def visit_ast_binary_expression(self, ast: ASTBinaryExpression):
         # Do nothing
         pass
 
     def visit_ast_assignment_expression(self, ast: ASTAssignmentExpression):
-        self.visit_ast_assignment(ast)
+        assert ast.token.token_type == TokenType.ASSIGNMENT_EXPRESSION
+        symbol_table = self.get_last_symbol_table()
+
+        # Do some semantic checks. If all checks don't raise any errors, continue on with the new value
+        self.check_undeclared_variable_usage(ast.right)
+        self.check_undeclared_variable_usage(ast.left)
+        self.check_uninitialized_variable_usage(ast.right)
+
+        variable = symbol_table.lookup_variable(ast.left.get_token_content())
+        if not variable.is_initialized():
+            variable.initialized = True
+
+        self.check_const_assignment(ast)
+
+        # Warn in case the result will be narrowed down into another data type
+        self.check_for_narrowing_result(variable.data_type, ast)
 
     def visit_ast_variable_declaration(self, ast: ASTVariableDeclaration):
         symbol_table = self.get_last_symbol_table()
@@ -272,5 +269,3 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
     # TODO implement this!
     def visit_ast_printf_instruction(self, ast: ASTPrintfInstruction):
         super().visit_ast_printf_instruction(ast)
-
-

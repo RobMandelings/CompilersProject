@@ -67,28 +67,34 @@ def create_ast_from_concrete_syntax_tree(cst, lexer: CLexer):
             return create_ast_from_concrete_syntax_tree(cst.children[0], lexer)
         else:
 
-            binary_expression, binary_operator_token = is_binary_expression(cst)
-            unary_expression, unary_operator_token = is_unary_expression(cst)
+            binary_expression = is_binary_expression(cst)
+            unary_expression, unary_expression_token = is_unary_expression(cst)
+
             if binary_expression:
-                if binary_operator_token.token_type == TokenType.ASSIGNMENT_EXPRESSION:
-                    # Special case of the binary expression: the assignment expression
-                    ast_binary_expression = ASTAssignmentExpression(
-                        create_ast_from_concrete_syntax_tree(cst.children[0],
-                                                             lexer),
-                        create_ast_from_concrete_syntax_tree(cst.children[2],
-                                                             lexer))
+
+                left_child = create_ast_from_concrete_syntax_tree(cst.children[0], lexer)
+                right_child = create_ast_from_concrete_syntax_tree(cst.children[2], lexer)
+
+                if is_assignment_expression(cst):
+
+                    return ASTAssignmentExpression(left_child, right_child)
+
                 else:
-                    ast_binary_expression = ASTBinaryExpression(binary_operator_token,
-                                                                create_ast_from_concrete_syntax_tree(cst.children[0],
-                                                                                                     lexer),
-                                                                create_ast_from_concrete_syntax_tree(cst.children[2],
-                                                                                                     lexer))
-                return ast_binary_expression
+
+                    binary_arithmetic_expression, arithmetic_token = is_binary_arithmetic_expression(cst)
+                    binary_compare_expression, compare_token = is_binary_compare_expression(cst)
+
+                    if binary_arithmetic_expression:
+                        return ASTBinaryArithmeticExpression(arithmetic_token, left_child, right_child)
+                    elif binary_compare_expression:
+                        return ASTBinaryCompareExpression(compare_token, left_child, right_child)
+                    else:
+                        raise NotImplementedError
+
             elif unary_expression:
-                ast_unary_expression = ASTInternal(ASTToken(TokenType.UNARY_EXPRESSION))
-                ast_unary_expression.add_child(ASTLeaf(unary_operator_token))
-                ast_unary_expression.add_child(create_ast_from_concrete_syntax_tree(cst.children[1], lexer))
-                return ast_unary_expression
+
+                value_applied_to = create_ast_from_concrete_syntax_tree(cst.children[1], lexer)
+                return ASTUnaryExpression(unary_expression_token, value_applied_to)
             elif is_bracket_expression(cst):
                 return create_ast_from_concrete_syntax_tree(cst.children[1], lexer)
 
@@ -146,30 +152,70 @@ def contains_terminal_as_child(cst):
     return False
 
 
-def is_binary_expression(cst: ParserRuleContext):
-    if len(cst.children) == 3 and isinstance(cst.children[1], TerminalNodeImpl):
-        token_type = None
+def is_literal(cst: TerminalNodeImpl, lexer: CLexer):
+    assert isinstance(cst, TerminalNodeImpl)
+    symbol_type = cst.getSymbol().type
+    if symbol_type == lexer.CHAR:
+        return True, TokenType.CHAR_LITERAL
+    elif symbol_type == lexer.INTEGER:
+        return True, TokenType.INT_LITERAL
+    elif symbol_type == lexer.DOUBLE:
+        return True, TokenType.FLOAT_LITERAL
+
+    return False, None
+
+
+def is_binary_arithmetic_expression(cst: ParserRuleContext):
+    if is_binary_expression(cst):
         symbol_text = cst.children[1].getSymbol().text
         if symbol_text == '+':
             token_type = TokenType.ADD_EXPRESSION
         elif symbol_text == '-':
             token_type = TokenType.SUB_EXPRESSION
+        elif symbol_text == '*':
+            token_type = TokenType.MUL_EXPRESSION
         elif symbol_text == '/':
             token_type = TokenType.DIV_EXPRESSION
-        elif symbol_text == '*':
-            token_type = TokenType.MULT_EXPRESSION
-        elif symbol_text == '>':
-            token_type = TokenType.GREATER_THAN_EXPRESSION
-        elif symbol_text == '<':
-            token_type = TokenType.LESS_THAN_EXPRESSION
-        elif symbol_text == '==':
-            token_type = TokenType.EQUALS_EXPRESSION
-        elif symbol_text == '=':
-            token_type = TokenType.ASSIGNMENT_EXPRESSION
-        assert token_type is not None
+        else:
+            return False, None
+
         return True, ASTToken(token_type, symbol_text)
 
     return False, None
+
+
+def is_binary_compare_expression(cst: ParserRuleContext):
+    if is_binary_expression(cst):
+
+        symbol_text = cst.children[1].getSymbol().text
+        if symbol_text == '<':
+            token_type = TokenType.LESS_THAN_EXPRESSION
+        elif symbol_text == '>':
+            token_type = TokenType.GREATER_THAN_EXPRESSION
+        elif symbol_text == '==':
+            token_type = TokenType.EQUALS_EXPRESSION
+        else:
+            return False, None
+
+        return True, ASTToken(token_type, symbol_text)
+
+    return False, None
+
+
+def is_assignment_expression(cst: ParserRuleContext):
+    if is_binary_expression(cst):
+
+        if cst.children[1].getSymbol().text == '=':
+            return True
+
+    return False
+
+
+def is_binary_expression(cst: ParserRuleContext):
+    if len(cst.children) == 3 and isinstance(cst.children[1], TerminalNodeImpl):
+        return True
+    else:
+        return False
 
 
 def is_unary_expression(cst: ParserRuleContext):
@@ -177,13 +223,13 @@ def is_unary_expression(cst: ParserRuleContext):
         token_type = None
         symbol_text = cst.children[0].getSymbol().text
         if symbol_text == '+':
-            token_type = TokenType.UNARY_PLUS_OPERATOR
+            token_type = TokenType.UNARY_PLUS_EXPRESSION
         elif symbol_text == '-':
-            token_type = TokenType.UNARY_MINUS_OPERATOR
+            token_type = TokenType.UNARY_MINUS_EXPRESSION
         elif symbol_text == '*':
-            token_type = TokenType.DEREFERENCE_OPERATOR
+            token_type = TokenType.DEREFERENCE_EXPRESSION
         elif symbol_text == '&':
-            token_type = TokenType.ADDRESS_OPERATOR
+            token_type = TokenType.ADDRESS_EXPRESSION
         assert token_type is not None
         return True, ASTToken(token_type, symbol_text)
 

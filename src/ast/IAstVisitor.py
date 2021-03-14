@@ -11,11 +11,27 @@ class IASTVisitor:
         pass
 
     @abstractmethod
+    def visit_ast_literal(self, ast):
+        pass
+
+    @abstractmethod
     def visit_ast_internal(self, ast):
         pass
 
     @abstractmethod
+    def visit_ast_unary_expression(self, ast):
+        pass
+
+    @abstractmethod
     def visit_ast_binary_expression(self, ast):
+        pass
+
+    @abstractmethod
+    def visit_ast_binary_arithmetic_expression(self, ast):
+        pass
+
+    @abstractmethod
+    def visit_ast_binary_compare_expression(self, ast):
         pass
 
     @abstractmethod

@@ -2,7 +2,7 @@ from graphviz import Digraph
 
 from src.ast.ASTToken import TokenType
 from src.ast.ASTBaseVisitor import ASTBaseVisitor
-from src.ast.ASTs import ASTPrintfInstruction
+from src.ast.ASTs import ASTPrintfInstruction, ASTUnaryExpression
 
 
 class ASTVisitorDot(ASTBaseVisitor):
@@ -31,6 +31,10 @@ class ASTVisitorDot(ASTBaseVisitor):
 
     def visit_ast_internal(self, ast):
         super().visit_ast_internal(ast)
+        self.add_to_dot_node(ast)
+
+    def visit_ast_unary_expression(self, ast: ASTUnaryExpression):
+        super().visit_ast_unary_expression(ast)
         self.add_to_dot_node(ast)
 
     def visit_ast_binary_expression(self, ast):

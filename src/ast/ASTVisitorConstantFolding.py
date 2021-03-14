@@ -40,7 +40,7 @@ class ASTVisitorConstantFolding(ASTBaseVisitor):
                     return ASTLeaf(ASTToken(token_type, left_value + right_value)).set_parent(ast.parent)
                 elif ast.get_token_type() == TokenType.SUB_EXPRESSION:
                     return ASTLeaf(ASTToken(token_type, left_value - right_value)).set_parent(ast.parent)
-                elif ast.get_token_type() == TokenType.MULT_EXPRESSION:
+                elif ast.get_token_type() == TokenType.MUL_EXPRESSION:
                     return ASTLeaf(ASTToken(token_type, left_value * right_value)).set_parent(ast.parent)
                 elif ast.get_token_type() == TokenType.DIV_EXPRESSION:
                     return ASTLeaf(ASTToken(token_type, left_value / right_value)).set_parent(ast.parent)

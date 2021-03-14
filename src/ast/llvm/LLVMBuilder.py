@@ -22,7 +22,7 @@ class LLVMBuilder:
                 operation_string = 'add'
             elif ast.get_token_type() == TokenType.SUB_EXPRESSION:
                 operation_string = 'sub'
-            elif ast.get_token_type() == TokenType.MULT_EXPRESSION:
+            elif ast.get_token_type() == TokenType.MUL_EXPRESSION:
                 operation_string = 'mul'
             elif ast.get_token_type() == TokenType.DIV_EXPRESSION:
                 # TODO sdiv or udiv?

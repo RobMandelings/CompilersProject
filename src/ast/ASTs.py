@@ -47,6 +47,16 @@ class ASTLeaf(AST):
         visitor.visit_ast_leaf(self)
 
 
+class ASTLiteral(ASTLeaf):
+
+    def __init__(self, token: ASTToken):
+        super().__init__(token)
+
+    def accept(self, visitor: IASTVisitor):
+        assert isinstance(visitor, IASTVisitor)
+        visitor.visit_ast_literal(self)
+
+
 class ASTInternal(AST):
 
     def __init__(self, token: ASTToken):
@@ -65,6 +75,18 @@ class ASTInternal(AST):
         else:
             child.parent = self
             self.children.append(child)
+
+
+class ASTUnaryExpression(AST):
+
+    def __init__(self, token: ASTToken, value_applied_to: AST):
+        super().__init__(token)
+        # The value this unary expression is applied to
+        self.value_applied_to = value_applied_to
+        self.value_applied_to.parent = self
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_unary_expression(self)
 
 
 class ASTBinaryExpression(AST):
@@ -104,6 +126,33 @@ class ASTAssignmentExpression(ASTBinaryExpression):
         """
         assert isinstance(self.left, ASTLeaf) and self.left.get_token_type() == TokenType.IDENTIFIER
         return self.left
+
+
+class ASTBinaryArithmeticExpression(ASTBinaryExpression):
+
+    def __init__(self, token: ASTToken, left: AST, right: AST):
+        assert (
+                token.token_type == TokenType.ADD_EXPRESSION
+                or token.token_type == TokenType.SUB_EXPRESSION
+                or token.token_type == TokenType.MUL_EXPRESSION
+                or token.token_type == TokenType.DIV_EXPRESSION)
+        super().__init__(token, left, right)
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_binary_arithmetic_expression(self)
+
+
+class ASTBinaryCompareExpression(ASTBinaryExpression):
+
+    def __init__(self, token: ASTToken, left: AST, right: AST):
+        assert (
+                token.token_type == TokenType.LESS_THAN_EXPRESSION
+                or token.token_type == TokenType.GREATER_THAN_EXPRESSION
+                or token.token_type == TokenType.EQUALS_EXPRESSION)
+        super().__init__(token, left, right)
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_binary_compare_expression(self)
 
 
 class ASTVariableDeclaration(AST):

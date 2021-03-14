@@ -10,17 +10,31 @@ class ASTBaseVisitor(IASTVisitor):
 
     def visit_ast_leaf(self, ast: ASTLeaf):
         assert isinstance(ast, ASTLeaf), "The AST is not an ASTLeaf"
-        pass
+
+    def visit_ast_literal(self, ast: ASTLiteral):
+        assert isinstance(ast, ASTLiteral), "The AST is not an ASTLiteral"
 
     def visit_ast_internal(self, ast: ASTInternal):
         assert isinstance(ast, ASTInternal), "The AST is not an ASTInternal"
         for child in ast.children:
             child.accept(self)
 
+    def visit_ast_unary_expression(self, ast: ASTUnaryExpression):
+        assert isinstance(ast, ASTUnaryExpression), "The AST is not an ASTUnaryExpression"
+        ast.value_applied_to.accept(self)
+
     def visit_ast_binary_expression(self, ast: ASTBinaryExpression):
         assert isinstance(ast, ASTBinaryExpression), "The AST is not an ASTBinaryExpression"
         ast.left.accept(self)
         ast.right.accept(self)
+
+    def visit_ast_binary_arithmetic_expression(self, ast: ASTBinaryArithmeticExpression):
+        assert isinstance(ast, ASTBinaryArithmeticExpression)
+        self.visit_ast_binary_expression(ast)
+
+    def visit_ast_binary_compare_expression(self, ast: ASTBinaryCompareExpression):
+        assert isinstance(ast, ASTBinaryArithmeticExpression)
+        self.visit_ast_binary_expression(ast)
 
     def visit_ast_assignment_expression(self, ast: ASTAssignmentExpression):
         """
