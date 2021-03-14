@@ -54,6 +54,9 @@ def create_ast_from_concrete_syntax_tree(cst, lexer: CLexer):
 
         return ast_children
     elif isinstance(cst, TerminalNodeImpl):
+
+        is_literal, literal_token = is_literal(cst, lexer)
+
         token = get_token_from_terminal_node(cst, lexer)
         if token is None:
             print("Token is none for terminal: " + cst.symbol.text + ", no ast is created for this node")
@@ -154,13 +157,48 @@ def contains_terminal_as_child(cst):
 
 def is_literal(cst: TerminalNodeImpl, lexer: CLexer):
     assert isinstance(cst, TerminalNodeImpl)
+    token_type = None
     symbol_type = cst.getSymbol().type
+    symbol_text = cst.getSymbol().text
     if symbol_type == lexer.CHAR:
-        return True, TokenType.CHAR_LITERAL
+        token_type = TokenType.CHAR_LITERAL
+        symbol_text = symbol_text.replace("\'", "")
+        char = list()
+        for c in symbol_text:
+            char.append(c)
+
+        assert len(char) == 1, "Character defined consists of multiple characters. This should not be possible"
+        # Store its value as an integer as its an integral type, much easier to work with afterwards.
+        # You can always reverse to char notation when visualising
+        symbol_text = str(ord(char[0]))
     elif symbol_type == lexer.INTEGER:
-        return True, TokenType.INT_LITERAL
+        token_type = TokenType.INT_LITERAL
     elif symbol_type == lexer.DOUBLE:
-        return True, TokenType.FLOAT_LITERAL
+        token_type = TokenType.FLOAT_LITERAL
+
+    if token_type is not None:
+        return ASTToken(token_type, symbol_text)
+    else:
+        return False, None
+
+
+def is_identifier(cst: TerminalNodeImpl, lexer: CLexer):
+    assert isinstance(cst, TerminalNodeImpl)
+    return cst.getSymbol().type == lexer.ID
+
+
+# Maybe merge 'type' and 'literal' together or something?
+def is_type(cst: TerminalNodeImpl):
+    assert isinstance(cst, TerminalNodeImpl)
+    symbol_text = cst.getSymbol().text
+    if symbol_text == 'char':
+        return True, TokenType.CHAR_TYPE
+    if symbol_text == 'int':
+        return True, TokenType.INT_TYPE
+    if symbol_text == 'float':
+        return True, TokenType.FLOAT_TYPE
+    if symbol_text == 'const':
+        return True, TokenType.CONST_TYPE
 
     return False, None
 
