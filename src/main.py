@@ -1,9 +1,9 @@
 from CSTVisitors import CSTVisitorToDot
-from src.ast.ASTVisitorConstantFolding import ASTVisitorConstantFolding
-from src.ast.CSTtoASTConverter import *
 from src.ast.ASTVisitorDot import ASTVisitorDot
-from src.syntacticalAnalysis import CSTErrorListener
+from src.ast.CSTtoASTConverter import *
+from src.ast.llvm.ASTVisitorToLLVM import ASTVisitorToLLVM
 from src.ast.semantic_analysis.ASTVisitorSemanticAnalysis import ASTVisitorSemanticAnalysis, SemanticError
+from src.syntacticalAnalysis import CSTErrorListener
 
 
 # TODO support for unary operations ('-5' for example)
@@ -31,10 +31,9 @@ def main(argv):
 
         # ast_visitor_folding = ASTVisitorConstantFolding()
         # ast.accept(ast_visitor_folding)
-
-        ast_visitor_dot = ASTVisitorDot()
-        ast.accept(ast_visitor_dot)
-        ast_visitor_dot.graph.render('output/astfolded.gv', view=False)
+        # ast_visitor_dot = ASTVisitorDot()
+        # ast.accept(ast_visitor_dot)
+        # ast_visitor_dot.graph.render('output/astfolded.gv', view=False)
 
         ast_visitor_semantic_analysis = ASTVisitorSemanticAnalysis()
         try:
@@ -45,6 +44,10 @@ def main(argv):
             print("Stopping the compiler...")
             sys.exit(0)
         print(argv[1])
+
+        ast_visitor_to_llvm = ASTVisitorToLLVM()
+        ast.accept(ast_visitor_to_llvm)
+        ast_visitor_to_llvm.to_file("output/converted.b")
 
     except SyntaxError:
         print("Exiting program...", file=sys.stderr)

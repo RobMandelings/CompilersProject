@@ -4,10 +4,8 @@ from LLVMBuilder import *
 
 class ASTVisitorToLLVM(ASTBaseVisitor):
 
-    def __init__(self, output_filename):
+    def __init__(self):
         self.llvm_builder = LLVMBuilder()
-        self.output_file = open(output_filename, "w+")
-
 
     def visit_ast_leaf(self, ast: ASTLeaf):
         super().visit_ast_leaf(ast)
@@ -19,7 +17,6 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
         raise NotImplementedError
 
     def visit_ast_assignment_expression(self, ast: ASTAssignmentExpression):
-
         identifier = ast.left.get_token_content()
         self.llvm_builder.assign_value_to_variable(identifier, ast.right)
 
@@ -28,3 +25,6 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
 
     def visit_ast_variable_declaration_and_init(self, ast: ASTVariableDeclarationAndInit):
         super().visit_ast_variable_declaration_and_init(ast)
+
+    def to_file(self, output_filename: str):
+        self.llvm_builder.to_file(output_filename)
