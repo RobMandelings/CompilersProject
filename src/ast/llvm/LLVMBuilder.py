@@ -55,10 +55,19 @@ class LLVMBuilder:
         self.symbol_table[variable_name] = self._compute_expression(ast)
 
     def _generate_begin_of_file(self):
-        pass
+        begin_of_file = ""
+        begin_of_file += "declare i32 @printf(i8*, ...)\n"
+        begin_of_file += "@.str = private unnamed_addr constant [3 x i8] c\"%i\00\", align 1\n"
+        begin_of_file += "define i32 @main() {\n"
+        begin_of_file += "    start:\n"
+        return begin_of_file
 
     def _generate_end_of_file(self):
-        pass
+        end_of_file = ""
+        end_of_file += "; we exit with code 0 = success\n"
+        end_of_file += "ret i32 0\n"
+        end_of_file += "}\n"
+        return end_of_file
 
     def to_file(self, filename: str):
         pass
