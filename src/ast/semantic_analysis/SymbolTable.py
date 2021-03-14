@@ -1,12 +1,12 @@
-from enum import Enum, auto
+from enum import Enum
 
-from src.ast.ASTs import AST
+from src.ast.ASTs import TokenType
 
 
 class DataType(Enum):
-    CHAR = auto()
-    INT = auto()
-    FLOAT = auto()
+    CHAR = 0
+    INT = 1
+    FLOAT = 2
 
     @staticmethod
     def get_data_type_from_name(name: str):
@@ -21,6 +21,26 @@ class DataType(Enum):
         else:
             return None
 
+    @staticmethod
+    def get_data_type_for_token_type(token_type: TokenType):
+        if token_type == TokenType.CHAR_TYPE or token_type == TokenType.CHAR_LITERAL:
+            return DataType.CHAR
+        elif token_type == TokenType.INT_TYPE or token_type == TokenType.INT_LITERAL:
+            return DataType.INT
+        elif token_type == TokenType.FLOAT_TYPE or token_type == TokenType.FLOAT_LITERAL:
+            return DataType.FLOAT
+        else:
+            raise NotImplementedError("Cannot convert the given tokentype ' " + str(token_type) + "' to a datatype")
+
+
+def is_richer_than(datatype1: DataType, datatype2: DataType):
+    """
+    Must be placed outside the DataType class because it would not be fully 'defined' when setting the expected parameter types, weird stuff
+    """
+    assert isinstance(datatype1, DataType), "Given datatype1 is not an instance of DataType"
+    assert isinstance(datatype2, DataType), "Given datatype2 is not an instance of DataType"
+    return datatype1.value > datatype2.value
+
 
 class Symbol:
 
@@ -30,34 +50,22 @@ class Symbol:
 
 class VariableSymbol(Symbol):
 
-    def __init__(self, attributes: list):
+    def __init__(self, data_type: DataType, const, initialized):
         super().__init__()
-        self.data_type = None
-        self.is_const = False
-        self.current_value = None
-        self.init_member_variables(attributes)
-        print("Hello")
-
-    def init_member_variables(self, attributes: list):
-        for attribute in attributes:
-            assert isinstance(attribute, AST)
-            if DataType.get_data_type_from_name(attribute.get_token_content()) is not None:
-                assert self.data_type is None, "There are multiple datatypes defined. " \
-                                               "This should not be possible as it should have halted with a syntax error"
-                self.data_type = DataType.get_data_type_from_name(attribute.get_token_content())
-            elif attribute.get_token_content() == 'const':
-                self.is_const = True
-            else:
-                NotImplementedError('This attribute is not supported yet')
-        assert self.data_type is not None and self.is_const is not None
+        self.data_type = data_type
+        self.const = const
+        self.initialized = initialized
 
     def get_data_type(self):
         assert isinstance(self.data_type, DataType)
         return self.data_type
 
     def is_const(self):
-        assert isinstance(self.is_const, bool)
-        return self.is_const
+        assert isinstance(self.const, bool)
+        return self.const
+
+    def is_initialized(self):
+        return self.initialized
 
 
 class SymbolTableElement:
@@ -88,6 +96,18 @@ class SymbolTable:
                 return self.parent.lookup(symbol)
             else:
                 return None
+
+    def lookup_variable(self, symbol: str):
+        """
+        Looks up a variable in the symbol table
+        PRE-CONDITION: the symbol name given for lookup should result in a symbol which is actually a VariableSymbol.
+        The semantic error checks should be executed before using this
+        """
+        symbol_table_element = self.lookup(symbol)
+        assert isinstance(symbol_table_element, SymbolTableElement)
+        variable = symbol_table_element.symbol
+        assert isinstance(variable, VariableSymbol)
+        return variable
 
     def insert_symbol(self, symbol: SymbolTableElement):
         assert self.lookup(symbol.symbol_name) is None

@@ -42,8 +42,9 @@ unaryExpr:
     | finalExpr
     ;
 finalExpr: ID
-     | DOUBLE
+     | CHAR
      | INTEGER
+     | DOUBLE
      | '(' expr ')'
      ;
 typeDeclaration1:
@@ -60,6 +61,7 @@ constDeclaration:
     'const'
     ;
 ID  :   [a-zA-Z_]+ [0-9_]* ;      // match identifiers
+CHAR: '\''.'\'' ;
 INTEGER: [0-9]+ ;
 DOUBLE :   [0-9]+'.'[0-9]+ ;
 LineComment: '//' ~[\r\n]* -> channel(HIDDEN);
