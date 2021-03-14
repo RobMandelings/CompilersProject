@@ -1,4 +1,5 @@
 from CSTVisitors import CSTVisitorToDot
+from src.ast.ASTVisitorConstantFolding import ASTVisitorConstantFolding
 from src.ast.CSTtoASTConverter import *
 from src.ast.ASTVisitorDot import ASTVisitorDot
 from src.syntacticalAnalysis import CSTErrorListener
@@ -26,8 +27,14 @@ def main(argv):
         ast = create_ast_from_concrete_syntax_tree(tree, lexer)
         ast_visitor_dot = ASTVisitorDot()
         ast.accept(ast_visitor_dot)
-
         ast_visitor_dot.graph.render('output/ast.gv', view=False)
+
+        ast_visitor_folding = ASTVisitorConstantFolding()
+        ast.accept(ast_visitor_folding)
+
+        ast_visitor_dot = ASTVisitorDot()
+        ast.accept(ast_visitor_dot)
+        ast_visitor_dot.graph.render('output/astfolded.gv', view=False)
 
         ast_visitor_semantic_analysis = ASTVisitorSemanticAnalysis()
         try:

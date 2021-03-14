@@ -1,6 +1,6 @@
-from enum import Enum, auto
+from enum import Enum
 
-from src.ast.ASTs import AST, TokenType
+from src.ast.ASTs import TokenType
 
 
 class DataType(Enum):
@@ -23,11 +23,11 @@ class DataType(Enum):
 
 
 def convert_token_type_to_data_type(token_type: TokenType):
-    if token_type == TokenType.CHAR_TYPE:
+    if token_type == TokenType.CHAR_TYPE or token_type == TokenType.CHAR_LITERAL:
         return DataType.CHAR
-    elif token_type == TokenType.INT_TYPE:
+    elif token_type == TokenType.INT_TYPE or token_type == TokenType.INT_LITERAL:
         return DataType.INT
-    elif token_type == TokenType.FLOAT_TYPE:
+    elif token_type == TokenType.FLOAT_TYPE or token_type == TokenType.FLOAT_LITERAL:
         return DataType.FLOAT
     else:
         raise NotImplementedError("Cannot convert the given tokentype ' " + str(token_type) + "' to a datatype")
