@@ -1,10 +1,10 @@
 from graphviz import Digraph
 
 from src.ast.ASTToken import TokenType
-from src.ast.ASTVisitor import ASTVisitor
+from src.ast.ASTBaseVisitor import ASTBaseVisitor
 
 
-class ASTVisitorDot(ASTVisitor):
+class ASTVisitorDot(ASTBaseVisitor):
 
     def __init__(self):
         super().__init__()

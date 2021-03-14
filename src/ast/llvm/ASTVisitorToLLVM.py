@@ -1,7 +1,7 @@
-from src.ast.ASTVisitor import ASTVisitor
+from src.ast.ASTBaseVisitor import ASTBaseVisitor
 
 
-class ASTVisitorToLLVM(ASTVisitor):
+class ASTVisitorToLLVM(ASTBaseVisitor):
 
     def __init__(self, output_filename):
         self.llvm_builder

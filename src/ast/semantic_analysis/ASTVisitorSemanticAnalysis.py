@@ -1,5 +1,6 @@
-from src.ast.semantic_analysis.SymbolTable import *
+from src.ast.ASTBaseVisitor import ASTBaseVisitor
 from src.ast.ASTs import *
+from src.ast.semantic_analysis.SymbolTable import *
 
 
 class SemanticError(Exception):
@@ -44,7 +45,7 @@ def divide_type_attributes(type_attributes: list):
     return data_type, is_const
 
 
-class ASTVisitorResultingDataType(ASTVisitor):
+class ASTVisitorResultingDataType(ASTBaseVisitor):
     """
     This visitor is used whenever the semantic analysis visitor needs to decide what the data type of the result
     of a (binary) expression is.
@@ -87,7 +88,7 @@ class ASTVisitorResultingDataType(ASTVisitor):
             raise NotImplementedError("Token type '" + str(ast.token.token_type) + "' not recognized")
 
 
-class ASTVisitorUndeclaredVariableUsed(ASTVisitor):
+class ASTVisitorUndeclaredVariableUsed(ASTBaseVisitor):
     """
     Used by the semantical analysis visitor to check if a certain AST contains undeclared variables
     """
@@ -105,7 +106,7 @@ class ASTVisitorUndeclaredVariableUsed(ASTVisitor):
                 self.undeclared_variables_used.append(ast)
 
 
-class ASTVisitorUninitializedVariableUsed(ASTVisitor):
+class ASTVisitorUninitializedVariableUsed(ASTBaseVisitor):
     """
     Used by the semantical analysis visitor to check if a certain AST contains an unitialized variables
     """
@@ -126,7 +127,7 @@ class ASTVisitorUninitializedVariableUsed(ASTVisitor):
                     self.uninitialized_variables_used.append(ast)
 
 
-class ASTVisitorSemanticAnalysis(ASTVisitor):
+class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
     def __init__(self):
         super().__init__()

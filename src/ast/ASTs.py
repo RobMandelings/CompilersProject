@@ -1,5 +1,5 @@
 from .ASTToken import ASTToken, TokenType
-from .ASTVisitor import ASTVisitor
+from src.ast.IAstVisitor import IASTVisitor
 
 
 class AST:
@@ -42,8 +42,8 @@ class ASTLeaf(AST):
     def __init__(self, token: ASTToken):
         super().__init__(token)
 
-    def accept(self, visitor: ASTVisitor):
-        assert isinstance(visitor, ASTVisitor)
+    def accept(self, visitor: IASTVisitor):
+        assert isinstance(visitor, IASTVisitor)
         visitor.visit_ast_leaf(self)
 
 
@@ -53,7 +53,7 @@ class ASTInternal(AST):
         super().__init__(token)
         self.children = list()
 
-    def accept(self, visitor: ASTVisitor):
+    def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_internal(self)
 
     def add_child(self, child):
@@ -79,7 +79,7 @@ class ASTBinaryExpression(AST):
         if self.token.token_type == TokenType.ASSIGNMENT_EXPRESSION:
             assert isinstance(self.left, ASTLeaf) and self.left.token.token_type == TokenType.IDENTIFIER
 
-    def accept(self, visitor: ASTVisitor):
+    def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_binary_expression(self)
 
 
@@ -89,7 +89,7 @@ class ASTAssignmentExpression(ASTBinaryExpression):
         super().__init__(ASTToken(TokenType.ASSIGNMENT_EXPRESSION, '='), left, right)
         assert isinstance(left, ASTLeaf)
 
-    def accept(self, visitor: ASTVisitor):
+    def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_assignment_expression(self)
 
 
@@ -118,7 +118,7 @@ class ASTVariableDeclaration(AST):
             else:
                 self.type_attributes.append(attribute)
 
-    def accept(self, visitor: ASTVisitor):
+    def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_variable_declaration(self)
 
 
