@@ -43,6 +43,9 @@ class ASTBaseVisitor(IASTVisitor):
         ast.var_name.accept(self)
         ast.value.accept(self)
 
+    def visit_ast_printf_instruction(self, ast: ASTPrintfInstruction):
+        pass
+
     def reset(self):
         """
         Resets the visitor to use it for another tree for example

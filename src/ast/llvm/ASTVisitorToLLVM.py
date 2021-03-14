@@ -20,6 +20,9 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
         identifier = ast.left.get_token_content()
         self.llvm_builder.assign_value_to_variable(identifier, ast.right)
 
+    def visit_ast_printf_instruction(self, ast: ASTPrintfInstruction):
+        self.llvm_builder.print_variable(ast.get_token_content())
+
     def visit_ast_variable_declaration(self, ast: ASTVariableDeclaration):
         super().visit_ast_variable_declaration(ast)
 

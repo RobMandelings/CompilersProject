@@ -5,7 +5,10 @@ instruction:
     varDeclaration ';'
     | varAssignment ';'
     | expr ';'
-    | 'printf' '(' (ID|CHAR|DOUBLE|INTEGER) ')' ';'
+    | printfInstruction
+    ;
+printfInstruction:
+    'printf' '(' (ID|CHAR|DOUBLE|INTEGER) ')' ';'
     ;
 varDeclaration:
     // Declaration and initialization

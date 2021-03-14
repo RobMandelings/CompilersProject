@@ -28,6 +28,7 @@ class LLVMBuilder:
                 # TODO sdiv or udiv?
                 operation_string = 'sdiv'
             else:
+                # TODO less than,...
                 raise NotImplementedError
 
             self.instructions.append(
@@ -51,13 +52,19 @@ class LLVMBuilder:
         self.register_count += 1
         return register_to_return
 
+    # TODO also be able to print literals
+    def print_variable(self, variable_name):
+        assert self.symbol_table[variable_name] is not None
+        self.instructions.append(
+            f"call i32 (i8*, ...) @printf(i8* getelementptr inbounds([3 x i8], [3 x i8]* @.i, i64 0, i64 0), i32 {self.symbol_table[variable_name]})")
+
     def assign_value_to_variable(self, variable_name: str, ast: AST):
         self.symbol_table[variable_name] = self._compute_expression(ast)
 
     def _generate_begin_of_file(self):
         begin_of_file = ""
         begin_of_file += "declare i32 @printf(i8*, ...)\n"
-        begin_of_file += "@.str = private unnamed_addr constant [3 x i8] c\"%i\\00\", align 1\n"
+        begin_of_file += "@.i = private unnamed_addr constant [3 x i8] c\"%i\\00\", align 1\n"
         begin_of_file += "define i32 @main() {\n"
         begin_of_file += "    start:\n"
         return begin_of_file

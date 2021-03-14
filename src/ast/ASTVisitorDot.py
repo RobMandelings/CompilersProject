@@ -2,6 +2,7 @@ from graphviz import Digraph
 
 from src.ast.ASTToken import TokenType
 from src.ast.ASTBaseVisitor import ASTBaseVisitor
+from src.ast.ASTs import ASTPrintfInstruction
 
 
 class ASTVisitorDot(ASTBaseVisitor):
@@ -43,3 +44,7 @@ class ASTVisitorDot(ASTBaseVisitor):
     def visit_ast_variable_declaration_and_init(self, ast):
         super().visit_ast_variable_declaration_and_init(ast)
         self.add_to_dot_node(ast)
+
+    def visit_ast_printf_instruction(self, ast: ASTPrintfInstruction):
+        super().visit_ast_printf_instruction(ast)
+        self.add_to_dot_node(ast, f"printf({ast.get_token_content()})")

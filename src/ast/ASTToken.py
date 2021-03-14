@@ -6,6 +6,7 @@ class TokenType(Enum):
     PROGRAM = auto()
     INSTRUCTIONS = auto()
     INSTRUCTION = auto()
+    PRINTF_INSTRUCTION = auto()
 
     UNARY_EXPRESSION = auto()
     UNARY_PLUS_OPERATOR = auto()

@@ -1,8 +1,6 @@
-from antlr4.RuleContext import Parser
+from antlr4.tree.Tree import TerminalNodeImpl
 from graphviz import Digraph
 
-from antlr4.ParserRuleContext import ParserRuleContext
-from antlr4.tree.Tree import TerminalNodeImpl
 from antlr4_gen.CVisitor import CVisitor
 from src.antlr4_gen.CParser import CParser
 
@@ -83,3 +81,7 @@ class CSTVisitorToDot(CVisitor):
     def visitUnaryExpr(self, ctx: CParser.UnaryExprContext):
         self.toDotCurrent(ctx)
         return super().visitUnaryExpr(ctx)
+
+    def visitPrintfInstruction(self, ctx: CParser.PrintfInstructionContext):
+        self.toDotCurrent(ctx)
+        return super().visitPrintfInstruction(ctx)

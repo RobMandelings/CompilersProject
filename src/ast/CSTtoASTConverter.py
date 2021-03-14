@@ -23,6 +23,10 @@ def create_ast_from_concrete_syntax_tree(cst, lexer: CLexer):
         ast_instruction = ASTInternal(ASTToken(TokenType.INSTRUCTION))
         append_child_asts_to_ast(ast_instruction, cst, lexer)
         return ast_instruction
+    elif isinstance(cst, CParser.PrintfInstructionContext):
+        # TODO less hardcoding
+        ast_prinf_instruction = ASTPrintfInstruction(create_ast_from_concrete_syntax_tree(cst.children[2], lexer))
+        return ast_prinf_instruction
     elif isinstance(cst, CParser.VarDeclarationContext):
 
         type_attributes = create_ast_from_concrete_syntax_tree(cst.children[0], lexer)

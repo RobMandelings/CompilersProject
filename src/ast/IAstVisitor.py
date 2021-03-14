@@ -29,3 +29,7 @@ class IASTVisitor:
     @abstractmethod
     def visit_ast_variable_declaration_and_init(self, ast):
         pass
+
+    @abstractmethod
+    def visit_ast_printf_instruction(self, ast):
+        pass

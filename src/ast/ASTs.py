@@ -19,7 +19,7 @@ class AST:
     def is_root(self):
         return self.parent is None
 
-    def accept(self, visitor):
+    def accept(self, visitor: IASTVisitor):
         raise NotImplementedError('Generic method')
 
     def get_token(self):
@@ -145,3 +145,12 @@ class ASTVariableDeclarationAndInit(ASTVariableDeclaration):
 
     def accept(self, visitor):
         visitor.visit_ast_variable_declaration_and_init(self)
+
+
+class ASTPrintfInstruction(AST):
+
+    def __init__(self, value_to_print):
+        super().__init__(ASTToken(TokenType.PRINTF_INSTRUCTION, value_to_print))
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_printf_instruction(self)
