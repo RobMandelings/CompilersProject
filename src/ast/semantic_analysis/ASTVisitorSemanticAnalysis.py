@@ -113,7 +113,7 @@ class ASTVisitorUninitializedVariableUsed(ASTVisitor):
     def __init__(self, last_symbol_table: SymbolTable):
         """ The symbol table at the top of the stack in the semantical analysis vistor"""
         self.last_symbol_table = last_symbol_table
-        self.unitialized_variables_used = list()
+        self.uninitialized_variables_used = list()
         assert last_symbol_table is not None
 
     def visit_ast_leaf(self, ast):
@@ -123,7 +123,7 @@ class ASTVisitorUninitializedVariableUsed(ASTVisitor):
                 assert isinstance(table_element, SymbolTableElement)
                 assert isinstance(table_element.symbol, VariableSymbol)
                 if not table_element.symbol.is_initialized():
-                    self.unitialized_variables_used.append(ast)
+                    self.uninitialized_variables_used.append(ast)
 
 
 class ASTVisitorSemanticAnalysis(ASTVisitor):
@@ -177,39 +177,29 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
         if bin_expr.left.token.token_type == TokenType.CHAR_LITERAL or bin_expr.left.token.token_type == TokenType.INT_LITERAL or bin_expr.left.token.token_type == TokenType.FLOAT_LITERAL:
             raise SemanticError("Assignment to an rValue (value is " + bin_expr.left.get_token_content() + ")")
 
-    def check_unavailable_variable_usage(self, expr: AST, being_initialized=False):
-        """
-        Checks if unavailable variables are used in an operation (undeclared variables, uninitialized variables)
-        Throws an exception if this is the case
-        """
-        assert isinstance(expr, ASTBinaryExpression) or expr.get_token_type() == TokenType.UNARY_EXPRESSION
+    def check_undeclared_variable_usage(self, ast: AST):
 
         undeclared_var_usage = ASTVisitorUndeclaredVariableUsed(self.get_last_symbol_table())
-        uninitialized_var_usage = ASTVisitorUninitializedVariableUsed(self.get_last_symbol_table())
+        ast.accept(undeclared_var_usage)
 
-        if isinstance(expr, ASTBinaryExpression):
-            expr.left.accept(undeclared_var_usage)
-            expr.right.accept(undeclared_var_usage)
-
-            if not being_initialized:
-                expr.left.accept(uninitialized_var_usage)
-            expr.right.accept(uninitialized_var_usage)
-
-        else:
-            raise NotImplementedError("Not yet implemented for unary expressions")
-
-        if len(uninitialized_var_usage.unitialized_variables_used) != 0 or len(
-                undeclared_var_usage.undeclared_variables_used) != 0:
-
+        if len(undeclared_var_usage.undeclared_variables_used) != 0:
             error_text = ""
 
-            if len(uninitialized_var_usage.unitialized_variables_used) != 0:
-                for variable in uninitialized_var_usage.unitialized_variables_used:
-                    error_text += "Variable with name '" + variable.get_token_content() + "' used in an expression is found but is unitialized! \n"
+            for variable in undeclared_var_usage.undeclared_variables_used:
+                error_text += "Variable with name '" + variable.get_token_content() + "' is undeclared! \n"
 
-            if len(undeclared_var_usage.undeclared_variables_used) != 0:
-                for variable in undeclared_var_usage.undeclared_variables_used:
-                    error_text += "Variable with name '" + variable.get_token_content() + "' is undeclared: not found in the symbol table \n"
+            raise SemanticError(error_text)
+
+    def check_uninitialized_variable_usage(self, ast: AST):
+
+        uninitialized_var_usage = ASTVisitorUninitializedVariableUsed(self.get_last_symbol_table())
+        ast.accept(uninitialized_var_usage)
+
+        if len(uninitialized_var_usage.uninitialized_variables_used) != 0:
+            error_text = ""
+
+            for variable in uninitialized_var_usage.uninitialized_variables_used:
+                error_text += "Variable with name '" + variable.get_token_content() + "' is found but uninitialized! \n"
 
             raise SemanticError(error_text)
 
@@ -234,7 +224,10 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
         symbol_table = self.get_last_symbol_table()
 
         # Do some semantic checks. If all checks don't raise any errors, continue on with the new value
-        self.check_unavailable_variable_usage(bin_expr, being_initialized=True)
+        self.check_undeclared_variable_usage(bin_expr.right)
+        self.check_undeclared_variable_usage(bin_expr.left)
+        self.check_uninitialized_variable_usage(bin_expr.right)
+
         variable = symbol_table.lookup_variable(bin_expr.left.get_token_content())
         if not variable.is_initialized():
             variable.initialized = True
@@ -263,7 +256,10 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
         self.visit_ast_variable_declaration(ast)
         variable_symbol = self.get_last_symbol_table().lookup_variable(ast.var_name.get_token_content())
 
-        self.check_unavailable_variable_usage(ast, being_initialized=True)
+        # Do some semantic checks
+        self.check_undeclared_variable_usage(ast.value)
+        self.check_uninitialized_variable_usage(ast.value)
+
         variable_symbol.initialized = True
 
         data_type, is_const = divide_type_attributes(ast.type_attributes)
