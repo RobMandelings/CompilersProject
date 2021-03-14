@@ -1,5 +1,6 @@
 # TODO import asts to get some 'expected' types as parameters
 
+
 class ASTVisitor:
 
     def visit_ast_leaf(self, ast):
@@ -12,6 +13,13 @@ class ASTVisitor:
     def visit_ast_binary_expression(self, ast):
         ast.left.accept(self)
         ast.right.accept(self)
+
+    def visit_ast_assignment_expression(self, ast):
+        """
+        Does nothing special by default, just goes to the visit binary expression method.
+        If you would want to do something special in case of the assignment expression, override this method
+        """
+        self.visit_ast_binary_expression(ast)
 
     def visit_ast_variable_declaration(self, ast):
         for attribute in ast.type_attributes:

@@ -66,11 +66,19 @@ def create_ast_from_concrete_syntax_tree(cst, lexer: CLexer):
             binary_expression, binary_operator_token = is_binary_expression(cst)
             unary_expression, unary_operator_token = is_unary_expression(cst)
             if binary_expression:
-                ast_binary_expression = ASTBinaryExpression(binary_operator_token,
-                                                            create_ast_from_concrete_syntax_tree(cst.children[0],
-                                                                                                 lexer),
-                                                            create_ast_from_concrete_syntax_tree(cst.children[2],
-                                                                                                 lexer))
+                if binary_operator_token.token_type == TokenType.ASSIGNMENT_EXPRESSION:
+                    # Special case of the binary expression: the assignment expression
+                    ast_binary_expression = ASTAssignmentExpression(
+                        create_ast_from_concrete_syntax_tree(cst.children[0],
+                                                             lexer),
+                        create_ast_from_concrete_syntax_tree(cst.children[2],
+                                                             lexer))
+                else:
+                    ast_binary_expression = ASTBinaryExpression(binary_operator_token,
+                                                                create_ast_from_concrete_syntax_tree(cst.children[0],
+                                                                                                     lexer),
+                                                                create_ast_from_concrete_syntax_tree(cst.children[2],
+                                                                                                     lexer))
                 return ast_binary_expression
             elif unary_expression:
                 ast_unary_expression = ASTInternal(ASTToken(TokenType.UNARY_EXPRESSION))

@@ -8,6 +8,9 @@ class AST:
         self.parent = None
         self.token = token
 
+    def __str__(self):
+        return self.get_token_content()
+
     def set_parent(self, parent):
         assert isinstance(parent, AST) and not isinstance(parent, ASTLeaf)
         self.parent = parent
@@ -76,11 +79,18 @@ class ASTBinaryExpression(AST):
         if self.token.token_type == TokenType.ASSIGNMENT_EXPRESSION:
             assert isinstance(self.left, ASTLeaf) and self.left.token.token_type == TokenType.IDENTIFIER
 
-    def __str__(self):
-        return self.get_token_content()
-
     def accept(self, visitor: ASTVisitor):
         visitor.visit_ast_binary_expression(self)
+
+
+class ASTAssignmentExpression(ASTBinaryExpression):
+
+    def __init__(self, left: ASTLeaf, right: AST):
+        super().__init__(ASTToken(TokenType.ASSIGNMENT_EXPRESSION, '='), left, right)
+        assert isinstance(left, ASTLeaf)
+
+    def accept(self, visitor: ASTVisitor):
+        visitor.visit_ast_internal()
 
 
 class ASTVariableDeclaration(AST):
