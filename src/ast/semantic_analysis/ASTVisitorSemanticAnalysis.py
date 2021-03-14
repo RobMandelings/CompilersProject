@@ -238,8 +238,11 @@ class ASTVisitorSemanticAnalysis(ASTVisitor):
         self.check_for_narrowing_result(variable.data_type, bin_expr)
 
     def visit_ast_binary_expression(self, ast: ASTBinaryExpression):
-        if ast.get_token().token_type == TokenType.ASSIGNMENT_EXPRESSION:
-            self.visit_ast_assignment(ast)
+        # Do nothing
+        pass
+
+    def visit_ast_assignment_expression(self, ast: ASTAssignmentExpression):
+        self.visit_ast_assignment(ast)
 
     def visit_ast_variable_declaration(self, ast: ASTVariableDeclaration):
         symbol_table = self.get_last_symbol_table()

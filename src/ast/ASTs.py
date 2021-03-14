@@ -90,7 +90,7 @@ class ASTAssignmentExpression(ASTBinaryExpression):
         assert isinstance(left, ASTLeaf)
 
     def accept(self, visitor: ASTVisitor):
-        visitor.visit_ast_internal()
+        visitor.visit_ast_assignment_expression(self)
 
 
 class ASTVariableDeclaration(AST):
