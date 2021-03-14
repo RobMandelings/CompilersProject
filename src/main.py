@@ -29,8 +29,8 @@ def main(argv):
         ast.accept(ast_visitor_dot)
         ast_visitor_dot.graph.render('output/ast.gv', view=False)
 
-        ast_visitor_folding = ASTVisitorConstantFolding()
-        ast.accept(ast_visitor_folding)
+        # ast_visitor_folding = ASTVisitorConstantFolding()
+        # ast.accept(ast_visitor_folding)
 
         ast_visitor_dot = ASTVisitorDot()
         ast.accept(ast_visitor_dot)

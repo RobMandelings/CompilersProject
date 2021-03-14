@@ -5,7 +5,7 @@ from src.ast.ASTs import *
 
 class ASTBaseVisitor(IASTVisitor):
     """
-    Base class for the abstract syntax tree visitor which implements the basic traversal.
+    Base class for the abstract syntax tree visitor which implements the basic post-order traversal.
     Specific visitors should inherit from this class
     """
 

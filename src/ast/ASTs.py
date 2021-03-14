@@ -102,7 +102,7 @@ class ASTAssignmentExpression(ASTBinaryExpression):
         """
         Inherits get_left from ASTBinaryExpression to do an extra check: the left must be a leaf in this case
         """
-        assert isinstance(self.left, ASTLeaf)
+        assert isinstance(self.left, ASTLeaf) and self.left.get_token_type() == TokenType.IDENTIFIER
         return self.left
 
 
