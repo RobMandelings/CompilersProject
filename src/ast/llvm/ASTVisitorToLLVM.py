@@ -1,5 +1,5 @@
 from src.ast.ASTBaseVisitor import *
-from LLVMBuilder import *
+from src.ast.llvm.LLVMBuilder import *
 
 
 class ASTVisitorToLLVM(ASTBaseVisitor):

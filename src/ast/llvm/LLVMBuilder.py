@@ -57,7 +57,7 @@ class LLVMBuilder:
     def _generate_begin_of_file(self):
         begin_of_file = ""
         begin_of_file += "declare i32 @printf(i8*, ...)\n"
-        begin_of_file += "@.str = private unnamed_addr constant [3 x i8] c\"%i\00\", align 1\n"
+        begin_of_file += "@.str = private unnamed_addr constant [3 x i8] c\"%i\\00\", align 1\n"
         begin_of_file += "define i32 @main() {\n"
         begin_of_file += "    start:\n"
         return begin_of_file
