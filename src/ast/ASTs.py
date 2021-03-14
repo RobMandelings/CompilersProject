@@ -8,6 +8,11 @@ class AST:
         self.parent = None
         self.token = token
 
+    def set_parent(self, parent):
+        assert isinstance(parent, AST) and not isinstance(parent, ASTLeaf)
+        self.parent = parent
+        return self
+
     def is_root(self):
         return self.parent is None
 

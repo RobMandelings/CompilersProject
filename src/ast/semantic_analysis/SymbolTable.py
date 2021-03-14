@@ -21,16 +21,16 @@ class DataType(Enum):
         else:
             return None
 
-
-def convert_token_type_to_data_type(token_type: TokenType):
-    if token_type == TokenType.CHAR_TYPE or token_type == TokenType.CHAR_LITERAL:
-        return DataType.CHAR
-    elif token_type == TokenType.INT_TYPE or token_type == TokenType.INT_LITERAL:
-        return DataType.INT
-    elif token_type == TokenType.FLOAT_TYPE or token_type == TokenType.FLOAT_LITERAL:
-        return DataType.FLOAT
-    else:
-        raise NotImplementedError("Cannot convert the given tokentype ' " + str(token_type) + "' to a datatype")
+    @staticmethod
+    def get_data_type_for_token_type(token_type: TokenType):
+        if token_type == TokenType.CHAR_TYPE or token_type == TokenType.CHAR_LITERAL:
+            return DataType.CHAR
+        elif token_type == TokenType.INT_TYPE or token_type == TokenType.INT_LITERAL:
+            return DataType.INT
+        elif token_type == TokenType.FLOAT_TYPE or token_type == TokenType.FLOAT_LITERAL:
+            return DataType.FLOAT
+        else:
+            raise NotImplementedError("Cannot convert the given tokentype ' " + str(token_type) + "' to a datatype")
 
 
 def is_richer_than(datatype1: DataType, datatype2: DataType):

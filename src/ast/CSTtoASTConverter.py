@@ -103,6 +103,15 @@ def get_token_from_terminal_node(cst: TerminalNodeImpl, lexer: CLexer):
     # of the parsers' token IDs
     elif cst.getSymbol().type == lexer.CHAR:
         token_type = TokenType.CHAR_LITERAL
+        symbol_text = symbol_text.replace("\'", "")
+        char = list()
+        for c in symbol_text:
+            char.append(c)
+
+        assert len(char) == 1, "Character defined consists of multiple characters. This should not be possible"
+        # Store its value as an integer as its an integral type, much easier to work with afterwards.
+        # You can always reverse to char notation when visualising
+        symbol_text = str(ord(char[0]))
     elif cst.getSymbol().type == lexer.INTEGER:
         token_type = TokenType.INT_LITERAL
     elif cst.getSymbol().type == lexer.DOUBLE:

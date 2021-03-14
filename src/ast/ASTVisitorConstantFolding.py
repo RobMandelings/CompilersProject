@@ -2,28 +2,18 @@ from src.ast.ASTToken import TokenType, ASTToken
 from src.ast.ASTVisitor import ASTVisitor
 from src.ast.ASTs import ASTBinaryExpression, ASTLeaf, ASTInternal, ASTVariableDeclaration, \
     ASTVariableDeclarationAndInit
-from src.ast.semantic_analysis.SymbolTable import is_richer_than
+from src.ast.semantic_analysis.SymbolTable import is_richer_than, DataType
 
 
 class ASTVisitorConstantFolding(ASTVisitor):
 
     def get_leaf_result(self, ast: ASTLeaf):
         value = ast.get_token_content()
+        value_as_number = float(value)
 
-        if ast.get_token_type() == TokenType.CHAR_LITERAL:
-            value = value.replace("\'", "")
-            char = list()
-            for c in value:
-                char.append(c)
+        # If its a char, we first need to convert the char into a number notation
 
-            assert len(char) == 1, "Character defined consists of multiple characters. This should not be possible"
-            return ord(char[0]),
-        elif ast.get_token_type() == TokenType.INT_LITERAL:
-            return int(value)
-        elif ast.get_token_type() == TokenType.FLOAT_LITERAL:
-            return float(value)
-        else:
-            raise NotImplementedError("This should not be possible")
+        return value_as_number
 
     def fold_binary_expression(self, ast: ASTBinaryExpression):
         assert isinstance(ast, ASTBinaryExpression)
@@ -40,25 +30,26 @@ class ASTVisitorConstantFolding(ASTVisitor):
                 left_value = self.get_leaf_result(ast.left)
                 right_value = self.get_leaf_result(ast.right)
 
-                if is_richer_than(ast.left.get_token_type(), ast.right.get_token_type()):
+                if is_richer_than(DataType.get_data_type_for_token_type(ast.left.get_token_type()),
+                                  DataType.get_data_type_for_token_type(ast.right.get_token_type())):
                     token_type = ast.left.get_token_type()
                 else:
                     token_type = ast.right.get_token_type()
 
                 if ast.get_token_type() == TokenType.ADD_EXPRESSION:
-                    return ASTLeaf(ASTToken(token_type, left_value + right_value))
+                    return ASTLeaf(ASTToken(token_type, left_value + right_value)).set_parent(ast.parent)
                 elif ast.get_token_type() == TokenType.SUB_EXPRESSION:
-                    return ASTLeaf(ASTToken(token_type, left_value - right_value))
+                    return ASTLeaf(ASTToken(token_type, left_value - right_value)).set_parent(ast.parent)
                 elif ast.get_token_type() == TokenType.MULT_EXPRESSION:
-                    return ASTLeaf(ASTToken(token_type, left_value * right_value))
+                    return ASTLeaf(ASTToken(token_type, left_value * right_value)).set_parent(ast.parent)
                 elif ast.get_token_type() == TokenType.DIV_EXPRESSION:
-                    return ASTLeaf(ASTToken(token_type, left_value / right_value))
+                    return ASTLeaf(ASTToken(token_type, left_value / right_value)).set_parent(ast.parent)
                 elif ast.get_token_type() == TokenType.EQUALS_EXPRESSION:
-                    return ASTLeaf(ASTToken(token_type, left_value == right_value))
+                    return ASTLeaf(ASTToken(token_type, left_value == right_value)).set_parent(ast.parent)
                 elif ast.get_token_type() == TokenType.GREATER_THAN_EXPRESSION:
-                    return ASTLeaf(ASTToken(token_type, left_value > right_value))
+                    return ASTLeaf(ASTToken(token_type, left_value > right_value)).set_parent(ast.parent)
                 elif ast.get_token_type() == TokenType.LESS_THAN_EXPRESSION:
-                    return ASTLeaf(ASTToken(token_type, left_value < right_value))
+                    return ASTLeaf(ASTToken(token_type, left_value < right_value)).set_parent(ast.parent)
                 else:
                     raise NotImplementedError("Should not be possible")
 
@@ -66,9 +57,9 @@ class ASTVisitorConstantFolding(ASTVisitor):
 
     def visit_ast_internal(self, ast: ASTInternal):
         super().visit_ast_internal(ast)
-        for child in ast.children:
-            if isinstance(child, ASTBinaryExpression):
-                child = self.fold_binary_expression(child)
+        for i in range(len(ast.children)):
+            if isinstance(ast.children[i], ASTBinaryExpression):
+                ast.children[i] = self.fold_binary_expression(ast.children[i])
 
     def visit_ast_variable_declaration_and_init(self, ast: ASTVariableDeclarationAndInit):
         super().visit_ast_variable_declaration_and_init(ast)

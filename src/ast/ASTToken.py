@@ -45,7 +45,10 @@ class ASTToken:
 
         self.token_type = token_type
         if content is not None:
-            self.content = content
+            if not isinstance(content, str):
+                self.content = str(content)
+            else:
+                self.content = content
         else:
             self.content = self.token_type.name.lower().replace("_", " ")
 

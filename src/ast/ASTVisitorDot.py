@@ -1,5 +1,6 @@
 from graphviz import Digraph
 
+from src.ast.ASTToken import TokenType
 from src.ast.ASTVisitor import ASTVisitor
 
 
@@ -9,14 +10,23 @@ class ASTVisitorDot(ASTVisitor):
         super().__init__()
         self.graph = Digraph('Abstract Syntax Tree')
 
-    def add_to_dot_node(self, ast):
-        self.graph.node(str(id(ast)), ast.token.content)
+    def add_to_dot_node(self, ast, content=None):
+        if content is not None:
+            self.graph.node(str(id(ast)), content)
+        else:
+            self.graph.node(str(id(ast)), ast.token.content)
+
         if ast.parent is not None:
             self.graph.edge(str(id(ast.parent)), str(id(ast)))
 
     def visit_ast_leaf(self, ast):
         super().visit_ast_leaf(ast)
-        self.add_to_dot_node(ast)
+
+        content = None
+        if ast.get_token_type() == TokenType.CHAR_LITERAL:
+            content = "'" + str(chr(int(ast.get_token_content()))) + "'"
+
+        self.add_to_dot_node(ast, content)
 
     def visit_ast_internal(self, ast):
         super().visit_ast_internal(ast)
