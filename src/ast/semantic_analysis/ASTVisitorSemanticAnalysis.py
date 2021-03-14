@@ -268,3 +268,9 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         data_type, is_const = divide_type_attributes(ast.type_attributes)
         self.check_for_narrowing_result(data_type, ast.value)
+
+    # TODO implement this!
+    def visit_ast_printf_instruction(self, ast: ASTPrintfInstruction):
+        super().visit_ast_printf_instruction(ast)
+
+
