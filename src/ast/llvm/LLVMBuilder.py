@@ -71,10 +71,7 @@ class LLVMBuilder:
 
     def to_file(self, filename: str):
 
-        size = len(filename)
-        output_file = filename[:size - 1]
-        output_file = output_file + "ll"
-        f = open(output_file, "w+")
+        f = open(filename, "w+")
 
         f.write(self._generate_begin_of_file())
 
