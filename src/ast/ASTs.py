@@ -82,6 +82,12 @@ class ASTBinaryExpression(AST):
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_binary_expression(self)
 
+    def get_left(self):
+        return self.left
+
+    def get_right(self):
+        return self.right
+
 
 class ASTAssignmentExpression(ASTBinaryExpression):
 
@@ -91,6 +97,13 @@ class ASTAssignmentExpression(ASTBinaryExpression):
 
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_assignment_expression(self)
+
+    def get_left(self):
+        """
+        Inherits get_left from ASTBinaryExpression to do an extra check: the left must be a leaf in this case
+        """
+        assert isinstance(self.left, ASTLeaf)
+        return self.left
 
 
 class ASTVariableDeclaration(AST):
