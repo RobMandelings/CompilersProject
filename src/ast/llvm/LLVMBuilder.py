@@ -78,4 +78,9 @@ class LLVMBuilder:
 
         f.write(self._generate_begin_of_file())
 
+        for instruction in self.instructions:
+            f.write(instruction + "\n")
+
         f.write(self._generate_end_of_file())
+
+        f.close()
