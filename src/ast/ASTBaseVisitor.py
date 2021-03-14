@@ -1,5 +1,4 @@
 # TODO import asts to get some 'expected' types as parameters
-from src.ast.IAstVisitor import IASTVisitor
 from src.ast.ASTs import *
 
 
@@ -43,3 +42,9 @@ class ASTBaseVisitor(IASTVisitor):
             attribute.accept(self)
         ast.var_name.accept(self)
         ast.value.accept(self)
+
+    def reset(self):
+        """
+        Resets the visitor to use it for another tree for example
+        """
+        self.__init__()
