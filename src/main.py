@@ -38,6 +38,7 @@ def main(argv):
         ast_visitor_semantic_analysis = ASTVisitorSemanticAnalysis()
         try:
             ast.accept(ast_visitor_semantic_analysis)
+            print(str(ast))
         except SemanticError as e:
             print("A semantic error occurred: ")
             print(e)
