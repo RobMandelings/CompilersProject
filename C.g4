@@ -34,8 +34,8 @@ addExpr:
     | multExpr
     ;
 multExpr:
-    multExpr '*' finalExpr
-    | multExpr '/' finalExpr
+    multExpr '*' unaryExpr
+    | multExpr '/' unaryExpr
     | unaryExpr
     ;
 unaryExpr:
