@@ -32,7 +32,7 @@ class LLVMBuilder:
                 raise NotImplementedError
 
             self.instructions.append(
-                f"%{self.register_count} = {operation_string} i32 {left_register}, {right_register}")
+                f"%{self.register_count} = {operation_string} f32 {left_register}, {right_register}")
 
             assert operation_string is not None
 
@@ -47,13 +47,13 @@ class LLVMBuilder:
 
             value_register = self._compute_expression(ast.value_applied_to)
 
-            self.instructions.append(f"%{self.register_count} = mul i32 {factor}, {value_register}")
+            self.instructions.append(f"%{self.register_count} = mul f32 {factor}, {value_register}")
 
         elif isinstance(ast, ASTLiteral):
             # Generate a single instructions and return the register for this instruction
             if ast.get_token() == LiteralToken.INT_LITERAL:
                 value = int(ast.get_content())
-                self.instructions.append(f"%{self.register_count} = add i32 0, {value}")
+                self.instructions.append(f"%{self.register_count} = add f32 0, {value}")
 
             else:
                 raise NotImplementedError

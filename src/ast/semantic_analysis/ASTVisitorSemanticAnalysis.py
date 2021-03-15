@@ -24,28 +24,6 @@ class IncompatibleTypesError(Exception):
     pass
 
 
-def divide_type_attributes(type_attributes: list):
-    """
-    Separates the type attributes from the list into a tuple of specific type specifier and type qualifier(s)
-    Returns: tuple (data_type, is_const)
-    """
-    data_type = None
-    is_const = False
-    for attribute in type_attributes:
-        assert isinstance(attribute, AST)
-        if DataTypeToken.get_data_type_from_name(attribute.get_content()) is not None:
-            assert data_type is None, "There are multiple datatypes defined. " \
-                                      "This should not be possible as it should have halted with a syntax error"
-            data_type = DataTypeToken.get_data_type_from_name(attribute.get_content())
-        elif attribute.get_content() == 'const':
-            is_const = True
-        else:
-            NotImplementedError('This attribute is not supported yet')
-    assert data_type is not None and is_const is not None
-
-    return data_type, is_const
-
-
 class ASTVisitorResultingDataType(ASTBaseVisitor):
     """
     This visitor is used whenever the semantic analysis visitor needs to decide what the data type of the result
@@ -240,17 +218,17 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
     def visit_ast_variable_declaration(self, ast: ASTVariableDeclaration):
         symbol_table = self.get_last_symbol_table()
 
-        if symbol_table.lookup(ast.var_name.get_content()) is None:
-            data_type, is_const = divide_type_attributes(ast.type_attributes)
+        if symbol_table.lookup(ast.var_name_ast.get_content()) is None:
             symbol_table.insert_symbol(
-                SymbolTableElement(ast.var_name.get_content(), VariableSymbol(data_type, is_const, False)))
+                SymbolTableElement(ast.var_name_ast.get_content(),
+                                   VariableSymbol(ast.get_data_type(), ast.is_const(), False)))
         else:
             raise AlreadyDeclaredError(
-                "Variable with name '" + str(ast.var_name) + "' has already been declared in this scope!")
+                "Variable with name '" + str(ast.var_name_ast) + "' has already been declared in this scope!")
 
     def visit_ast_variable_declaration_and_init(self, ast: ASTVariableDeclarationAndInit):
         self.visit_ast_variable_declaration(ast)
-        variable_symbol = self.get_last_symbol_table().lookup_variable(ast.var_name.get_content())
+        variable_symbol = self.get_last_symbol_table().lookup_variable(ast.var_name_ast.get_content())
 
         # Do some semantic checks
         self.check_undeclared_variable_usage(ast.value)
@@ -258,8 +236,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         variable_symbol.initialized = True
 
-        data_type, is_const = divide_type_attributes(ast.type_attributes)
-        self.check_for_narrowing_result(data_type, ast.value)
+        self.check_for_narrowing_result(ast.get_data_type(), ast.value)
 
     # TODO implement this!
     def visit_ast_printf_instruction(self, ast: ASTPrintfInstruction):

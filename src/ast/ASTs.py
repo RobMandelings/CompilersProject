@@ -250,34 +250,77 @@ class ASTBinaryCompareExpression(ASTBinaryExpression, Tokenable):
 
 class ASTVariableDeclaration(AST):
 
-    def __init__(self, type_attributes: list, name: ASTLeaf):
+    def __init__(self, data_type_and_attributes: list, name: ASTLeaf):
         super().__init__('variable declaration')
+        data_type, data_type_and_attributes = self.divide_type_attributes(data_type_and_attributes)
+
+        self.data_type_ast = data_type
+        self.data_type_ast.parent = self
         self.type_attributes = list()
-        self.set_type_attributes(type_attributes)
         for attribute in self.type_attributes:
             attribute.parent = self
+        self.var_name_ast = name
+        self.var_name_ast.parent = self
 
-        self.var_name = name
-        self.var_name.parent = self
+    def is_const(self):
+        for attribute in self.type_attributes:
+            if isinstance(attribute, ASTTypeAttribute) and attribute.token == TypeAttributeToken.CONST:
+                return True
 
-    def set_type_attributes(self, type_attributes: list):
+        return False
+
+    def get_data_type(self):
         """
-        Performs a recursion to make sure the list only consists of ast elements within instead of other lists
+        Returns the token that represents the DataType of this variable (DataTypeToken)
+        """
+        assert isinstance(self.data_type_ast, ASTDataType)
+        return self.data_type_ast.token
+
+    def __remove_attributes_recursion(self, type_attributes: list, new_type_attributes: list):
+        """
+        Remove the recursion from the type attributes list (lists contained within the list), output value in out_type_attributes.
+        The recursion in the list is because the grammar is designed that way.
         """
         for attribute in type_attributes:
             if isinstance(attribute, list):
-                self.set_type_attributes(attribute)
+                self.__remove_attributes_recursion(attribute, new_type_attributes)
             else:
-                self.type_attributes.append(attribute)
+                new_type_attributes.append(attribute)
 
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_variable_declaration(self)
 
+    def divide_type_attributes(self, type_attributes: list):
+        """
+        Separates the type attributes from the list into a tuple of and ASTDataType and one or more ASTTypeAttributes
+        Returns: tuple (data_type, const)
+        """
+
+        new_type_attributes_list = list()
+        # First remove the recursion from the list
+        self.__remove_attributes_recursion(type_attributes, new_type_attributes_list)
+
+        data_type_ast = None
+        type_attribute_asts = list()
+        for attribute in new_type_attributes_list:
+            assert isinstance(attribute, AST)
+            if DataTypeToken.get_data_type_from_name(attribute.get_content()) is not None:
+                assert data_type_ast is None, "There are multiple datatypes defined. " \
+                                              "This should not be possible as it should have halted with a syntax error"
+                data_type_ast = ASTDataType(DataTypeToken.get_data_type_from_name(attribute.get_content()))
+            elif attribute.get_content() == 'const':
+                type_attribute_asts.append(ASTTypeAttribute(TypeAttributeToken.CONST))
+            else:
+                NotImplementedError('This attribute is not supported yet')
+        assert isinstance(data_type_ast, ASTDataType)
+
+        return data_type_ast, type_attribute_asts
+
 
 class ASTVariableDeclarationAndInit(ASTVariableDeclaration):
 
-    def __init__(self, type_attributes: list, name: ASTLeaf, value: AST):
-        super().__init__(type_attributes, name)
+    def __init__(self, data_type_and_attributes: list, name: ASTLeaf, value: AST):
+        super().__init__(data_type_and_attributes, name)
         self.content += ' and init'
         self.value = value
         self.value.parent = self

@@ -30,19 +30,19 @@ def create_ast_from_concrete_syntax_tree(cst, lexer: CLexer):
         return ast_prinf_instruction
     elif isinstance(cst, CParser.VarDeclarationContext):
 
-        type_attributes = create_ast_from_concrete_syntax_tree(cst.children[0], lexer)
-        assert isinstance(type_attributes, list)
+        data_type_and_attributes = create_ast_from_concrete_syntax_tree(cst.children[0], lexer)
+        assert isinstance(data_type_and_attributes, list)
 
         if isinstance(cst.children[1], CParser.VarInitContext):
 
             name_and_value = create_ast_from_concrete_syntax_tree(cst.children[1], lexer)
             assert isinstance(name_and_value, list) and len(name_and_value) == 2
 
-            return ASTVariableDeclarationAndInit(type_attributes, name_and_value[0], name_and_value[1])
+            return ASTVariableDeclarationAndInit(data_type_and_attributes, name_and_value[0], name_and_value[1])
         else:
 
             name = create_ast_from_concrete_syntax_tree(cst.children[1], lexer)
-            return ASTVariableDeclaration(type_attributes, name)
+            return ASTVariableDeclaration(data_type_and_attributes, name)
     elif isinstance(cst, CParser.VarInitContext):
         children_to_return = list()
         children_to_return.append(create_ast_from_concrete_syntax_tree(cst.children[0], lexer))

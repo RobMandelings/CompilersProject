@@ -59,15 +59,14 @@ class ASTBaseVisitor(IASTVisitor):
 
     def visit_ast_variable_declaration(self, ast: ASTVariableDeclaration):
         assert isinstance(ast, ASTVariableDeclaration), "The AST is not an ASTVariableDeclaration"
+        ast.data_type_ast.accept(self)
         for attribute in ast.type_attributes:
             attribute.accept(self)
-        ast.var_name.accept(self)
+        ast.var_name_ast.accept(self)
 
     def visit_ast_variable_declaration_and_init(self, ast: ASTVariableDeclarationAndInit):
         assert isinstance(ast, ASTVariableDeclarationAndInit), "The AST is not an ASTVariableDeclarationAndInit"
-        for attribute in ast.type_attributes:
-            attribute.accept(self)
-        ast.var_name.accept(self)
+        self.visit_ast_variable_declaration(ast)
         ast.value.accept(self)
 
     def visit_ast_printf_instruction(self, ast: ASTPrintfInstruction):
