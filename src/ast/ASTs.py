@@ -252,7 +252,7 @@ class ASTVariableDeclaration(AST):
 
     def __init__(self, data_type_and_attributes: list, name: ASTLeaf):
         super().__init__('variable declaration')
-        data_type, data_type_and_attributes = self.divide_type_attributes(data_type_and_attributes)
+        data_type, data_type_and_attributes = self.__divide_type_attributes(data_type_and_attributes)
 
         self.data_type_ast = data_type
         self.data_type_ast.parent = self
@@ -274,7 +274,10 @@ class ASTVariableDeclaration(AST):
         Returns the token that represents the DataType of this variable (DataTypeToken)
         """
         assert isinstance(self.data_type_ast, ASTDataType)
-        return self.data_type_ast.token
+        return self.data_type_ast.get_token()
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_variable_declaration(self)
 
     def __remove_attributes_recursion(self, type_attributes: list, new_type_attributes: list):
         """
@@ -287,10 +290,7 @@ class ASTVariableDeclaration(AST):
             else:
                 new_type_attributes.append(attribute)
 
-    def accept(self, visitor: IASTVisitor):
-        visitor.visit_ast_variable_declaration(self)
-
-    def divide_type_attributes(self, type_attributes: list):
+    def __divide_type_attributes(self, type_attributes: list):
         """
         Separates the type attributes from the list into a tuple of and ASTDataType and one or more ASTTypeAttributes
         Returns: tuple (data_type, const)
