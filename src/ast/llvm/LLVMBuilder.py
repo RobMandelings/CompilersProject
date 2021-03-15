@@ -13,18 +13,18 @@ class LLVMBuilder:
         """
         """
 
-        if isinstance(ast, ASTBinaryExpression):
+        if isinstance(ast, ASTBinaryArithmeticExpression):
             left_register = self._compute_expression(ast.left)
             right_register = self._compute_expression(ast.right)
 
             operation_string = None
-            if ast.get_token_type() == TokenType.ADD_EXPRESSION:
+            if ast.get_token() == BinaryArithmeticExprToken.ADD_EXPRESSION:
                 operation_string = 'add'
-            elif ast.get_token_type() == TokenType.SUB_EXPRESSION:
+            elif ast.get_token() == BinaryArithmeticExprToken.SUB_EXPRESSION:
                 operation_string = 'sub'
-            elif ast.get_token_type() == TokenType.MUL_EXPRESSION:
+            elif ast.get_token() == BinaryArithmeticExprToken.MUL_EXPRESSION:
                 operation_string = 'mul'
-            elif ast.get_token_type() == TokenType.DIV_EXPRESSION:
+            elif ast.get_token() == BinaryArithmeticExprToken.DIV_EXPRESSION:
                 # TODO sdiv or udiv?
                 operation_string = 'sdiv'
             else:
@@ -36,10 +36,23 @@ class LLVMBuilder:
 
             assert operation_string is not None
 
-        elif isinstance(ast, ASTLeaf):
+        elif isinstance(ast, ASTUnaryExpression):
+
+            if ast.get_token() == UnaryExprToken.UNARY_PLUS_EXPRESSION:
+                factor = 1
+            elif ast.get_token() == UnaryExprToken.UNARY_MINUS_EXPRESSION:
+                factor = -1
+            else:
+                raise NotImplementedError
+
+            value_register = self._compute_expression(ast.value_applied_to)
+
+            self.instructions.append(f"%{self.register_count} = mul i32 {factor}, {value_register}")
+
+        elif isinstance(ast, ASTLiteral):
             # Generate a single instructions and return the register for this instruction
-            if ast.get_token_type() == TokenType.INT_LITERAL:
-                value = int(ast.get_token_content())
+            if ast.get_token() == LiteralToken.INT_LITERAL:
+                value = int(ast.get_content())
                 self.instructions.append(f"%{self.register_count} = add i32 0, {value}")
 
             else:

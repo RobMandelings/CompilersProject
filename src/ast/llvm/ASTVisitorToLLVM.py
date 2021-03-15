@@ -17,15 +17,15 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
         raise NotImplementedError
 
     def visit_ast_assignment_expression(self, ast: ASTAssignmentExpression):
-        identifier = ast.left.get_token_content()
+        identifier = ast.left.get_content()
         self.llvm_builder.assign_value_to_variable(identifier, ast.right)
 
     def visit_ast_variable_declaration_and_init(self, ast: ASTVariableDeclarationAndInit):
-        identifier = ast.var_name.get_token_content()
+        identifier = ast.var_name.get_content()
         self.llvm_builder.assign_value_to_variable(identifier, ast.value)
 
     def visit_ast_printf_instruction(self, ast: ASTPrintfInstruction):
-        self.llvm_builder.print_variable(ast.get_token_content())
+        self.llvm_builder.print_variable(ast.get_content())
 
     def visit_ast_variable_declaration(self, ast: ASTVariableDeclaration):
         super().visit_ast_variable_declaration(ast)

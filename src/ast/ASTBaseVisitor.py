@@ -15,8 +15,12 @@ class ASTBaseVisitor(IASTVisitor):
         assert isinstance(ast, ASTLiteral), "The AST is not an ASTLiteral"
         self.visit_ast_leaf(ast)
 
-    def visit_ast_type(self, ast: ASTType):
-        assert isinstance(ast, ASTType)
+    def visit_ast_data_type(self, ast: ASTDataType):
+        assert isinstance(ast, ASTDataType)
+        self.visit_ast_leaf(ast)
+
+    def visit_ast_type_attribute(self, ast: ASTTypeAttribute):
+        assert isinstance(ast, ASTTypeAttribute)
         self.visit_ast_leaf(ast)
 
     def visit_ast_identifier(self, ast: ASTIdentifier):

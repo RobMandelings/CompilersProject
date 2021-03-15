@@ -15,7 +15,11 @@ class IASTVisitor:
         pass
 
     @abstractmethod
-    def visit_ast_type(self, ast):
+    def visit_ast_data_type(self, ast):
+        pass
+
+    @abstractmethod
+    def visit_ast_type_attribute(self, ast):
         pass
 
     @abstractmethod

@@ -1,4 +1,6 @@
-from src.ast.ASTToken import *
+from abc import abstractmethod
+
+from src.ast.ASTTokens import *
 from src.ast.IAstVisitor import IASTVisitor
 
 
@@ -27,6 +29,16 @@ class AST:
         return self.content
 
 
+class Tokenable:
+    """
+    Interface which provides a get_token method for the ASTs which contain tokens
+    """
+
+    @abstractmethod
+    def get_token(self):
+        pass
+
+
 class ASTLeaf(AST):
 
     def __init__(self, content: str):
@@ -37,13 +49,14 @@ class ASTLeaf(AST):
         visitor.visit_ast_leaf(self)
 
 
-class ASTLiteral(ASTLeaf):
+class ASTLiteral(ASTLeaf, Tokenable):
 
-    def __init__(self, token: ASTLiteralToken, content: str):
+    def __init__(self, token: LiteralToken, content: str):
         super().__init__(content)
         self.token = token
 
     def get_token(self):
+        assert isinstance(self.token, LiteralToken)
         return self.token
 
     def accept(self, visitor: IASTVisitor):
@@ -51,28 +64,48 @@ class ASTLiteral(ASTLeaf):
         visitor.visit_ast_literal(self)
 
 
-class ASTType(ASTLeaf):
+class ASTDataType(ASTLeaf, Tokenable):
 
-    def __init__(self, token: ASTTypeToken):
+    def __init__(self, token: DataTypeToken):
         content = None
-        if token == ASTTypeToken.CHAR_TYPE:
+        if token == DataTypeToken.CHAR:
             content = 'char'
-        elif token == ASTTypeToken.INT_TYPE:
+        elif token == DataTypeToken.INT:
             content = 'int'
-        elif token == ASTTypeToken.FLOAT_TYPE:
+        elif token == DataTypeToken.FLOAT:
             content = 'float'
-        elif token == ASTTypeToken.CONST_TYPE:
+        elif token == DataTypeToken.CONST_TYPE:
             content = 'const'
         assert content is not None
         super().__init__(content)
         self.token = token
 
     def get_token(self):
+        assert isinstance(self.token, DataTypeToken)
         return self.token
 
     def accept(self, visitor: IASTVisitor):
         assert isinstance(visitor, IASTVisitor)
-        visitor.visitast_type(self)
+        visitor.visit_ast_data_type(self)
+
+
+class ASTTypeAttribute(ASTLeaf, Tokenable):
+
+    def __init__(self, token: TypeAttributeToken):
+        content = None
+        if token == TypeAttributeToken.CONST:
+            content = 'const'
+        assert content is not None
+        super().__init__(content)
+        self.token = token
+
+    def get_token(self):
+        assert isinstance(self.token, TypeAttributeToken)
+        return self.token
+
+    def accept(self, visitor: IASTVisitor):
+        assert isinstance(visitor, IASTVisitor)
+        visitor.visit_ast_data_type(self)
 
 
 class ASTIdentifier(ASTLeaf):
@@ -104,13 +137,29 @@ class ASTInternal(AST):
             self.children.append(child)
 
 
-class ASTUnaryExpression(AST):
+class ASTUnaryExpression(AST, Tokenable):
 
-    def __init__(self, content: str, token: ASTUnaryExpressionToken, value_applied_to: AST):
+    def __init__(self, token: UnaryExprToken, value_applied_to: AST):
+        if token == UnaryExprToken.UNARY_PLUS_EXPRESSION:
+            content = '+'
+        elif token == UnaryExprToken.UNARY_MINUS_EXPRESSION:
+            content = '-'
+        elif token == UnaryExprToken.DEREFERENCE_EXPRESSION:
+            content = '*'
+        elif token == UnaryExprToken.ADDRESS_EXPRESSION:
+            content = '&'
+        else:
+            raise NotImplementedError
+
         super().__init__(content)
         # The value this unary expression is applied to
         self.value_applied_to = value_applied_to
         self.value_applied_to.parent = self
+        self.token = token
+
+    def get_token(self):
+        assert isinstance(self.token, UnaryExprToken)
+        return self.token
 
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_unary_expression(self)
@@ -153,38 +202,47 @@ class ASTAssignmentExpression(ASTBinaryExpression):
         return self.left
 
 
-class ASTBinaryArithmeticExpression(ASTBinaryExpression):
+class ASTBinaryArithmeticExpression(ASTBinaryExpression, Tokenable):
 
-    def __init__(self, token: ASTBinaryArithmeticExprToken, left: AST, right: AST):
+    def __init__(self, token: BinaryArithmeticExprToken, left: AST, right: AST):
         content = None
-        if token == ASTBinaryArithmeticExprToken.ADD_EXPRESSION:
+        if token == BinaryArithmeticExprToken.ADD_EXPRESSION:
             content = '+'
-        elif token == ASTBinaryArithmeticExprToken.SUB_EXPRESSION:
+        elif token == BinaryArithmeticExprToken.SUB_EXPRESSION:
             content = '-'
-        elif token == ASTBinaryArithmeticExprToken.MUL_EXPRESSION:
+        elif token == BinaryArithmeticExprToken.MUL_EXPRESSION:
             content = '*'
-        elif token == ASTBinaryArithmeticExprToken.DIV_EXPRESSION:
+        elif token == BinaryArithmeticExprToken.DIV_EXPRESSION:
             content = '/'
         assert content is not None
-
         super().__init__(content, left, right)
+        self.token = token
+
+    def get_token(self):
+        assert isinstance(self.token, BinaryArithmeticExprToken)
+        return self.token
 
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_binary_arithmetic_expression(self)
 
 
-class ASTBinaryCompareExpression(ASTBinaryExpression):
+class ASTBinaryCompareExpression(ASTBinaryExpression, Tokenable):
 
-    def __init__(self, token: ASTBinaryCompareExprToken, left: AST, right: AST):
+    def __init__(self, token: BinaryCompareExprToken, left: AST, right: AST):
         content = None
-        if token == ASTBinaryCompareExprToken.LESS_THAN_EXPRESSION:
+        if token == BinaryCompareExprToken.LESS_THAN_EXPRESSION:
             content = '<'
-        elif token == ASTBinaryCompareExprToken.GREATER_THAN_EXPRESSION:
+        elif token == BinaryCompareExprToken.GREATER_THAN_EXPRESSION:
             content = '>'
-        elif token == ASTBinaryCompareExprToken.EQUALS_EXPRESSION:
+        elif token == BinaryCompareExprToken.EQUALS_EXPRESSION:
             content = '=='
         assert content is not None
         super().__init__(content, left, right)
+        self.token = token
+
+    def get_token(self):
+        assert isinstance(self.token, BinaryCompareExprToken)
+        return self.token
 
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_binary_compare_expression(self)

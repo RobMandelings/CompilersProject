@@ -1,45 +1,4 @@
-from enum import Enum
-
-from src.ast.ASTs import TokenType
-
-
-class DataType(Enum):
-    CHAR = 0
-    INT = 1
-    FLOAT = 2
-
-    @staticmethod
-    def get_data_type_from_name(name: str):
-        if name == 'int':
-            return DataType.INT
-        elif name == 'float':
-            return DataType.FLOAT
-        elif name == 'double':
-            return DataType.DOUBLE
-        elif name == 'char':
-            return DataType.CHAR
-        else:
-            return None
-
-    @staticmethod
-    def get_data_type_for_token_type(token_type: TokenType):
-        if token_type == TokenType.CHAR_TYPE or token_type == TokenType.CHAR_LITERAL:
-            return DataType.CHAR
-        elif token_type == TokenType.INT_TYPE or token_type == TokenType.INT_LITERAL:
-            return DataType.INT
-        elif token_type == TokenType.FLOAT_TYPE or token_type == TokenType.FLOAT_LITERAL:
-            return DataType.FLOAT
-        else:
-            raise NotImplementedError("Cannot convert the given tokentype ' " + str(token_type) + "' to a datatype")
-
-
-def is_richer_than(datatype1: DataType, datatype2: DataType):
-    """
-    Must be placed outside the DataType class because it would not be fully 'defined' when setting the expected parameter types, weird stuff
-    """
-    assert isinstance(datatype1, DataType), "Given datatype1 is not an instance of DataType"
-    assert isinstance(datatype2, DataType), "Given datatype2 is not an instance of DataType"
-    return datatype1.value > datatype2.value
+from src.ast.ASTTokens import DataTypeToken
 
 
 class Symbol:
@@ -50,14 +9,14 @@ class Symbol:
 
 class VariableSymbol(Symbol):
 
-    def __init__(self, data_type: DataType, const, initialized):
+    def __init__(self, data_type: DataTypeToken, const, initialized):
         super().__init__()
         self.data_type = data_type
         self.const = const
         self.initialized = initialized
 
     def get_data_type(self):
-        assert isinstance(self.data_type, DataType)
+        assert isinstance(self.data_type, DataTypeToken)
         return self.data_type
 
     def is_const(self):

@@ -1,4 +1,4 @@
-from src.ast.ASTToken import TokenType, ASTToken
+from src.ast.ASTTokens import TokenType, ASTToken
 from src.ast.ASTBaseVisitor import ASTBaseVisitor
 from src.ast.ASTs import ASTBinaryExpression, ASTLeaf, ASTInternal, ASTVariableDeclaration, \
     ASTVariableDeclarationAndInit

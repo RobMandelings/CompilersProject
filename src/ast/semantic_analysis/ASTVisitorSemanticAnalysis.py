@@ -1,5 +1,6 @@
 from src.ast.ASTBaseVisitor import ASTBaseVisitor
 from src.ast.ASTs import *
+from src.ast.ASTTokens import *
 from src.ast.semantic_analysis.SymbolTable import *
 
 
@@ -32,11 +33,11 @@ def divide_type_attributes(type_attributes: list):
     is_const = False
     for attribute in type_attributes:
         assert isinstance(attribute, AST)
-        if DataType.get_data_type_from_name(attribute.get_token_content()) is not None:
+        if DataTypeToken.get_data_type_from_name(attribute.get_content()) is not None:
             assert data_type is None, "There are multiple datatypes defined. " \
                                       "This should not be possible as it should have halted with a syntax error"
-            data_type = DataType.get_data_type_from_name(attribute.get_token_content())
-        elif attribute.get_token_content() == 'const':
+            data_type = DataTypeToken.get_data_type_from_name(attribute.get_content())
+        elif attribute.get_content() == 'const':
             is_const = True
         else:
             NotImplementedError('This attribute is not supported yet')
@@ -70,22 +71,23 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
         if self.resulting_data_type is None:
             self.resulting_data_type = other_data_type
         else:
-            if is_richer_than(other_data_type, self.resulting_data_type):
+            if DataTypeToken.is_richer_than(other_data_type, self.resulting_data_type):
                 self.resulting_data_type = other_data_type
 
     def visit_ast_literal(self, ast: ASTLiteral):
-        if ast.token.token_type == TokenType.IDENTIFIER:
-            variable = self.last_symbol_table.lookup_variable(ast.get_token_content())
-            assert variable.is_initialized()
-            self.update_current_data_type(variable.data_type)
-        elif ast.token.token_type == TokenType.INT_LITERAL:
-            self.update_current_data_type(DataType.INT)
-        elif ast.token.token_type == TokenType.FLOAT_LITERAL:
-            self.update_current_data_type(DataType.FLOAT)
-        elif ast.token.token_type == TokenType.CHAR_LITERAL:
-            self.update_current_data_type(DataType.CHAR)
+        if ast.get_token() == LiteralToken.CHAR_LITERAL:
+            self.update_current_data_type(DataTypeToken.CHAR)
+        elif ast.get_token() == LiteralToken.INT_LITERAL:
+            self.update_current_data_type(DataTypeToken.INT)
+        elif ast.get_token() == LiteralToken.FLOAT_LITERAL:
+            self.update_current_data_type(DataTypeToken.FLOAT)
         else:
-            raise NotImplementedError(f"Token type '{ast.token.token_type}' not recognized as literal")
+            raise NotImplementedError(f"Token type '{ast.get_token()}' not recognized as literal")
+
+    def visit_ast_identifier(self, ast: ASTIdentifier):
+        variable = self.last_symbol_table.lookup_variable(ast.get_content())
+        assert variable.is_initialized()
+        self.update_current_data_type(variable.data_type)
 
 
 class ASTVisitorUndeclaredVariableUsed(ASTBaseVisitor):
@@ -99,11 +101,10 @@ class ASTVisitorUndeclaredVariableUsed(ASTBaseVisitor):
         self.undeclared_variables_used = list()
         assert last_symbol_table is not None
 
-    def visit_ast_leaf(self, ast):
-        if ast.token.token_type == TokenType.IDENTIFIER:
-            table_element = self.last_symbol_table.lookup(ast.get_token_content())
-            if not table_element:
-                self.undeclared_variables_used.append(ast)
+    def visit_ast_identifier(self, ast: ASTIdentifier):
+        table_element = self.last_symbol_table.lookup(ast.get_content())
+        if not table_element:
+            self.undeclared_variables_used.append(ast)
 
 
 class ASTVisitorUninitializedVariableUsed(ASTBaseVisitor):
@@ -117,14 +118,14 @@ class ASTVisitorUninitializedVariableUsed(ASTBaseVisitor):
         self.uninitialized_variables_used = list()
         assert last_symbol_table is not None
 
-    def visit_ast_leaf(self, ast):
-        if ast.token.token_type == TokenType.IDENTIFIER:
-            table_element = self.last_symbol_table.lookup(ast.get_token_content())
-            if table_element:
-                assert isinstance(table_element, SymbolTableElement)
-                assert isinstance(table_element.symbol, VariableSymbol)
-                if not table_element.symbol.is_initialized():
-                    self.uninitialized_variables_used.append(ast)
+    def visit_ast_identifier(self, ast: ASTIdentifier):
+        super().visit_ast_identifier(ast)
+        table_element = self.last_symbol_table.lookup(ast.get_content())
+        if table_element:
+            assert isinstance(table_element, SymbolTableElement)
+            assert isinstance(table_element.symbol, VariableSymbol)
+            if not table_element.symbol.is_initialized():
+                self.uninitialized_variables_used.append(ast)
 
 
 class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
@@ -154,7 +155,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         assert isinstance(symbol_table, SymbolTable)
         return symbol_table
 
-    def check_for_narrowing_result(self, declared_data_type: DataType, ast: AST):
+    def check_for_narrowing_result(self, declared_data_type: DataTypeToken, ast: AST):
         """
         Checks if the result would be narrowed down into another data type (e.g. float to int). If so, warn to the log
         PRE-CONDITION: All variables need to be declared and initialized in order for lookups to work
@@ -165,18 +166,18 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         # This is the data type that was declared in the input program
 
-        if declared_data_type != resulting_data_type_visitor.resulting_data_type and not is_richer_than(
+        if declared_data_type != resulting_data_type_visitor.resulting_data_type and not DataTypeToken.is_richer_than(
                 declared_data_type, resulting_data_type_visitor.resulting_data_type):
             print(
                 "WARN: narrowing result of expression from datatype '" +
                 resulting_data_type_visitor.resulting_data_type.name + "' to datatype '" + declared_data_type.name + "'")
 
-    def check_rvalue_assignment(self, bin_expr: ASTBinaryExpression):
+    def check_r_value_assignment(self, bin_expr: ASTAssignmentExpression):
         # TODO Needs to be improved with derefencing and all that stuff
-        assert bin_expr.token.token_type == TokenType.ASSIGNMENT_EXPRESSION
 
-        if bin_expr.left.token.token_type == TokenType.CHAR_LITERAL or bin_expr.left.token.token_type == TokenType.INT_LITERAL or bin_expr.left.token.token_type == TokenType.FLOAT_LITERAL:
-            raise SemanticError("Assignment to an rValue (value is " + bin_expr.left.get_token_content() + ")")
+        if isinstance(bin_expr.left, ASTLiteral):
+            raise SemanticError(
+                f"Assignment to an R-VALUE of type {bin_expr.left.token.name} (value is {bin_expr.left.get_content()})")
 
     def check_undeclared_variable_usage(self, ast: AST):
 
@@ -187,7 +188,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
             error_text = ""
 
             for variable in undeclared_var_usage.undeclared_variables_used:
-                error_text += "Variable with name '" + variable.get_token_content() + "' is undeclared! \n"
+                error_text += "Variable with name '" + variable.get_content() + "' is undeclared! \n"
 
             raise SemanticError(error_text)
 
@@ -200,32 +201,26 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
             error_text = ""
 
             for variable in uninitialized_var_usage.uninitialized_variables_used:
-                error_text += "Variable with name '" + variable.get_token_content() + "' is found but uninitialized! \n"
+                error_text += "Variable with name '" + variable.get_content() + "' is found but uninitialized! \n"
 
             raise SemanticError(error_text)
 
-    def check_const_assignment(self, bin_expr: ASTBinaryExpression):
+    def check_const_assignment(self, bin_expr: ASTAssignmentExpression):
         """
         Checks if a variable being assigned a new value is const, and if so, raise a semantic error
         PRE-CONDITION: Variable must exist (check must have gone before)
         """
-        assert bin_expr.token.token_type == TokenType.ASSIGNMENT_EXPRESSION
 
-        symbol_element = self.get_last_symbol_table().lookup(bin_expr.left.get_token_content())
-        assert symbol_element
-        assert symbol_element.symbol and isinstance(symbol_element.symbol, VariableSymbol)
-
-        variable = symbol_element.symbol
+        variable = self.get_last_symbol_table().lookup_variable(bin_expr.left.get_content())
 
         if variable.const:
-            raise SemanticError("Cannot assign value to const variable '" + bin_expr.left.get_token_content() + "'")
+            raise SemanticError("Cannot assign value to const variable '" + bin_expr.left.get_content() + "'")
 
     def visit_ast_binary_expression(self, ast: ASTBinaryExpression):
-        # Do nothing
+        # Do nothing, just some optimization
         pass
 
     def visit_ast_assignment_expression(self, ast: ASTAssignmentExpression):
-        assert ast.token.token_type == TokenType.ASSIGNMENT_EXPRESSION
         symbol_table = self.get_last_symbol_table()
 
         # Do some semantic checks. If all checks don't raise any errors, continue on with the new value
@@ -233,7 +228,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         self.check_undeclared_variable_usage(ast.left)
         self.check_uninitialized_variable_usage(ast.right)
 
-        variable = symbol_table.lookup_variable(ast.left.get_token_content())
+        variable = symbol_table.lookup_variable(ast.left.get_content())
         if not variable.is_initialized():
             variable.initialized = True
 
@@ -245,17 +240,17 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
     def visit_ast_variable_declaration(self, ast: ASTVariableDeclaration):
         symbol_table = self.get_last_symbol_table()
 
-        if symbol_table.lookup(ast.var_name.get_token_content()) is None:
+        if symbol_table.lookup(ast.var_name.get_content()) is None:
             data_type, is_const = divide_type_attributes(ast.type_attributes)
             symbol_table.insert_symbol(
-                SymbolTableElement(ast.var_name.get_token_content(), VariableSymbol(data_type, is_const, False)))
+                SymbolTableElement(ast.var_name.get_content(), VariableSymbol(data_type, is_const, False)))
         else:
             raise AlreadyDeclaredError(
                 "Variable with name '" + str(ast.var_name) + "' has already been declared in this scope!")
 
     def visit_ast_variable_declaration_and_init(self, ast: ASTVariableDeclarationAndInit):
         self.visit_ast_variable_declaration(ast)
-        variable_symbol = self.get_last_symbol_table().lookup_variable(ast.var_name.get_token_content())
+        variable_symbol = self.get_last_symbol_table().lookup_variable(ast.var_name.get_content())
 
         # Do some semantic checks
         self.check_undeclared_variable_usage(ast.value)
