@@ -1,11 +1,12 @@
 from src.ast.ASTs import *
+from src.ast.llvm.LLVMSymbolTable import *
 
 
 class LLVMBuilder:
 
     def __init__(self):
         self.instructions = list()
-        self.symbol_table = dict()
+        self.symbol_table = LLVMSymbolTable()
         self.register_count = 0
         pass
 
@@ -67,12 +68,22 @@ class LLVMBuilder:
 
     # TODO also be able to print literals
     def print_variable(self, variable_name):
-        assert self.symbol_table[variable_name] is not None
+        variable = self.symbol_table.lookup_variable(variable_name)
+        assert variable is not None
         self.instructions.append(
-            f"call i32 (i8*, ...) @printf(i8* getelementptr inbounds([3 x i8], [3 x i8]* @.i, i64 0, i64 0), i32 {self.symbol_table[variable_name]})")
+            f"call i32 (i8*, ...) @printf(i8* getelementptr inbounds([3 x i8], [3 x i8]* @.i, i64 0, i64 0), i32 {variable})")
 
-    def assign_value_to_variable(self, variable_name: str, ast: AST):
-        self.symbol_table[variable_name] = self._compute_expression(ast)
+    def declare_variable(self, ast: ASTVariableDeclaration):
+        self.symbol_table.insert_symbol(
+            LLVMVariableSymbol(ast.var_name_ast.get_content(), ast.data_type_ast.get_token(), None))
+
+    def declare_and_init_variable(self, ast: ASTVariableDeclarationAndInit):
+        self.symbol_table.insert_symbol(
+            LLVMVariableSymbol(ast.var_name_ast.get_content(), ast.data_type_ast.get_token(),
+                               self._compute_expression(ast.value)))
+
+    def assign_value_to_variable(self, variable_name: str, value: AST):
+        self.symbol_table.lookup_variable(variable_name).set_current_register(self._compute_expression(value))
 
     def _generate_begin_of_file(self):
         begin_of_file = ""

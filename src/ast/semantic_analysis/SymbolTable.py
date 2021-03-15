@@ -33,7 +33,7 @@ class SymbolTable:
         self.parent = None
         self.symbols = dict()
 
-    def lookup_local(self, symbol: str):
+    def __lookup_local(self, symbol: str):
         lookup = self.symbols[symbol]
         assert lookup is None or isinstance(lookup, Symbol)
         return lookup

@@ -21,14 +21,13 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
         self.llvm_builder.assign_value_to_variable(identifier, ast.right)
 
     def visit_ast_variable_declaration_and_init(self, ast: ASTVariableDeclarationAndInit):
-        identifier = ast.var_name_ast.get_content()
-        self.llvm_builder.assign_value_to_variable(identifier, ast.value)
+        self.llvm_builder.declare_and_init_variable(ast)
+
+    def visit_ast_variable_declaration(self, ast: ASTVariableDeclaration):
+        self.llvm_builder.declare_variable(ast)
 
     def visit_ast_printf_instruction(self, ast: ASTPrintfInstruction):
         self.llvm_builder.print_variable(ast.get_content())
-
-    def visit_ast_variable_declaration(self, ast: ASTVariableDeclaration):
-        super().visit_ast_variable_declaration(ast)
 
     def to_file(self, output_filename: str):
         self.llvm_builder.to_file(output_filename)
