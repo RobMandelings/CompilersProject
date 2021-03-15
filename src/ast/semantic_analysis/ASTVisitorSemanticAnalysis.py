@@ -100,9 +100,9 @@ class ASTVisitorUninitializedVariableUsed(ASTBaseVisitor):
         super().visit_ast_identifier(ast)
         table_element = self.last_symbol_table.lookup(ast.get_content())
         if table_element:
-            assert isinstance(table_element, SymbolTableElement)
-            assert isinstance(table_element.symbol, VariableSymbol)
-            if not table_element.symbol.is_initialized():
+            assert isinstance(table_element, Symbol)
+            assert isinstance(table_element, VariableSymbol)
+            if not table_element.is_initialized():
                 self.uninitialized_variables_used.append(ast)
 
 
@@ -220,8 +220,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         if symbol_table.lookup(ast.var_name_ast.get_content()) is None:
             symbol_table.insert_symbol(
-                SymbolTableElement(ast.var_name_ast.get_content(),
-                                   VariableSymbol(ast.get_data_type(), ast.is_const(), False)))
+                VariableSymbol(ast.var_name_ast.get_content(), ast.get_data_type(), ast.is_const(), False))
         else:
             raise AlreadyDeclaredError(
                 "Variable with name '" + str(ast.var_name_ast) + "' has already been declared in this scope!")

@@ -3,14 +3,14 @@ from src.ast.ASTTokens import DataTypeToken
 
 class Symbol:
 
-    def __init__(self):
-        pass
+    def __init__(self, symbol_name: str):
+        self.symbol_name = symbol_name
 
 
 class VariableSymbol(Symbol):
 
-    def __init__(self, data_type: DataTypeToken, const, initialized):
-        super().__init__()
+    def __init__(self, symbol_name: str, data_type: DataTypeToken, const, initialized):
+        super().__init__(symbol_name)
         self.data_type = data_type
         self.const = const
         self.initialized = initialized
@@ -27,13 +27,6 @@ class VariableSymbol(Symbol):
         return self.initialized
 
 
-class SymbolTableElement:
-
-    def __init__(self, symbol_name: str, symbol: Symbol):
-        self.symbol_name = symbol_name
-        self.symbol = symbol
-
-
 class SymbolTable:
 
     def __init__(self):
@@ -42,7 +35,7 @@ class SymbolTable:
 
     def lookup_local(self, symbol: str):
         lookup = self.symbols[symbol]
-        assert lookup is None or isinstance(lookup, SymbolTableElement)
+        assert lookup is None or isinstance(lookup, Symbol)
         return lookup
 
     def lookup(self, symbol: str):
@@ -62,13 +55,13 @@ class SymbolTable:
         PRE-CONDITION: the symbol name given for lookup should result in a symbol which is actually a VariableSymbol.
         The semantic error checks should be executed before using this
         """
-        symbol_table_element = self.lookup(symbol)
-        assert isinstance(symbol_table_element, SymbolTableElement)
-        variable = symbol_table_element.symbol
+        symbol = self.lookup(symbol)
+        assert isinstance(symbol, Symbol)
+        variable = symbol
         assert isinstance(variable, VariableSymbol)
         return variable
 
-    def insert_symbol(self, symbol: SymbolTableElement):
+    def insert_symbol(self, symbol: Symbol):
         assert self.lookup(symbol.symbol_name) is None
         self.symbols[symbol.symbol_name] = symbol
         assert self.lookup(symbol.symbol_name) is not None
