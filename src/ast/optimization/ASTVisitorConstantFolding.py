@@ -1,11 +1,8 @@
-from src.ast.ASTTokens import TokenType, ASTToken
 from src.ast.ASTBaseVisitor import ASTBaseVisitor
-from src.ast.ASTs import ASTBinaryExpression, ASTLeaf, ASTInternal, ASTVariableDeclaration, \
-    ASTVariableDeclarationAndInit
-from src.ast.semantic_analysis.SymbolTable import is_richer_than, DataType
+from src.ast.ASTs import ASTBinaryExpression, ASTLeaf, ASTInternal, ASTVariableDeclarationAndInit
 
 
-class ASTVisitorConstantFolding(ASTBaseVisitor):
+class ASTVisitorOptimization(ASTBaseVisitor):
 
     def get_leaf_result(self, ast: ASTLeaf):
         value = ast.get_token_content()
