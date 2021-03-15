@@ -29,21 +29,14 @@ def main(argv):
         ast.accept(ast_visitor_dot)
         ast_visitor_dot.graph.render('output/ast.gv', view=False)
 
+        symbol_table_manager = do_semantic_analysis(ast)
+
         # ast_visitor_folding = ASTVisitorConstantFolding()
         # ast.accept(ast_visitor_folding)
         # ast_visitor_dot = ASTVisitorDot()
         # ast.accept(ast_visitor_dot)
         # ast_visitor_dot.graph.render('output/astfolded.gv', view=False)
 
-        ast_visitor_semantic_analysis = ASTVisitorSemanticAnalysis()
-        try:
-            ast.accept(ast_visitor_semantic_analysis)
-            print(str(ast))
-        except SemanticError as e:
-            print("A semantic error occurred: ")
-            print(e)
-            print("Stopping the compiler...")
-            sys.exit(0)
         print(argv[1])
 
         ast_visitor_to_llvm = ASTVisitorToLLVM()
@@ -53,6 +46,18 @@ def main(argv):
     except SyntaxError:
         print("Exiting program...", file=sys.stderr)
         sys.exit()
+
+
+def do_semantic_analysis(ast: AST):
+    ast_visitor_semantic_analysis = ASTVisitorSemanticAnalysis()
+    try:
+        ast.accept(ast_visitor_semantic_analysis)
+        return ast_visitor_semantic_analysis.symbol_table_manager
+    except SemanticError as e:
+        print("A semantic error occurred: ")
+        print(e)
+        print("Stopping the compiler...")
+        sys.exit(0)
 
 
 if __name__ == '__main__':
