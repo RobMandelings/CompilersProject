@@ -17,8 +17,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
         raise NotImplementedError
 
     def visit_ast_assignment_expression(self, ast: ASTAssignmentExpression):
-        identifier = ast.left.get_content()
-        self.llvm_builder.assign_value_to_variable(identifier, ast.right)
+        self.llvm_builder.assign_value_to_variable(ast)
 
     def visit_ast_variable_declaration_and_init(self, ast: ASTVariableDeclarationAndInit):
         self.llvm_builder.declare_and_init_variable(ast)
