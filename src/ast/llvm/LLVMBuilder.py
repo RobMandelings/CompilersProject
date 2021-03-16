@@ -54,7 +54,7 @@ class LLVMBuilder:
             else:
                 raise NotImplementedError
 
-            value_register = self._compute_expression(ast.value_applied_to_ast)
+            value_register = self._compute_expression(ast.value_applied_to)
 
             self.instructions.append(f"%{self.register_count} = fmul float {factor}, {value_register}")
 

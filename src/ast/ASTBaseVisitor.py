@@ -34,7 +34,7 @@ class ASTBaseVisitor(IASTVisitor):
 
     def visit_ast_unary_expression(self, ast: ASTUnaryExpression):
         assert isinstance(ast, ASTUnaryExpression), "The AST is not an ASTUnaryExpression"
-        ast.value_applied_to_ast.accept(self)
+        ast.value_applied_to.accept(self)
 
     def visit_ast_binary_expression(self, ast: ASTBinaryExpression):
         assert isinstance(ast, ASTBinaryExpression), "The AST is not an ASTBinaryExpression"

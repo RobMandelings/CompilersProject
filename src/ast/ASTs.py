@@ -153,8 +153,8 @@ class ASTUnaryExpression(AST, Tokenable):
 
         super().__init__(content)
         # The value this unary expression is applied to
-        self.value_applied_to_ast = value_applied_to
-        self.value_applied_to_ast.parent = self
+        self.value_applied_to = value_applied_to
+        self.value_applied_to.parent = self
         self.token = token
 
     def get_token(self):
