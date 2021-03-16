@@ -29,14 +29,14 @@ class AST:
         return self.content
 
 
-class HasDataType:
+class IHasDataType:
 
     @abstractmethod
     def get_data_type(self):
         pass
 
 
-class Tokenable:
+class IHasToken:
     """
     Interface which provides a get_token method for the ASTs which contain tokens
     """
@@ -69,13 +69,14 @@ class ASTLValue(ASTLeaf):
         visitor.visit_ast_identifier(self)
 
 
-class ASTRValue(ASTLeaf, Tokenable, HasDataType):
+class ASTRValue(ASTLeaf, IHasToken, IHasDataType):
     """
     Representation of an R-Value in an Abstract Syntax Tree
     Basically just literals, they don't refer to any location in memory (r-values)
     """
 
     def __init__(self, token: DataTypeToken, content: str):
+        assert isinstance(token, DataTypeToken)
         super().__init__(content)
         self.token = token
 
@@ -100,20 +101,10 @@ class ASTRValue(ASTLeaf, Tokenable, HasDataType):
             raise NotImplementedError
 
 
-class ASTDataType(ASTLeaf, Tokenable, HasDataType):
+class ASTDataType(ASTLeaf, IHasToken, IHasDataType):
 
     def __init__(self, token: DataTypeToken):
-        content = None
-        if token == DataTypeToken.CHAR:
-            content = 'char'
-        elif token == DataTypeToken.INT:
-            content = 'int'
-        elif token == DataTypeToken.FLOAT:
-            content = 'float'
-        elif token == DataTypeToken.CONST_TYPE:
-            content = 'const'
-        assert content is not None
-        super().__init__(content)
+        super().__init__(token.token_name)
         self.token = token
 
     def get_data_type(self):
@@ -128,14 +119,10 @@ class ASTDataType(ASTLeaf, Tokenable, HasDataType):
         visitor.visit_ast_data_type(self)
 
 
-class ASTTypeAttribute(ASTLeaf, Tokenable):
+class ASTTypeAttribute(ASTLeaf, IHasToken):
 
     def __init__(self, token: TypeAttributeToken):
-        content = None
-        if token == TypeAttributeToken.CONST:
-            content = 'const'
-        assert content is not None
-        super().__init__(content)
+        super().__init__(token.token_name)
         self.token = token
 
     def get_token(self):
@@ -167,35 +154,61 @@ class ASTInternal(AST):
             self.children.append(child)
 
 
-class ASTUnaryExpression(AST, Tokenable):
+class ASTUnaryExpression(AST):
 
-    def __init__(self, token: UnaryExprToken, value_applied_to: AST):
-        if token == UnaryExprToken.UNARY_PLUS_EXPRESSION:
-            content = '+'
-        elif token == UnaryExprToken.UNARY_MINUS_EXPRESSION:
-            content = '-'
-        elif token == UnaryExprToken.DEREFERENCE_EXPRESSION:
-            content = '*'
-        elif token == UnaryExprToken.ADDRESS_EXPRESSION:
-            content = '&'
-        else:
-            raise NotImplementedError
-
+    def __init__(self, content: str, value_applied_to: AST):
         super().__init__(content)
         # The value this unary expression is applied to
         self.value_applied_to = value_applied_to
         self.value_applied_to.parent = self
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_unary_expression(self)
+
+
+class ASTUnaryArithmeticExpression(ASTUnaryExpression, IHasToken):
+
+    def __init__(self, token: UnaryArithmeticExprToken, value_applied_to: AST):
+        super().__init__(token.token_name, value_applied_to)
         self.token = token
 
     def get_token(self):
-        assert isinstance(self.token, UnaryExprToken)
+        assert isinstance(self.token, UnaryArithmeticExprToken)
         return self.token
 
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_unary_expression(self)
 
 
-class ASTBinaryExpression(AST, HasDataType):
+class ASTPointerExpression(ASTUnaryExpression, IHasToken):
+
+    def __init__(self, token: UnaryArithmeticExprToken, value_applied_to: AST):
+        super().__init__(token.token_name, value_applied_to)
+        self.token = token
+
+    def get_token(self):
+        assert isinstance(self.token, UnaryArithmeticExprToken)
+        return self.token
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_unary_expression(self)
+
+
+class ASTUnaryPointerExpression(ASTUnaryExpression, IHasToken):
+
+    def __init__(self, token: UnaryArithmeticExprToken, value_applied_to: AST):
+        super().__init__(token.token_name, value_applied_to)
+        self.token = token
+
+    def get_token(self):
+        assert isinstance(self.token, UnaryArithmeticExprToken)
+        return self.token
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_unary_expression(self)
+
+
+class ASTBinaryExpression(AST, IHasDataType):
 
     def __init__(self, content: str, left: AST, right: AST):
         assert isinstance(left, AST) and isinstance(right, AST)
@@ -217,16 +230,17 @@ class ASTBinaryExpression(AST, HasDataType):
         visitor.visit_ast_binary_expression(self)
 
     def get_left(self):
-        assert isinstance(self.left, HasDataType)
+        assert isinstance(self.left, IHasDataType)
         return self.left
 
     def get_right(self):
-        assert isinstance(self.right, HasDataType)
+        assert isinstance(self.right, IHasDataType)
         return self.right
 
 
 class ASTAssignmentExpression(ASTBinaryExpression):
 
+    # TODO maybe later on +=, -=, *=, /= and %=
     def __init__(self, left: ASTLeaf, right: AST):
         assert isinstance(left, ASTLeaf)
         super().__init__('=', left, right)
@@ -242,20 +256,11 @@ class ASTAssignmentExpression(ASTBinaryExpression):
         return self.left
 
 
-class ASTBinaryArithmeticExpression(ASTBinaryExpression, Tokenable):
+class ASTBinaryArithmeticExpression(ASTBinaryExpression, IHasToken):
 
+    # TODO maybe later on also %
     def __init__(self, token: BinaryArithmeticExprToken, left: AST, right: AST):
-        content = None
-        if token == BinaryArithmeticExprToken.ADD_EXPRESSION:
-            content = '+'
-        elif token == BinaryArithmeticExprToken.SUB_EXPRESSION:
-            content = '-'
-        elif token == BinaryArithmeticExprToken.MUL_EXPRESSION:
-            content = '*'
-        elif token == BinaryArithmeticExprToken.DIV_EXPRESSION:
-            content = '/'
-        assert content is not None
-        super().__init__(content, left, right)
+        super().__init__(token.token_name, left, right)
         self.token = token
 
     def get_token(self):
@@ -266,27 +271,39 @@ class ASTBinaryArithmeticExpression(ASTBinaryExpression, Tokenable):
         visitor.visit_ast_binary_arithmetic_expression(self)
 
 
-class ASTBinaryRelationalExpression(ASTBinaryExpression, Tokenable):
+class ASTRelationalExpression(ASTBinaryExpression, IHasToken):
 
-    def __init__(self, token: BinaryCompareExprToken, left: AST, right: AST):
-        # TODO maybe soon also !=, <=, >=
-        content = None
-        if token == BinaryCompareExprToken.LESS_THAN_EXPRESSION:
-            content = '<'
-        elif token == BinaryCompareExprToken.GREATER_THAN_EXPRESSION:
-            content = '>'
-        elif token == BinaryCompareExprToken.EQUALS_EXPRESSION:
-            content = '=='
-        assert content is not None
-        super().__init__(content, left, right)
+    # TODO maybe soon also !=, <=, >=
+    def __init__(self, token: RelationalExprToken, left: AST, right: AST):
+        super().__init__(token.token_name, left, right)
         self.token = token
 
     def get_token(self):
-        assert isinstance(self.token, BinaryCompareExprToken)
+        assert isinstance(self.token, RelationalExprToken)
         return self.token
 
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_binary_compare_expression(self)
+
+
+class ASTLogicalExpression(ASTBinaryExpression, IHasToken):
+    """
+    TODO Binary Expression Node which represents the logical expressions &&, || and !
+    """
+
+    def __init__(self, token: LogicalExprToken, left: AST, right: AST):
+        super().__init__(token.token_name, left, right)
+        self.token = token
+
+
+class ASTBitwiseExpression(ASTBinaryExpression, IHasToken):
+    """
+    TODO Binary Expression Node which represents the bitwise expressions &, |, ^, ~, <<, >>
+    """
+
+    def __init__(self, token: BitwiseExprToken, left: AST, right: AST):
+        super().__init__(token.token_name, left, right)
+        self.token = token
 
 
 class ASTVariableDeclaration(AST):
@@ -345,10 +362,10 @@ class ASTVariableDeclaration(AST):
         type_attribute_asts = list()
         for attribute in new_type_attributes_list:
             assert isinstance(attribute, AST)
-            if DataTypeToken.get_data_type_from_name(attribute.get_content()) is not None:
+            if DataTypeToken.from_str(attribute.get_content()) is not None:
                 assert data_type_ast is None, "There are multiple datatypes defined. " \
                                               "This should not be possible as it should have halted with a syntax error"
-                data_type_ast = ASTDataType(DataTypeToken.get_data_type_from_name(attribute.get_content()))
+                data_type_ast = ASTDataType(DataTypeToken.from_str(attribute.get_content()))
             elif attribute.get_content() == 'const':
                 type_attribute_asts.append(ASTTypeAttribute(TypeAttributeToken.CONST))
             else:

@@ -1,16 +1,34 @@
-from enum import Enum, auto
+from abc import abstractmethod
+from enum import Enum
 
 
-class DataTypeToken(Enum):
+class NamedEnum(Enum):
+    def __new__(cls, *args, **kwargs):
+        value = len(cls.__members__) + 1
+        obj = object.__new__(cls)
+        obj._value_ = value
+        return obj
+
+    def __init__(self, token_name: str):
+        assert isinstance(token_name, str)
+        self.token_name = token_name
+
+    def __str__(self):
+        return self.token_name
+
+
+class DataTypeToken(NamedEnum):
     """
     Ordered from lowest precedence to highest precedence
     """
-    CHAR = auto()
-    INT = auto()
-    FLOAT = auto()
+    # Indicates the richness of the datatype, from low to high
+    _order_ = 'CHAR INT FLOAT'
+    CHAR = 'char'
+    INT = 'int'
+    FLOAT = 'float'
 
     @staticmethod
-    def get_data_type_from_name(name: str):
+    def from_str(name: str):
         if name == 'int':
             return DataTypeToken.INT
         elif name == 'float':
@@ -21,48 +39,131 @@ class DataTypeToken(Enum):
             return None
 
     @staticmethod
-    def get_data_type_for_token_type(token_type):
-        assert isinstance(token_type, DataTypeToken)
-        if token_type == DataTypeToken.CHAR:
-            return DataTypeToken.CHAR
-        elif token_type == DataTypeToken.INT:
-            return DataTypeToken.INT
-        elif token_type == DataTypeToken.FLOAT:
-            return DataTypeToken.FLOAT
-        else:
-            raise NotImplementedError(f"Datatype token {token_type.name} not recognized")
-
-    @staticmethod
     def is_richer_than(datatype1, datatype2):
         """
         Must be placed outside the DataType class because it would not be fully 'defined' when setting the expected parameter types, weird stuff
         """
-        if not isinstance(datatype1, DataTypeToken):
-            datatype1 = DataTypeToken.get_data_type_for_token_type(datatype1)
-        if not isinstance(datatype2, DataTypeToken):
-            datatype2 = DataTypeToken.get_data_type_for_token_type(datatype2)
         return datatype1.value > datatype2.value
 
 
-class TypeAttributeToken(Enum):
-    CONST = auto()
+class TypeAttributeToken(NamedEnum):
+    CONST = 'const'
+
+    @staticmethod
+    def from_str(name: str):
+
+        if name == 'const':
+            return DataTypeToken.CONST
+        else:
+            return None
 
 
-class UnaryExprToken(Enum):
-    UNARY_PLUS_EXPRESSION = auto()
-    UNARY_MINUS_EXPRESSION = auto()
-    DEREFERENCE_EXPRESSION = auto()
-    ADDRESS_EXPRESSION = auto()
+class UnaryArithmeticExprToken(NamedEnum):
+    PLUS = '+'
+    MINUS = '-'
+
+    @staticmethod
+    def from_str(name: str):
+
+        if name == '+':
+            return UnaryArithmeticExprToken.PLUS
+        elif name == '-':
+            return UnaryArithmeticExprToken.MINUS
+        else:
+            return None
 
 
-class BinaryArithmeticExprToken(Enum):
-    ADD_EXPRESSION = auto()
-    SUB_EXPRESSION = auto()
-    MUL_EXPRESSION = auto()
-    DIV_EXPRESSION = auto()
+class PointerExprToken(NamedEnum):
+    DEREFERENCE = '*'
+    ADDRESS = '&'
+
+    @staticmethod
+    def from_str(name: str):
+
+        if name == '*':
+            return PointerExprToken.PLUS
+        elif name == '&':
+            return PointerExprToken.MINUS
+        else:
+            return None
 
 
-class BinaryCompareExprToken(Enum):
-    GREATER_THAN_EXPRESSION = auto()
-    LESS_THAN_EXPRESSION = auto()
-    EQUALS_EXPRESSION = auto()
+class BinaryArithmeticExprToken(NamedEnum):
+    ADD = '+'
+    SUB = '-'
+    MUL = '*'
+    DIV = '/'
+    MOD = '%'
+
+    @staticmethod
+    def from_str(name: str):
+
+        if name == '+':
+            return BinaryArithmeticExprToken.ADD
+        elif name == '-':
+            return BinaryArithmeticExprToken.SUB
+        elif name == '*':
+            return BinaryArithmeticExprToken.MUL
+        elif name == '/':
+            return BinaryArithmeticExprToken.DIV
+        elif name == '%':
+            return BinaryArithmeticExprToken.MOD
+        else:
+            return None
+
+
+class LogicalExprToken(NamedEnum):
+    OR = '||'
+    AND = '&&'
+    NOT = '!'
+
+    @staticmethod
+    def from_str(name: str):
+        if name == '||':
+            return LogicalExprToken.OR
+        elif name == '&&':
+            return LogicalExprToken.AND
+        elif name == '!':
+            return LogicalExprToken.NOT
+        else:
+            return None
+
+
+class BitwiseExprToken(NamedEnum):
+    OR = '|'
+    AND = '&'
+
+    @staticmethod
+    def from_str(name: str):
+        if name == '|':
+            return BitwiseExprToken.OR
+        elif name == '&':
+            return BitwiseExprToken.AND
+        else:
+            return None
+
+
+class RelationalExprToken(NamedEnum):
+    GREATER_THAN = '>'
+    GREATER_THAN_OR_EQUALS = '>='
+    LESS_THAN = '<'
+    LESS_THAN_OR_EQUALS = '<='
+    EQUALS = '=='
+    NOT_EQUALS = '!='
+
+    @staticmethod
+    def from_str(name: str):
+        if name == '>':
+            return RelationalExprToken.GREATER_THAN
+        elif name == '>=':
+            return RelationalExprToken.GREATER_THAN_OR_EQUALS
+        elif name == '<':
+            return RelationalExprToken.LESS_THAN
+        elif name == '<=':
+            return RelationalExprToken.LESS_THAN_OR_EQUALS
+        elif name == '==':
+            return RelationalExprToken.EQUALS
+        elif name == '!=':
+            return RelationalExprToken.NOT_EQUALS
+        else:
+            return None

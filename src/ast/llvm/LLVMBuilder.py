@@ -27,13 +27,13 @@ class LLVMBuilder:
             right_register = self._compute_expression(ast.right)
 
             operation_string = None
-            if ast.get_token() == BinaryArithmeticExprToken.ADD_EXPRESSION:
+            if ast.get_token() == BinaryArithmeticExprToken.ADD:
                 operation_string = 'fadd'
-            elif ast.get_token() == BinaryArithmeticExprToken.SUB_EXPRESSION:
+            elif ast.get_token() == BinaryArithmeticExprToken.SUB:
                 operation_string = 'fsub'
-            elif ast.get_token() == BinaryArithmeticExprToken.MUL_EXPRESSION:
+            elif ast.get_token() == BinaryArithmeticExprToken.MUL:
                 operation_string = 'fmul'
-            elif ast.get_token() == BinaryArithmeticExprToken.DIV_EXPRESSION:
+            elif ast.get_token() == BinaryArithmeticExprToken.DIV:
                 # TODO sdiv or udiv?
                 operation_string = 'fdiv'
             else:
@@ -47,16 +47,22 @@ class LLVMBuilder:
 
         elif isinstance(ast, ASTUnaryExpression):
 
-            if ast.get_token() == UnaryExprToken.UNARY_PLUS_EXPRESSION:
-                factor = 1.0
-            elif ast.get_token() == UnaryExprToken.UNARY_MINUS_EXPRESSION:
-                factor = -1.0
+            if isinstance(ast, ASTUnaryArithmeticExpression):
+                if ast.get_token() == UnaryArithmeticExprToken.PLUS:
+                    factor = 1.0
+                elif ast.get_token() == UnaryArithmeticExprToken.MINUS:
+                    factor = -1.0
+                else:
+                    raise NotImplementedError
+
+                value_register = self._compute_expression(ast.value_applied_to)
+
+                self.instructions.append(f"%{self.register_count} = fmul float {factor}, {value_register}")
+
+            elif isinstance(ast, ASTUnaryPointerExpression):
+                pass
             else:
                 raise NotImplementedError
-
-            value_register = self._compute_expression(ast.value_applied_to)
-
-            self.instructions.append(f"%{self.register_count} = fmul float {factor}, {value_register}")
 
         elif isinstance(ast, ASTRValue):
             # Generate a single instructions and return the register for this instruction

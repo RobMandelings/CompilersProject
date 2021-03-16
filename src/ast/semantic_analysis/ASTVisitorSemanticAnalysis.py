@@ -156,26 +156,26 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
 
                 result = None
                 if isinstance(ast, ASTBinaryArithmeticExpression):
-                    if ast.get_token() == BinaryArithmeticExprToken.ADD_EXPRESSION:
+                    if ast.get_token() == BinaryArithmeticExprToken.ADD:
                         result = left_value + right_value
-                    elif ast.get_token() == BinaryArithmeticExprToken.SUB_EXPRESSION:
+                    elif ast.get_token() == BinaryArithmeticExprToken.SUB:
                         result = left_value - right_value
-                    elif ast.get_token() == BinaryArithmeticExprToken.DIV_EXPRESSION:
+                    elif ast.get_token() == BinaryArithmeticExprToken.DIV:
                         if resulting_data_type == DataTypeToken.CHAR or resulting_data_type == DataTypeToken.INT:
                             result = int(left_value / right_value)
                         else:
                             result = float(left_value / right_value)
-                    elif ast.get_token() == BinaryArithmeticExprToken.MUL_EXPRESSION:
+                    elif ast.get_token() == BinaryArithmeticExprToken.MUL:
                         result = left_value * right_value
                     else:
                         raise NotImplementedError
 
-                elif isinstance(ast, ASTBinaryRelationalExpression):
-                    if ast.get_token() == BinaryCompareExprToken.EQUALS_EXPRESSION:
+                elif isinstance(ast, ASTRelationalExpression):
+                    if ast.get_token() == RelationalExprToken.EQUALS:
                         result = left_value == right_value
-                    elif ast.get_token() == BinaryCompareExprToken.LESS_THAN_EXPRESSION:
+                    elif ast.get_token() == RelationalExprToken.LESS_THAN:
                         result = left_value < right_value
-                    elif ast.get_token() == BinaryCompareExprToken.GREATER_THAN_EXPRESSION:
+                    elif ast.get_token() == RelationalExprToken.GREATER_THAN:
                         result = left_value > right_value
                     else:
                         raise NotImplementedError
@@ -188,9 +188,9 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
             ast.value_applied_to = self.do_constant_folding(ast.value_applied_to)
 
             if isinstance(ast.value_applied_to, ASTRValue):
-                if ast.get_token() == UnaryExprToken.UNARY_PLUS_EXPRESSION:
+                if ast.get_token() == UnaryArithmeticExprToken.PLUS:
                     factor = 1
-                elif ast.get_token() == UnaryExprToken.UNARY_MINUS_EXPRESSION:
+                elif ast.get_token() == UnaryArithmeticExprToken.MINUS:
                     factor = -1
                 else:
                     raise NotImplementedError
@@ -264,14 +264,14 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                 declared_data_type, resulting_data_type_visitor.resulting_data_type):
             print(
                 "WARN: narrowing result of expression from datatype '" +
-                resulting_data_type_visitor.resulting_data_type.name + "' to datatype '" + declared_data_type.name + "'")
+                resulting_data_type_visitor.resulting_data_type.token_name + "' to datatype '" + declared_data_type.token_name + "'")
 
     def check_r_value_assignment(self, bin_expr: ASTAssignmentExpression):
         # TODO Needs to be improved with derefencing and all that stuff
 
         if isinstance(bin_expr.left, ASTRValue):
             raise SemanticError(
-                f"Assignment to an R-VALUE of type {bin_expr.left.token.name} (value is {bin_expr.left.get_content()})")
+                f"Assignment to an R-VALUE of type {bin_expr.left.token.token_name} (value is {bin_expr.left.get_content()})")
 
     def check_undeclared_variable_usage(self, ast: AST):
 
