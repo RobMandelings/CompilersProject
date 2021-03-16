@@ -25,7 +25,7 @@ class ASTVisitorDot(ASTBaseVisitor):
 
     def visit_ast_literal(self, ast: ASTLiteral):
         content = None
-        if ast.get_token() == LiteralToken.CHAR_LITERAL:
+        if ast.get_token() == DataTypeToken.CHAR:
             content = "'" + str(chr(int(ast.get_content()))) + "'"
 
         self.add_to_dot_node(ast, content)

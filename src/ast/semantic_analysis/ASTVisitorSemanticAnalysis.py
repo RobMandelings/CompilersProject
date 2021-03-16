@@ -55,11 +55,11 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
                 self.resulting_data_type = other_data_type
 
     def visit_ast_literal(self, ast: ASTLiteral):
-        if ast.get_token() == LiteralToken.CHAR_LITERAL:
+        if ast.get_token() == DataTypeToken.CHAR:
             self.update_current_data_type(DataTypeToken.CHAR)
-        elif ast.get_token() == LiteralToken.INT_LITERAL:
+        elif ast.get_token() == DataTypeToken.INT:
             self.update_current_data_type(DataTypeToken.INT)
-        elif ast.get_token() == LiteralToken.FLOAT_LITERAL:
+        elif ast.get_token() == DataTypeToken.FLOAT:
             self.update_current_data_type(DataTypeToken.FLOAT)
         else:
             raise NotImplementedError(f"Token type '{ast.get_token()}' not recognized as literal")
@@ -149,14 +149,10 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
 
             if isinstance(ast.left, ASTLiteral) and isinstance(ast.right, ASTLiteral):
 
-                # The richest token will be the new literal token
-                if DataTypeToken.is_richer_than(ast.left.token, ast.right.token):
-                    new_literal_token = ast.left.token
-                else:
-                    new_literal_token = ast.right.token
+                resulting_data_type = ast.get_data_type()
 
-                left_value = ast.left.get_content_depending_on_literal_token()
-                right_value = ast.right.get_content_depending_on_literal_token()
+                left_value = ast.left.get_content_depending_on_data_type()
+                right_value = ast.right.get_content_depending_on_data_type()
 
                 result = None
                 if isinstance(ast, ASTBinaryArithmeticExpression):
@@ -165,7 +161,10 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
                     elif ast.get_token() == BinaryArithmeticExprToken.SUB_EXPRESSION:
                         result = left_value - right_value
                     elif ast.get_token() == BinaryArithmeticExprToken.DIV_EXPRESSION:
-                        result = left_value / right_value
+                        if resulting_data_type == DataTypeToken.CHAR or resulting_data_type == DataTypeToken.INT:
+                            result = int(left_value / right_value)
+                        else:
+                            result = float(left_value / right_value)
                     elif ast.get_token() == BinaryArithmeticExprToken.MUL_EXPRESSION:
                         result = left_value * right_value
                     else:
@@ -182,7 +181,7 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
                         raise NotImplementedError
 
                 assert result is not None
-                return ASTLiteral(new_literal_token, str(result)).set_parent(ast.parent)
+                return ASTLiteral(resulting_data_type, str(result)).set_parent(ast.parent)
 
         elif isinstance(ast, ASTUnaryExpression):
 
@@ -198,7 +197,7 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
 
                 return ASTLiteral(ast.value_applied_to.token,
                                   str(
-                                      factor * ast.value_applied_to.get_content_depending_on_literal_token())).set_parent(
+                                      factor * ast.value_applied_to.get_content_depending_on_data_type())).set_parent(
                     ast.parent)
 
         return ast
@@ -224,11 +223,12 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
 
 class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
-    def __init__(self):
+    def __init__(self, optimize=False):
         super().__init__()
         self.symbol_table_stack = list()
         # TODO needs to be removed once the concept of 'blocks' is introduced
         self.create_symbol_table()
+        self.optimize = optimize
 
     def create_symbol_table(self):
         if len(self.symbol_table_stack) == 0:
@@ -335,7 +335,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         self.check_const_assignment(ast)
 
-        ast.right = self.optimize_expression(ast.get_right())
+        if self.optimize:
+            ast.right = self.optimize_expression(ast.get_right())
 
         variable = symbol_table.lookup_variable(ast.left.get_content())
         if not variable.is_initialized():
@@ -377,7 +378,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         variable_symbol.initialized = True
 
-        ast.value = self.optimize_expression(ast.value)
+        if self.optimize:
+            ast.value = self.optimize_expression(ast.value)
         variable_symbol.reaching_definition_ast = ast.value
 
         self.check_for_narrowing_result(ast.get_data_type(), ast.value)

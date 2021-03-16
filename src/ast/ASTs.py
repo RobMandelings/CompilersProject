@@ -29,6 +29,13 @@ class AST:
         return self.content
 
 
+class HasDataType:
+
+    @abstractmethod
+    def get_data_type(self):
+        pass
+
+
 class Tokenable:
     """
     Interface which provides a get_token method for the ASTs which contain tokens
@@ -49,31 +56,34 @@ class ASTLeaf(AST):
         visitor.visit_ast_leaf(self)
 
 
-class ASTLiteral(ASTLeaf, Tokenable):
+class ASTLiteral(ASTLeaf, Tokenable, HasDataType):
 
-    def __init__(self, token: LiteralToken, content: str):
+    def __init__(self, token: DataTypeToken, content: str):
         super().__init__(content)
         self.token = token
 
+    def get_data_type(self):
+        return self.token
+
     def get_token(self):
-        assert isinstance(self.token, LiteralToken)
+        assert isinstance(self.token, DataTypeToken)
         return self.token
 
     def accept(self, visitor: IASTVisitor):
         assert isinstance(visitor, IASTVisitor)
         visitor.visit_ast_literal(self)
 
-    def get_content_depending_on_literal_token(self):
-        if self.token == LiteralToken.CHAR_LITERAL or self.token == LiteralToken.INT_LITERAL:
+    def get_content_depending_on_data_type(self):
+        if self.token == DataTypeToken.CHAR or self.token == DataTypeToken.INT:
             # Both char and integers are integral types, so return an integer
-            return float(self.get_content())
-        elif self.token == LiteralToken.FLOAT_LITERAL:
+            return int(self.get_content())
+        elif self.token == DataTypeToken.FLOAT:
             return float(self.get_content())
         else:
             raise NotImplementedError
 
 
-class ASTDataType(ASTLeaf, Tokenable):
+class ASTDataType(ASTLeaf, Tokenable, HasDataType):
 
     def __init__(self, token: DataTypeToken):
         content = None
@@ -88,6 +98,9 @@ class ASTDataType(ASTLeaf, Tokenable):
         assert content is not None
         super().__init__(content)
         self.token = token
+
+    def get_data_type(self):
+        return self.token
 
     def get_token(self):
         assert isinstance(self.token, DataTypeToken)
@@ -174,7 +187,7 @@ class ASTUnaryExpression(AST, Tokenable):
         visitor.visit_ast_unary_expression(self)
 
 
-class ASTBinaryExpression(AST):
+class ASTBinaryExpression(AST, HasDataType):
 
     def __init__(self, content: str, left: AST, right: AST):
         assert isinstance(left, AST) and isinstance(right, AST)
@@ -184,13 +197,23 @@ class ASTBinaryExpression(AST):
         self.left.parent = self
         self.right.parent = self
 
+    def get_data_type(self):
+        left_data_type = self.get_left().get_data_type()
+        right_data_type = self.get_right().get_data_type()
+        if DataTypeToken.is_richer_than(left_data_type, right_data_type):
+            return left_data_type
+        else:
+            return right_data_type
+
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_binary_expression(self)
 
     def get_left(self):
+        assert isinstance(self.left, HasDataType)
         return self.left
 
     def get_right(self):
+        assert isinstance(self.right, HasDataType)
         return self.right
 
 

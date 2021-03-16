@@ -29,7 +29,7 @@ def main(argv):
         # ast.accept(ast_visitor_dot)
         # ast_visitor_dot.graph.render('output/ast.gv', view=False)
 
-        ast_visitor_semantic_analysis = ASTVisitorSemanticAnalysis()
+        ast_visitor_semantic_analysis = ASTVisitorSemanticAnalysis(optimize=True)
         try:
             ast.accept(ast_visitor_semantic_analysis)
 

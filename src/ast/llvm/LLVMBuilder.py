@@ -62,6 +62,10 @@ class LLVMBuilder:
             # Generate a single instructions and return the register for this instruction
             value = float(ast.get_content())
             self.instructions.append(f"%{self.register_count} = fadd float 0.0, {float(value)}")
+        elif isinstance(ast, ASTIdentifier):
+
+            variable = self.symbol_table.lookup_variable(ast.get_content())
+            return variable.get_current_register()
         else:
             raise NotImplementedError
 

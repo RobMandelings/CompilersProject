@@ -59,13 +59,12 @@ def create_ast_from_concrete_syntax_tree(cst, lexer: CLexer):
         if is_identifier(cst, lexer):
             return ASTIdentifier(cst.getSymbol().text)
         else:
-            literal_token = get_literal_token(cst, lexer)
-            data_type_token = get_data_type_token(cst)
+            data_type_token = get_data_type_token(cst, lexer)
             type_attribute_token = get_type_attribute_token(cst)
 
-            if literal_token is not None:
-                return ASTLiteral(literal_token, cst.getSymbol().text)
-            elif data_type_token is not None:
+            if is_literal(cst, lexer):
+                return ASTLiteral(data_type_token, cst.getSymbol().text)
+            elif is_type_declaration(cst):
                 return ASTDataType(data_type_token)
             elif type_attribute_token is not None:
                 return ASTTypeAttribute(type_attribute_token)
@@ -127,47 +126,40 @@ def contains_terminal_as_child(cst):
     return False
 
 
-def get_literal_token(cst: TerminalNodeImpl, lexer: CLexer):
-    assert isinstance(cst, TerminalNodeImpl)
-    token_type = None
-    symbol_type = cst.getSymbol().type
-    symbol_text = cst.getSymbol().text
-    if symbol_type == lexer.CHAR:
-        token_type = LiteralToken.CHAR_LITERAL
-        symbol_text = symbol_text.replace("\'", "")
-        char = list()
-        for c in symbol_text:
-            char.append(c)
-
-        assert len(char) == 1, "Character defined consists of multiple characters. This should not be possible"
-        # Store its value as an integer as its an integral type, much easier to work with afterwards.
-        # You can always reverse to char notation when visualising
-        symbol_text = str(ord(char[0]))
-    elif symbol_type == lexer.INTEGER:
-        token_type = LiteralToken.INT_LITERAL
-    elif symbol_type == lexer.DOUBLE:
-        token_type = LiteralToken.FLOAT_LITERAL
-
-    if token_type is not None:
-        return token_type
-    else:
-        return None
-
-
 def is_identifier(cst: TerminalNodeImpl, lexer: CLexer):
     assert isinstance(cst, TerminalNodeImpl)
     return cst.getSymbol().type == lexer.ID
 
 
-# Maybe merge 'type' and 'literal' together or something?
-def get_data_type_token(cst: TerminalNodeImpl):
+def is_literal(cst: TerminalNodeImpl, lexer: CLexer):
+    assert isinstance(cst, TerminalNodeImpl)
+    symbol_type = cst.getSymbol().type
+    if symbol_type == lexer.CHAR or symbol_type == lexer.INTEGER or symbol_type == lexer.DOUBLE:
+        return True
+
+    return False
+
+
+def is_type_declaration(cst: TerminalNodeImpl):
     assert isinstance(cst, TerminalNodeImpl)
     symbol_text = cst.getSymbol().text
-    if symbol_text == 'char':
+    # TODO Automatically by the grammar
+    if symbol_text == 'char' or symbol_text == 'int' or symbol_text == 'float':
+        return True
+
+    return False
+
+
+# Maybe merge 'type' and 'literal' together or something?
+def get_data_type_token(cst: TerminalNodeImpl, lexer: CLexer):
+    assert isinstance(cst, TerminalNodeImpl)
+    symbol_text = cst.getSymbol().text
+    symbol_type = cst.getSymbol().type
+    if symbol_text == 'char' or symbol_type == lexer.CHAR:
         return DataTypeToken.CHAR
-    if symbol_text == 'int':
+    if symbol_text == 'int' or symbol_type == lexer.INTEGER:
         return DataTypeToken.INT
-    if symbol_text == 'float':
+    if symbol_text == 'float' or symbol_type == lexer.DOUBLE:
         return DataTypeToken.FLOAT
 
     return None

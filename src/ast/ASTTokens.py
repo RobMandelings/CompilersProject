@@ -22,15 +22,15 @@ class DataTypeToken(Enum):
 
     @staticmethod
     def get_data_type_for_token_type(token_type):
-        assert isinstance(token_type, DataTypeToken) or isinstance(token_type, LiteralToken)
-        if token_type == DataTypeToken.CHAR or token_type == LiteralToken.CHAR_LITERAL:
+        assert isinstance(token_type, DataTypeToken)
+        if token_type == DataTypeToken.CHAR:
             return DataTypeToken.CHAR
-        elif token_type == DataTypeToken.INT or token_type == LiteralToken.INT_LITERAL:
+        elif token_type == DataTypeToken.INT:
             return DataTypeToken.INT
-        elif token_type == DataTypeToken.FLOAT or token_type == LiteralToken.FLOAT_LITERAL:
+        elif token_type == DataTypeToken.FLOAT:
             return DataTypeToken.FLOAT
         else:
-            raise NotImplementedError(f"Cannot convert the given tokentype '{token_type.name}' to a datatype token")
+            raise NotImplementedError(f"Datatype token {token_type.name} not recognized")
 
     @staticmethod
     def is_richer_than(datatype1, datatype2):
@@ -46,12 +46,6 @@ class DataTypeToken(Enum):
 
 class TypeAttributeToken(Enum):
     CONST = auto()
-
-
-class LiteralToken(Enum):
-    CHAR_LITERAL = auto()
-    INT_LITERAL = auto()
-    FLOAT_LITERAL = auto()
 
 
 class UnaryExprToken(Enum):
