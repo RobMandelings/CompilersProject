@@ -14,6 +14,7 @@ class VariableSymbol(Symbol):
         self.data_type = data_type
         self.const = const
         self.initialized = initialized
+        self.reaching_definition_ast = None
 
     def get_data_type(self):
         assert isinstance(self.data_type, DataTypeToken)
@@ -22,6 +23,12 @@ class VariableSymbol(Symbol):
     def is_const(self):
         assert isinstance(self.const, bool)
         return self.const
+
+    def has_reaching_defintion(self):
+        return self.reaching_definition_ast is not None
+
+    def get_reaching_definition(self):
+        return self.reaching_definition_ast
 
     def is_initialized(self):
         return self.initialized

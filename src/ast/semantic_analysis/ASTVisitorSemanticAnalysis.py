@@ -106,6 +106,116 @@ class ASTVisitorUninitializedVariableUsed(ASTBaseVisitor):
                 self.uninitialized_variables_used.append(ast)
 
 
+class ASTVisitorOptimizer(ASTBaseVisitor):
+    """
+    Pre-condition: The variables used in these expressions must exist (checks must be done beforehand in the semantical analyser)
+    """
+
+    def __init__(self, last_symbol_table: SymbolTable):
+        self.last_symbol_table = last_symbol_table
+        self.optimized_ast = None
+
+    def replace_identifier_if_applicable(self, ast: ASTIdentifier):
+        assert isinstance(ast, ASTIdentifier)
+
+    def do_constant_propagation(self, ast: AST):
+
+        if isinstance(ast, ASTBinaryExpression):
+            ast.left = self.do_constant_propagation(ast.left)
+            ast.right = self.do_constant_propagation(ast.right)
+        elif isinstance(ast, ASTUnaryExpression):
+            ast.value_applied_to = self.do_constant_propagation(ast.value_applied_to)
+        elif isinstance(ast, ASTIdentifier):
+            variable = self.last_symbol_table.lookup_variable(ast.get_content())
+            # The variable in the symbol table still has a reaching definition, so we can replace this variable with the reaching definition
+            if variable.has_reaching_defintion():
+                # Return the reaching definition instead of the variable
+                return variable.get_reaching_definition()
+
+        return ast
+
+    def do_constant_folding(self, ast: AST):
+
+        if isinstance(ast, ASTBinaryExpression):
+
+            ast.left = self.do_constant_folding(ast.left)
+            ast.right = self.do_constant_folding(ast.right)
+
+            if isinstance(ast.left, ASTLiteral) and isinstance(ast.right, ASTLiteral):
+
+                # The richest token will be the new literal token
+                if DataTypeToken.is_richer_than(ast.left.token, ast.right.token):
+                    new_literal_token = ast.left.token
+                else:
+                    new_literal_token = ast.right.token
+
+                left_value = ast.left.get_content_depending_on_literal_token()
+                right_value = ast.right.get_content_depending_on_literal_token()
+
+                result = None
+                if isinstance(ast, ASTBinaryArithmeticExpression):
+                    if ast.get_token() == BinaryArithmeticExprToken.ADD_EXPRESSION:
+                        result = left_value + right_value
+                    elif ast.get_token() == BinaryArithmeticExprToken.SUB_EXPRESSION:
+                        result = left_value - right_value
+                    elif ast.get_token() == BinaryArithmeticExprToken.DIV_EXPRESSION:
+                        result = left_value / right_value
+                    elif ast.get_token() == BinaryArithmeticExprToken.MUL_EXPRESSION:
+                        result = left_value * right_value
+                    else:
+                        raise NotImplementedError
+
+                elif isinstance(ast, ASTBinaryCompareExpression):
+                    if ast.get_token() == BinaryCompareExprToken.EQUALS_EXPRESSION:
+                        result = left_value == right_value
+                    elif ast.get_token() == BinaryCompareExprToken.LESS_THAN_EXPRESSION:
+                        result = left_value < right_value
+                    elif ast.get_token() == BinaryCompareExprToken.GREATER_THAN_EXPRESSION:
+                        result = left_value > right_value
+                    else:
+                        raise NotImplementedError
+
+                assert result is not None
+                return ASTLiteral(new_literal_token, str(result)).set_parent(ast.parent)
+
+        elif isinstance(ast, ASTUnaryExpression):
+
+            ast.value_applied_to = self.do_constant_folding(ast.value_applied_to)
+
+            if isinstance(ast.value_applied_to, ASTLiteral):
+                if ast.get_token() == UnaryExprToken.UNARY_PLUS_EXPRESSION:
+                    factor = 1
+                elif ast.get_token() == UnaryExprToken.UNARY_MINUS_EXPRESSION:
+                    factor = -1
+                else:
+                    raise NotImplementedError
+
+                return ASTLiteral(ast.value_applied_to.token,
+                                  str(
+                                      factor * ast.value_applied_to.get_content_depending_on_literal_token())).set_parent(
+                    ast.parent)
+
+        return ast
+
+    def optimize(self, ast: AST):
+        self.optimized_ast = ast
+        self.optimized_ast = self.do_constant_propagation(self.optimized_ast)
+        self.optimized_ast = self.do_constant_folding(self.optimized_ast)
+
+    def visit_ast_binary_expression(self, ast: ASTBinaryExpression):
+        self.optimize(ast)
+
+    def visit_ast_unary_expression(self, ast: ASTUnaryExpression):
+        self.optimize(ast)
+
+    def visit_ast_identifier(self, ast: ASTIdentifier):
+        self.optimize(ast)
+
+    def visit_ast_literal(self, ast: ASTLiteral):
+        # Do nothing, literals can't be optimized
+        self.optimized_ast = ast
+
+
 class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
     def __init__(self):
@@ -198,6 +308,17 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         # Do nothing, just some optimization
         pass
 
+    def optimize_expression(self, ast: AST):
+        """
+        Optimizes an expression using constant propagation and constant folding
+        Constant propagation: replaces the variables, if possible, with their corresponding literals (reaching definition)
+        Constant folding: folds literal expressions with nodes containing the results
+        """
+
+        optimizer_visitor = ASTVisitorOptimizer(self.get_last_symbol_table())
+        ast.accept(optimizer_visitor)
+        return optimizer_visitor.optimized_ast
+
     def visit_ast_assignment_expression(self, ast: ASTAssignmentExpression):
         symbol_table = self.get_last_symbol_table()
 
@@ -206,17 +327,32 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         self.check_undeclared_variable_usage(ast.left)
         self.check_uninitialized_variable_usage(ast.right)
 
+        self.check_const_assignment(ast)
+
+        ast.right = self.optimize_expression(ast.get_right())
+
         variable = symbol_table.lookup_variable(ast.left.get_content())
         if not variable.is_initialized():
             variable.initialized = True
+            # Set its reaching definition as it has just been initialized
+            variable.reaching_definition_ast = ast.get_right()
 
-        self.check_const_assignment(ast)
+        else:
+
+            # Const variables can not be reassigned so the keep their reaching definition,
+            # otherwise there is no reaching definition anymore (intervening assignment has been encountered)
+            if variable.has_reaching_defintion() and not variable.is_const():
+                variable.reaching_definition_ast = None
 
         # Warn in case the result will be narrowed down into another data type
         self.check_for_narrowing_result(variable.data_type, ast)
 
     def visit_ast_variable_declaration(self, ast: ASTVariableDeclaration):
         symbol_table = self.get_last_symbol_table()
+
+        if ast.is_const():
+            raise SemanticError(
+                f"Variable '{ast.var_name_ast.get_content()}' declared const must be initialized with its declaration")
 
         if symbol_table.lookup(ast.var_name_ast.get_content()) is None:
             symbol_table.insert_symbol(
@@ -234,6 +370,9 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         self.check_uninitialized_variable_usage(ast.value)
 
         variable_symbol.initialized = True
+
+        ast.value = self.optimize_expression(ast.value)
+        variable_symbol.reaching_definition_ast = ast.value
 
         self.check_for_narrowing_result(ast.get_data_type(), ast.value)
 

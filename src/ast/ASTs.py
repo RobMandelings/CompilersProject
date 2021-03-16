@@ -63,6 +63,15 @@ class ASTLiteral(ASTLeaf, Tokenable):
         assert isinstance(visitor, IASTVisitor)
         visitor.visit_ast_literal(self)
 
+    def get_content_depending_on_literal_token(self):
+        if self.token == LiteralToken.CHAR_LITERAL or self.token == LiteralToken.INT_LITERAL:
+            # Both char and integers are integral types, so return an integer
+            return float(self.get_content())
+        elif self.token == LiteralToken.FLOAT_LITERAL:
+            return float(self.get_content())
+        else:
+            raise NotImplementedError
+
 
 class ASTDataType(ASTLeaf, Tokenable):
 

@@ -1,8 +1,8 @@
 from graphviz import Digraph
 
-from src.ast.ASTTokens import *
 from src.ast.ASTBaseVisitor import ASTBaseVisitor
-from src.ast.ASTs import ASTPrintfInstruction, ASTUnaryExpression, ASTDataType, ASTLiteral
+from src.ast.ASTTokens import *
+from src.ast.ASTs import ASTPrintfInstruction, ASTUnaryExpression, ASTLiteral
 
 
 class ASTVisitorDot(ASTBaseVisitor):
@@ -21,7 +21,6 @@ class ASTVisitorDot(ASTBaseVisitor):
             self.graph.edge(str(id(ast.parent)), str(id(ast)))
 
     def visit_ast_leaf(self, ast):
-        super().visit_ast_leaf(ast)
         self.add_to_dot_node(ast)
 
     def visit_ast_literal(self, ast: ASTLiteral):

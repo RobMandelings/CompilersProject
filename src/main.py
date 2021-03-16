@@ -29,15 +29,14 @@ def main(argv):
         ast.accept(ast_visitor_dot)
         ast_visitor_dot.graph.render('output/ast.gv', view=False)
 
-        # ast_visitor_folding = ASTVisitorConstantFolding()
-        # ast.accept(ast_visitor_folding)
-        # ast_visitor_dot = ASTVisitorDot()
-        # ast.accept(ast_visitor_dot)
-        # ast_visitor_dot.graph.render('output/astfolded.gv', view=False)
-
         ast_visitor_semantic_analysis = ASTVisitorSemanticAnalysis()
         try:
             ast.accept(ast_visitor_semantic_analysis)
+
+            ast_visitor_dot.reset()
+            ast.accept(ast_visitor_dot)
+            ast_visitor_dot.graph.render('output/ast-optimized.gv', view=False)
+
         except SemanticError as e:
             print("A semantic error occurred: ")
             print(e)

@@ -37,8 +37,10 @@ class DataTypeToken(Enum):
         """
         Must be placed outside the DataType class because it would not be fully 'defined' when setting the expected parameter types, weird stuff
         """
-        assert isinstance(datatype1, DataTypeToken), "Given datatype1 is not an instance of DataType"
-        assert isinstance(datatype2, DataTypeToken), "Given datatype2 is not an instance of DataType"
+        if not isinstance(datatype1, DataTypeToken):
+            datatype1 = DataTypeToken.get_data_type_for_token_type(datatype1)
+        if not isinstance(datatype2, DataTypeToken):
+            datatype2 = DataTypeToken.get_data_type_for_token_type(datatype2)
         return datatype1.value > datatype2.value
 
 
