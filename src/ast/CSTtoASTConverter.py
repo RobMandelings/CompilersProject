@@ -97,7 +97,7 @@ def create_ast_from_concrete_syntax_tree(cst, lexer: CLexer):
                     if binary_arithmetic_token is not None:
                         return ASTBinaryArithmeticExpression(binary_arithmetic_token, left_child, right_child)
                     elif binary_compare_token:
-                        return ASTBinaryCompareExpression(binary_compare_token, left_child, right_child)
+                        return ASTBinaryRelationalExpression(binary_compare_token, left_child, right_child)
                     else:
                         raise NotImplementedError
 

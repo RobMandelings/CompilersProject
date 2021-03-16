@@ -170,7 +170,7 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
                     else:
                         raise NotImplementedError
 
-                elif isinstance(ast, ASTBinaryCompareExpression):
+                elif isinstance(ast, ASTBinaryRelationalExpression):
                     if ast.get_token() == BinaryCompareExprToken.EQUALS_EXPRESSION:
                         result = left_value == right_value
                     elif ast.get_token() == BinaryCompareExprToken.LESS_THAN_EXPRESSION:

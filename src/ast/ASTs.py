@@ -266,9 +266,10 @@ class ASTBinaryArithmeticExpression(ASTBinaryExpression, Tokenable):
         visitor.visit_ast_binary_arithmetic_expression(self)
 
 
-class ASTBinaryCompareExpression(ASTBinaryExpression, Tokenable):
+class ASTBinaryRelationalExpression(ASTBinaryExpression, Tokenable):
 
     def __init__(self, token: BinaryCompareExprToken, left: AST, right: AST):
+        # TODO maybe soon also !=, <=, >=
         content = None
         if token == BinaryCompareExprToken.LESS_THAN_EXPRESSION:
             content = '<'
