@@ -57,13 +57,13 @@ def create_ast_from_concrete_syntax_tree(cst, lexer: CLexer):
     elif isinstance(cst, TerminalNodeImpl):
 
         if is_identifier(cst, lexer):
-            return ASTIdentifier(cst.getSymbol().text)
+            return ASTLValue(cst.getSymbol().text)
         else:
             data_type_token = get_data_type_token(cst, lexer)
             type_attribute_token = get_type_attribute_token(cst)
 
             if is_literal(cst, lexer):
-                return ASTLiteral(data_type_token, cst.getSymbol().text)
+                return ASTRValue(data_type_token, cst.getSymbol().text)
             elif is_type_declaration(cst):
                 return ASTDataType(data_type_token)
             elif type_attribute_token is not None:

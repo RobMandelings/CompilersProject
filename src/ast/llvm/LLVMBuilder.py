@@ -58,11 +58,11 @@ class LLVMBuilder:
 
             self.instructions.append(f"%{self.register_count} = fmul float {factor}, {value_register}")
 
-        elif isinstance(ast, ASTLiteral):
+        elif isinstance(ast, ASTRValue):
             # Generate a single instructions and return the register for this instruction
             value = float(ast.get_content())
             self.instructions.append(f"%{self.register_count} = fadd float 0.0, {float(value)}")
-        elif isinstance(ast, ASTIdentifier):
+        elif isinstance(ast, ASTLValue):
 
             variable = self.symbol_table.lookup_variable(ast.get_content())
             return variable.get_current_register()

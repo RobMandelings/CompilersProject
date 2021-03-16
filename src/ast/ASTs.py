@@ -56,7 +56,24 @@ class ASTLeaf(AST):
         visitor.visit_ast_leaf(self)
 
 
-class ASTLiteral(ASTLeaf, Tokenable, HasDataType):
+class ASTLValue(ASTLeaf):
+    """
+    Representation of an L-Value in an Abstract Syntax Tree
+    Name which refers to a specific location in memory (l-values, such as variables for example)
+    """
+
+    def __init__(self, content: str):
+        super().__init__(content)
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_identifier(self)
+
+
+class ASTRValue(ASTLeaf, Tokenable, HasDataType):
+    """
+    Representation of an R-Value in an Abstract Syntax Tree
+    Basically just literals, they don't refer to any location in memory (r-values)
+    """
 
     def __init__(self, token: DataTypeToken, content: str):
         super().__init__(content)
@@ -128,15 +145,6 @@ class ASTTypeAttribute(ASTLeaf, Tokenable):
     def accept(self, visitor: IASTVisitor):
         assert isinstance(visitor, IASTVisitor)
         visitor.visit_ast_data_type(self)
-
-
-class ASTIdentifier(ASTLeaf):
-
-    def __init__(self, content: str):
-        super().__init__(content)
-
-    def accept(self, visitor: IASTVisitor):
-        visitor.visit_ast_identifier(self)
 
 
 class ASTInternal(AST):
@@ -230,7 +238,7 @@ class ASTAssignmentExpression(ASTBinaryExpression):
         """
         Inherits get_left from ASTBinaryExpression to do an extra check: the left must be an identifier in this case
         """
-        assert isinstance(self.left, ASTIdentifier)
+        assert isinstance(self.left, ASTLValue)
         return self.left
 
 
