@@ -11,7 +11,6 @@ class SymbolTableManager:
         # Dict containing all symbol tables in the program.
         # Only retrieve the symbol table corresponding to your current scope
         self.symbol_tables = dict()
-        self.symbol_tables["global"] = SymbolTable()
 
     def add_symbol_table(self, current_scope: str, parent_scope: str):
         assert current_scope != "global", "The 'global' scope name is reserved!"
@@ -27,8 +26,7 @@ class SymbolTableManager:
         Returns the corresponding symbol table for the corresponding scope name
         """
         assert self.symbol_tables[
-                   scope] is not None, f"Symbol table not found for name (scope) {scope}. " \
-                                       f"Only get the symbol table for your current scope!"
+            scope], f"Symbol table not found for name (scope) {scope}. Only get the symbol table for your current scope!"
 
         symbol_table = self.symbol_tables[scope]
         assert isinstance(symbol_table, SymbolTable)
