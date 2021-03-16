@@ -1,6 +1,8 @@
+import copy
+
 from src.ast.ASTBaseVisitor import ASTBaseVisitor
-from src.ast.ASTs import *
 from src.ast.ASTTokens import *
+from src.ast.ASTs import *
 from src.ast.semantic_analysis.SymbolTable import *
 
 
@@ -130,7 +132,11 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
             # The variable in the symbol table still has a reaching definition, so we can replace this variable with the reaching definition
             if variable.has_reaching_defintion():
                 # Return the reaching definition instead of the variable
-                return variable.get_reaching_definition()
+                # We need to make a deep copy so that they are not seen as one node anymore (changes to one node doesn't make changes to the other)
+                # Otherwise this would also break visualisation because the DotVisitor uses the IDs of the Nodes
+                # Also the parent is different
+
+                return copy.deepcopy(variable.get_reaching_definition()).set_parent(ast.parent)
 
         return ast
 
