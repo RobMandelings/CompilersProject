@@ -1,6 +1,6 @@
 # Extra ignores
 
-input/optimizer.txt
+testinput.txt
 output/*
 
 
