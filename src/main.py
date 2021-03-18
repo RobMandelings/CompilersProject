@@ -26,8 +26,8 @@ def main(argv):
 
         ast = create_ast_from_concrete_syntax_tree(tree, lexer)
         ast_visitor_dot = ASTVisitorDot()
-        # ast.accept(ast_visitor_dot)
-        # ast_visitor_dot.graph.render('output/ast.gv', view=False)
+        ast.accept(ast_visitor_dot)
+        ast_visitor_dot.graph.render('output/ast.gv', view=False)
 
         ast_visitor_semantic_analysis = ASTVisitorSemanticAnalysis(optimize=True)
         try:
