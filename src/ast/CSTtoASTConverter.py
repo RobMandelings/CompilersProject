@@ -2,8 +2,8 @@ from antlr4.tree.Tree import TerminalNodeImpl
 
 from src.antlr4_gen.CLexer import CLexer
 from src.antlr4_gen.CParser import *
-from src.ast.ASTs import *
 from src.ast.ASTTokens import *
+from src.ast.ASTs import *
 
 
 # TODO Improve to use a visitor pattern of the cst instead
@@ -78,8 +78,6 @@ def create_ast_from_concrete_syntax_tree(cst, lexer: CLexer):
             return create_ast_from_concrete_syntax_tree(cst.children[0], lexer)
         else:
 
-            unary_expression_token = get_unary_expr_token(cst)
-
             if is_binary_expression(cst):
 
                 left_child = create_ast_from_concrete_syntax_tree(cst.children[0], lexer)
@@ -101,10 +99,19 @@ def create_ast_from_concrete_syntax_tree(cst, lexer: CLexer):
                     else:
                         raise NotImplementedError
 
-            elif unary_expression_token is not None:
+            elif is_unary_expression(cst):
+
+                unary_arithmetic_expr_token = get_unary_arithmetic_expr_token(cst)
+                pointer_expr_token = get_pointer_expr_token(cst)
 
                 value_applied_to = create_ast_from_concrete_syntax_tree(cst.children[1], lexer)
-                return ASTUnaryArithmeticExpression(unary_expression_token, value_applied_to)
+
+                if unary_arithmetic_expr_token is not None:
+                    return ASTUnaryArithmeticExpression(unary_arithmetic_expr_token, value_applied_to)
+                elif pointer_expr_token is not None:
+                    return ASTUnaryPointerExpression(pointer_expr_token, value_applied_to)
+                else:
+                    raise NotImplementedError
             elif is_bracket_expression(cst):
                 return create_ast_from_concrete_syntax_tree(cst.children[1], lexer)
 
@@ -185,9 +192,23 @@ def get_relational_expr_token(cst: ParserRuleContext):
     return None
 
 
-def get_unary_expr_token(cst: ParserRuleContext):
+def is_unary_expression(cst: ParserRuleContext):
     if len(cst.children) == 2 and isinstance(cst.children[0], TerminalNodeImpl):
-        return UnaryArithmeticExprToken.from_str(cst.children[0].getSymbol().text)
+        if (UnaryArithmeticExprToken.from_str(cst.children[0].getSymbol().text) is not None or
+                PointerExprToken.from_str(cst.children[0].getSymbol().text) is not None):
+            return True
+
+    return False
+
+
+def get_unary_arithmetic_expr_token(cst: ParserRuleContext):
+    assert is_unary_expression(cst)
+    return UnaryArithmeticExprToken.from_str(cst.children[0].getSymbol().text)
+
+
+def get_pointer_expr_token(cst: ParserRuleContext):
+    assert is_unary_expression(cst)
+    return PointerExprToken.from_str(cst.children[0].getSymbol().text)
 
 
 def is_assignment_expression(cst: ParserRuleContext):
