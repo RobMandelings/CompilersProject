@@ -1,6 +1,11 @@
+
 int main() {
+    int a = 5;
 
-    float b = 10.0;
-    int i = 5.0 + b;
+    int b = 6;
 
+    float c = a + b;
+
+    float d = 10 + c;
 }
+
