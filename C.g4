@@ -1,32 +1,35 @@
 grammar C;
 program:
-instructions
-| function+
-| ;
-function:
-    ifStatement
-   ;
+    body
+;
+
+// Everything that you can do within a scope as well as outside a scope. May also contain whitespaces
+body:
+    instruction+ ';' |
+    loop+ |
+    ifStatement+ |
+    WS
+    ;
 
 // Everything to do with loops
 loop:
-    'while' '(' expr ')' scope |
-    'for' '(' expr ';' expr ';' expr ')' scope
+    WHILE enclosedExpression scope |
+    FOR '(' expr ';' expr ';' expr ')' scope
     ;
 
 // Handles if, else if and else statement
 ifStatement:
-    'if' '(' expr ')' scope |
-    'if' '(' expr ')' scope elseStatement
+    IF enclosedExpression scope |
+    IF enclosedExpression scope elseStatement
     ;
 elseStatement:
-    'else' ifStatement scope |
-    'else' scope
+    ELSE IF enclosedExpression scope elseStatement |
+    ELSE scope
     ;
 
 // Handles scoping
-scope: '{' program '}' ;
+scope: '{' body '}' ;
 
-instructions: instruction+ ';';
 instruction:
     varDeclaration
     | varAssignment
@@ -49,9 +52,19 @@ varDeclaration:
     typeDeclaration1 varAssignment
     | typeDeclaration1 ID
     ;
+
 varAssignment:
     ID '=' expr
     ;
+
+typeDeclaration1:
+    // TODO instead of 'const int' also support 'int const'?
+    constDeclaration typeDeclaration2
+    | typeDeclaration2
+    ;
+typeDeclaration2: INT | CHAR | FLOAT ;
+constDeclaration: CONST ;
+
 expr: compareExpr;
 compareExpr:
     compareExpr '>' addExpr
@@ -79,25 +92,14 @@ pointerExpr:
     | '&' finalExpr
     | finalExpr
     ;
+enclosedExpression:
+    '(' expr ')';
 finalExpr: ID
      | CHAR_LITERAL
      | INT_LITERAL
      | DOUBLE_LITERAL
-     | '(' expr ')'
+     | enclosedExpression
      ;
-typeDeclaration1:
-    // TODO instead of 'const int' also support 'int const'?
-    constDeclaration typeDeclaration2
-    | typeDeclaration2
-    ;
-typeDeclaration2:
-    'int'
-    | 'char'
-    | 'float'
-    ;
-constDeclaration:
-    'const'
-    ;
 
 // Reserved words
 BREAK: 'break';
@@ -107,6 +109,7 @@ RETURN: 'return';
 IF: 'if';
 ELSE: 'else';
 WHILE: 'while';
+FOR: 'for';
 
 CONST: 'const';
 CHAR: 'char';
