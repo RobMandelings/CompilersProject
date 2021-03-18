@@ -116,6 +116,15 @@ class CListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CParser#pointerExpr.
+    def enterPointerExpr(self, ctx:CParser.PointerExprContext):
+        pass
+
+    # Exit a parse tree produced by CParser#pointerExpr.
+    def exitPointerExpr(self, ctx:CParser.PointerExprContext):
+        pass
+
+
     # Enter a parse tree produced by CParser#finalExpr.
     def enterFinalExpr(self, ctx:CParser.FinalExprContext):
         pass

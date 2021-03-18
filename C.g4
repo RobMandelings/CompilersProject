@@ -39,10 +39,13 @@ multExpr:
     | unaryExpr
     ;
 unaryExpr:
+    '+' pointerExpr
+    | '-' pointerExpr
+    | pointerExpr
+    ;
+pointerExpr:
     '*' finalExpr
     | '&' finalExpr
-    | '+' finalExpr
-    | '-' finalExpr
     | finalExpr
     ;
 finalExpr: ID

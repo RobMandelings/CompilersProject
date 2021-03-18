@@ -82,6 +82,10 @@ class CSTVisitorToDot(CVisitor):
         self.toDotCurrent(ctx)
         return super().visitUnaryExpr(ctx)
 
+    def visitPointerExpr(self, ctx: CParser.PointerExprContext):
+        self.toDotCurrent(ctx)
+        return super().visitPointerExpr(ctx)
+
     def visitPrintfInstruction(self, ctx: CParser.PrintfInstructionContext):
         self.toDotCurrent(ctx)
         return super().visitPrintfInstruction(ctx)
