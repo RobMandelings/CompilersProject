@@ -1,22 +1,54 @@
 grammar C;
-program: instructions;
-instructions: instruction+;
+program:
+instructions
+| function+
+| ;
+function:
+    ifStatement
+   ;
+
+
+// Everything to do with loops
+loop:
+    'while' '(' expr ')' scope |
+    'for' '(' expr ';' expr ';' expr ')' scope
+    ;
+
+// Handles if, else if and else statement
+ifStatement:
+    'if' '(' expr ')' scope |
+    'if' '(' expr ')' scope elseStatement
+    ;
+elseStatement:
+    'else' ifStatement scope |
+    'else' scope
+    ;
+
+// Handles scoping
+scope: '{' program '}' ;
+
+instructions: instruction+ ';';
 instruction:
-    varDeclaration ';'
-    | varAssignment ';'
-    | expr ';'
+    varDeclaration
+    | varAssignment
+    | expr
+    | controlFlowInstruction
     | printfInstruction
     ;
+
+// TODO Should be checked semantically that break and continue is only allowed in loops or switch statements
+controlFlowInstruction:
+    BREAK |
+    CONTINUE |
+    RETURN
+    ;
 printfInstruction:
-    'printf' '(' (ID|CHAR|DOUBLE|INTEGER) ')' ';'
+    'printf' '(' (ID|CHAR|INTEGER|DOUBLE) ')'
     ;
 varDeclaration:
     // Declaration and initialization
-    typeDeclaration1 varInit
+    typeDeclaration1 varAssignment
     | typeDeclaration1 ID
-    ;
-varInit:
-    ID '=' expr
     ;
 varAssignment:
     ID '=' expr
@@ -74,3 +106,7 @@ DOUBLE :   [0-9]+'.'[0-9]+ ;
 LineComment: '//' ~[\r\n]* -> channel(HIDDEN);
 BlockComment: '/*' .*? '*/' -> channel(HIDDEN);
 WS : [ \r\t\n]+ -> skip ;
+
+BREAK: 'break';
+CONTINUE: 'continue';
+RETURN: 'return';
