@@ -166,7 +166,7 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
                 assert result is not None
                 return ASTRValue(resulting_data_type, str(result)).set_parent(ast.parent)
 
-        elif isinstance(ast, ASTUnaryExpression):
+        elif isinstance(ast, ASTUnaryArithmeticExpression):
 
             ast.value_applied_to = self.do_constant_folding(ast.value_applied_to)
 
