@@ -7,7 +7,6 @@ function:
     ifStatement
    ;
 
-
 // Everything to do with loops
 loop:
     'while' '(' expr ')' scope |
@@ -43,7 +42,7 @@ controlFlowInstruction:
     RETURN
     ;
 printfInstruction:
-    'printf' '(' (ID|CHAR|INTEGER|DOUBLE) ')'
+    'printf' '(' (ID|CHAR_LITERAL|INT_LITERAL|DOUBLE_LITERAL) ')'
     ;
 varDeclaration:
     // Declaration and initialization
@@ -81,9 +80,9 @@ pointerExpr:
     | finalExpr
     ;
 finalExpr: ID
-     | CHAR
-     | INTEGER
-     | DOUBLE
+     | CHAR_LITERAL
+     | INT_LITERAL
+     | DOUBLE_LITERAL
      | '(' expr ')'
      ;
 typeDeclaration1:
@@ -105,10 +104,19 @@ BREAK: 'break';
 CONTINUE: 'continue';
 RETURN: 'return';
 
+IF: 'if';
+ELSE: 'else';
+WHILE: 'while';
+
+CONST: 'const';
+CHAR: 'char';
+INT: 'int';
+FLOAT: 'float';
+
 ID  :   [a-zA-Z_]+ [0-9_]* ;      // match identifiers
-CHAR: '\''.'\'' ;
-INTEGER: [0-9]+ ;
-DOUBLE :   [0-9]+'.'[0-9]+ ;
+CHAR_LITERAL: '\''.'\'' ;
+INT_LITERAL: [0-9]+ ;
+DOUBLE_LITERAL :   [0-9]+'.'[0-9]+ ;
 LineComment: '//' ~[\r\n]* -> channel(HIDDEN);
 BlockComment: '/*' .*? '*/' -> channel(HIDDEN);
 WS : [ \r\t\n]+ -> skip ;
