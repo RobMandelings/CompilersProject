@@ -1,8 +1,5 @@
 from CSTVisitors import CSTVisitorToDot
-from src.ast.ASTVisitorDot import ASTVisitorDot
 from src.ast.CSTtoASTConverter import *
-from src.ast.llvm.ASTVisitorToLLVM import ASTVisitorToLLVM
-from src.ast.semantic_analysis.ASTVisitorSemanticAnalysis import ASTVisitorSemanticAnalysis, SemanticError
 from src.syntacticalAnalysis import CSTErrorListener
 
 

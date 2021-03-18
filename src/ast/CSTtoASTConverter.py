@@ -116,6 +116,14 @@ def create_ast_from_concrete_syntax_tree(cst, lexer: CLexer):
                 return create_ast_from_concrete_syntax_tree(cst.children[1], lexer)
 
 
+def can_be_skipped(cst: TerminalNodeImpl, lexer: CLexer):
+    """
+    Returns true if a certain terminal node can be skipped or not (braces for example)
+    """
+    # TODO IMPLEMENT THIS
+    pass
+
+
 def append_child_asts_to_ast(ast: ASTInternal, cst, lexer: CLexer):
     for child in cst.children:
         new_child = create_ast_from_concrete_syntax_tree(child, lexer)
