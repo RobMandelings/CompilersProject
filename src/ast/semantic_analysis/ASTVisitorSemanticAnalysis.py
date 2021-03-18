@@ -1,28 +1,11 @@
 import copy
 
 from src.ast.ASTBaseVisitor import ASTBaseVisitor
-from src.ast.ASTTokens import *
 from src.ast.ASTs import *
 from src.ast.semantic_analysis.SymbolTable import *
 
 
 class SemanticError(Exception):
-    pass
-
-
-class AlreadyDeclaredError(SemanticError):
-    pass
-
-
-class UndeclaredError(SemanticError):
-    pass
-
-
-class UninitializedError(SemanticError):
-    pass
-
-
-class IncompatibleTypesError(Exception):
     pass
 
 
@@ -197,7 +180,7 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
 
                 return ASTRValue(ast.value_applied_to.token,
                                  str(
-                                      factor * ast.value_applied_to.get_content_depending_on_data_type())).set_parent(
+                                     factor * ast.value_applied_to.get_content_depending_on_data_type())).set_parent(
                     ast.parent)
 
         return ast
@@ -282,7 +265,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
             error_text = ""
 
             for variable in undeclared_var_usage.undeclared_variables_used:
-                error_text += "Variable with name '" + variable.get_content() + "' is undeclared! \n"
+                error_text += f"Variable with name '{variable.get_content()}' is undeclared! \n"
 
             raise SemanticError(error_text)
 
@@ -295,7 +278,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
             error_text = ""
 
             for variable in uninitialized_var_usage.uninitialized_variables_used:
-                error_text += "Variable with name '" + variable.get_content() + "' is found but uninitialized! \n"
+                error_text += f"Variable with name '{variable.get_content()}' is found but uninitialized! \n"
 
             raise SemanticError(error_text)
 
@@ -308,7 +291,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         variable = self.get_last_symbol_table().lookup_variable(bin_expr.left.get_content())
 
         if variable.const:
-            raise SemanticError("Cannot assign value to const variable '" + bin_expr.left.get_content() + "'")
+            raise SemanticError(f"Cannot assign value to const variable '{bin_expr.left.get_content()}'")
 
     def visit_ast_binary_expression(self, ast: ASTBinaryExpression):
         # Do nothing, just some optimization
@@ -365,8 +348,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
             symbol_table.insert_symbol(
                 VariableSymbol(ast.var_name_ast.get_content(), ast.get_data_type(), ast.is_const(), False))
         else:
-            raise AlreadyDeclaredError(
-                "Variable with name '" + str(ast.var_name_ast) + "' has already been declared in this scope!")
+            raise SemanticError(
+                f"Variable with name '{ast.var_name_ast.get_content()}' has already been declared in this scope!")
 
     def visit_ast_variable_declaration_and_init(self, ast: ASTVariableDeclarationAndInit):
         self.visit_ast_variable_declaration(ast)

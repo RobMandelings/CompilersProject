@@ -142,7 +142,6 @@ class BitwiseExprToken(NamedEnum):
         else:
             return None
 
-
 class RelationalExprToken(NamedEnum):
     GREATER_THAN = '>'
     GREATER_THAN_OR_EQUALS = '>='
@@ -167,3 +166,4 @@ class RelationalExprToken(NamedEnum):
             return RelationalExprToken.NOT_EQUALS
         else:
             return None
+
