@@ -1,3 +1,12 @@
 {
+    int i = 5;
 
+    float b = 6;
+
+    {
+
+        for (int i = 6; 5 < 3; i + 1) {
+            int b = 10;
+        }
+    }
 }

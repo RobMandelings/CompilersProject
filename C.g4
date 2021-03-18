@@ -1,20 +1,30 @@
 grammar C;
 program:
-    body
+    statement+
 ;
 
-// Everything that you can do within a scope as well as outside a scope. May also contain whitespaces
-body:
-    instruction+ ';' |
-    loop+ |
-    ifStatement+ |
-    WS
+statement:
+    singleLineStatement ';' |
+    scopedStatement
+    ;
+
+singleLineStatement:
+    expression |
+    varDeclaration |
+    controlFlowStatement |
+    printfStatement
+    ;
+
+scopedStatement:
+    scope |
+    loop |
+    ifStatement
     ;
 
 // Everything to do with loops
 loop:
     WHILE enclosedExpression scope |
-    FOR '(' expr ';' expr ';' expr ')' scope
+    FOR '(' expression ';' expression ';' expression ')' scope
     ;
 
 // Handles if, else if and else statement
@@ -28,33 +38,19 @@ elseStatement:
     ;
 
 // Handles scoping
-scope: '{' body '}' ;
-
-instruction:
-    varDeclaration
-    | varAssignment
-    | expr
-    | controlFlowInstruction
-    | printfInstruction
-    ;
+scope:
+    '{' '}' |
+    '{' statement+ '}';
 
 // TODO Should be checked semantically that break and continue is only allowed in loops or switch statements
-controlFlowInstruction:
-    BREAK |
-    CONTINUE |
-    RETURN
-    ;
-printfInstruction:
+controlFlowStatement: BREAK | CONTINUE | RETURN ;
+printfStatement:
     'printf' '(' (ID|CHAR_LITERAL|INT_LITERAL|DOUBLE_LITERAL) ')'
     ;
 varDeclaration:
     // Declaration and initialization
-    typeDeclaration1 varAssignment
-    | typeDeclaration1 ID
-    ;
-
-varAssignment:
-    ID '=' expr
+    varDeclarationAndInit |
+    typeDeclaration1 ID
     ;
 
 typeDeclaration1:
@@ -62,44 +58,46 @@ typeDeclaration1:
     constDeclaration typeDeclaration2
     | typeDeclaration2
     ;
+
 typeDeclaration2: INT | CHAR | FLOAT ;
 constDeclaration: CONST ;
 
-expr: compareExpr;
-compareExpr:
-    compareExpr '>' addExpr
-    | compareExpr '<' addExpr
-    | compareExpr '==' addExpr
-    | addExpr
+varDeclarationAndInit: typeDeclaration1 varAssignment ;
+varAssignment: ID '=' expression ;
+
+expression:
+    varDeclarationAndInit |
+    varAssignment |
+    compareExpression
     ;
-addExpr:
-    addExpr '+' multExpr
-    | addExpr '-' multExpr
-    | multExpr
+compareExpression:
+    compareExpression '>' addExpression
+    | compareExpression '<' addExpression
+    | compareExpression '==' addExpression
+    | addExpression
     ;
-multExpr:
-    multExpr '*' unaryExpr
-    | multExpr '/' unaryExpr
-    | unaryExpr
+addExpression:
+    addExpression '+' multExpression
+    | addExpression '-' multExpression
+    | multExpression
     ;
-unaryExpr:
-    '+' pointerExpr
-    | '-' pointerExpr
-    | pointerExpr
+multExpression:
+    multExpression '*' unaryExpression
+    | multExpression '/' unaryExpression
+    | unaryExpression
     ;
-pointerExpr:
-    '*' finalExpr
-    | '&' finalExpr
-    | finalExpr
+unaryExpression:
+    '+' pointerExpression
+    | '-' pointerExpression
+    | pointerExpression
     ;
-enclosedExpression:
-    '(' expr ')';
-finalExpr: ID
-     | CHAR_LITERAL
-     | INT_LITERAL
-     | DOUBLE_LITERAL
-     | enclosedExpression
-     ;
+pointerExpression:
+    '*' finalExpression
+    | '&' finalExpression
+    | finalExpression
+    ;
+enclosedExpression: '(' expression ')';
+finalExpression: enclosedExpression | ID | CHAR_LITERAL | INT_LITERAL | DOUBLE_LITERAL ;
 
 // Reserved words
 BREAK: 'break';
@@ -116,10 +114,15 @@ CHAR: 'char';
 INT: 'int';
 FLOAT: 'float';
 
-ID  :   [a-zA-Z_]+ [0-9_]* ;      // match identifiers
+// Literals and identifiers
+ID  :   [a-zA-Z_]+ [0-9_]* ;
 CHAR_LITERAL: '\''.'\'' ;
 INT_LITERAL: [0-9]+ ;
 DOUBLE_LITERAL :   [0-9]+'.'[0-9]+ ;
+
+// Comments
 LineComment: '//' ~[\r\n]* -> channel(HIDDEN);
 BlockComment: '/*' .*? '*/' -> channel(HIDDEN);
+
+// Skip whitespace
 WS : [ \r\t\n]+ -> skip ;

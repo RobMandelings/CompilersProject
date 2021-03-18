@@ -22,37 +22,29 @@ class CSTVisitorToDot(CVisitor):
         self.toDotCurrent(ctx)
         return super().visitProgram(ctx)
 
-    def visitInstructions(self, ctx: CParser.InstructionsContext):
-        self.toDotCurrent(ctx)
-        return super().visitInstructions(ctx)
-
-    def visitInstruction(self, ctx: CParser.InstructionContext):
-        self.toDotCurrent(ctx)
-        return super().visitInstruction(ctx)
-
     def visitVarDeclaration(self, ctx: CParser.VarDeclarationContext):
         self.toDotCurrent(ctx)
         return super().visitVarDeclaration(ctx)
 
-    def visitExpr(self, ctx: CParser.ExprContext):
+    def visitExpression(self, ctx: CParser.ExpressionContext):
         self.toDotCurrent(ctx)
-        return super().visitExpr(ctx)
+        return super().visitExpression(ctx)
 
-    def visitCompareExpr(self, ctx: CParser.CompareExprContext):
+    def visitCompareExpression(self, ctx: CParser.CompareExpressionContext):
         self.toDotCurrent(ctx)
-        return super().visitCompareExpr(ctx)
+        return super().visitCompareExpression(ctx)
 
-    def visitAddExpr(self, ctx: CParser.AddExprContext):
+    def visitAddExpression(self, ctx: CParser.AddExpressionContext):
         self.toDotCurrent(ctx)
-        return super().visitAddExpr(ctx)
+        return super().visitAddExpression(ctx)
 
-    def visitMultExpr(self, ctx: CParser.MultExprContext):
+    def visitMultExpression(self, ctx: CParser.MultExpressionContext):
         self.toDotCurrent(ctx)
-        return super().visitMultExpr(ctx)
+        return super().visitMultExpression(ctx)
 
-    def visitFinalExpr(self, ctx: CParser.FinalExprContext):
+    def visitFinalExpression(self, ctx: CParser.FinalExpressionContext):
         self.toDotCurrent(ctx)
-        return super().visitFinalExpr(ctx)
+        return super().visitFinalExpression(ctx)
 
     def visitTypeDeclaration1(self, ctx: CParser.TypeDeclaration1Context):
         self.toDotCurrent(ctx)
@@ -70,22 +62,18 @@ class CSTVisitorToDot(CVisitor):
         self.toDotCurrent(ctx)
         return super().visitVarAssignment(ctx)
 
-    def visitVarInit(self, ctx: CParser.VarInitContext):
-        self.toDotCurrent(ctx)
-        return super().visitVarInit(ctx)
-
     def visitTerminal(self, node):
         self.toDotCurrent(node)
         return super().visitTerminal(node)
 
-    def visitUnaryExpr(self, ctx: CParser.UnaryExprContext):
+    def visitUnaryExpression(self, ctx: CParser.UnaryExpressionContext):
         self.toDotCurrent(ctx)
-        return super().visitUnaryExpr(ctx)
+        return super().visitUnaryExpression(ctx)
 
-    def visitPointerExpr(self, ctx: CParser.PointerExprContext):
+    def visitPointerExpression(self, ctx: CParser.PointerExpressionContext):
         self.toDotCurrent(ctx)
-        return super().visitPointerExpr(ctx)
+        return super().visitPointerExpression(ctx)
 
-    def visitPrintfInstruction(self, ctx: CParser.PrintfInstructionContext):
+    def visitPrintfStatement(self, ctx: CParser.PrintfStatementContext):
         self.toDotCurrent(ctx)
-        return super().visitPrintfInstruction(ctx)
+        return super().visitPrintfStatement(ctx)
