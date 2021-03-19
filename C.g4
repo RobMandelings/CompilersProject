@@ -34,6 +34,7 @@ ifStatement:
     ;
 elseStatement:
     ELSE IF enclosedExpression scope elseStatement |
+    ELSE IF enclosedExpression scope |
     ELSE scope
     ;
 
@@ -87,8 +88,8 @@ multExpression:
     | unaryExpression
     ;
 unaryExpression:
-    '+' pointerExpression
-    | '-' pointerExpression
+    '+' unaryExpression
+    | '-' unaryExpression
     | pointerExpression
     ;
 pointerExpression:
