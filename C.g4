@@ -45,14 +45,8 @@ scope:
 
 // TODO Should be checked semantically that break and continue is only allowed in loops or switch statements
 controlFlowStatement: BREAK | CONTINUE | RETURN ;
-printfStatement:
-    'printf' '(' (ID|CHAR_LITERAL|INT_LITERAL|DOUBLE_LITERAL) ')'
-    ;
-varDeclaration:
-    // Declaration and initialization
-    varDeclarationAndInit |
-    typeDeclaration1 ID
-    ;
+printfStatement: 'printf' '(' (ID|CHAR_LITERAL|INT_LITERAL|DOUBLE_LITERAL) ')' ;
+varDeclaration: typeDeclaration1 ID ;
 
 typeDeclaration1:
     // TODO instead of 'const int' also support 'int const'?

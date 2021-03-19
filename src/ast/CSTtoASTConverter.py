@@ -2,11 +2,100 @@ from antlr4.tree.Tree import TerminalNodeImpl
 
 from src.antlr4_gen.CLexer import CLexer
 from src.antlr4_gen.CParser import *
-from src.ast.ASTTokens import *
 from src.ast.ASTs import *
 
 
 # TODO Improve to use a visitor pattern of the cst instead
+
+def create_ast_var_declaration_and_init(cst: CParser.VarDeclarationAndInitContext, lexer: CLexer):
+    assert isinstance(cst.children[0], CParser.TypeDeclaration1Context)
+    assert isinstance(cst.children[1], CParser.VarAssignmentContext)
+
+    data_type_and_attributes = create_ast_from_concrete_syntax_tree(cst.children[0], lexer)
+    assignment = create_ast_from_concrete_syntax_tree(cst.children[1], lexer)
+    assert isinstance(assignment, ASTAssignmentExpression)
+    name = assignment.get_left()
+    value = assignment.get_right()
+
+    var_declaration_and_init = ASTVariableDeclarationAndInit(data_type_and_attributes, name, value)
+    return var_declaration_and_init
+
+
+def create_ast_var_declaration(cst: CParser.VarDeclarationContext, lexer: CLexer):
+    assert isinstance(cst.children[0], CParser.TypeDeclaration1Context)
+
+    data_type_and_attributes = create_ast_from_concrete_syntax_tree(cst.children[0], lexer)
+    name = create_ast_from_concrete_syntax_tree(cst.children[1], lexer)
+
+    var_declaration = ASTVariableDeclaration(data_type_and_attributes, name)
+    return var_declaration
+
+
+def create_type_asts(cst, lexer):
+    assert isinstance(cst, CParser.TypeDeclaration1Context) or isinstance(cst, CParser.TypeDeclaration2Context)
+    ast_children = list()
+    for child in cst.children:
+        ast_children.append(create_ast_from_concrete_syntax_tree(child, lexer))
+
+    return ast_children
+
+
+def create_ast_from_terminal_node(cst: TerminalNodeImpl, lexer: CLexer):
+    if can_be_skipped(cst, lexer):
+        return None
+    else:
+        if is_identifier(cst, lexer):
+            return ASTLValue(cst.getSymbol().text)
+        else:
+            data_type_token = get_data_type_token(cst, lexer)
+            type_attribute_token = get_type_attribute_token(cst)
+
+            if is_rvalue(cst, lexer):
+                return ASTRValue(data_type_token, cst.getSymbol().text)
+            elif is_type_declaration(cst):
+                return ASTDataType(data_type_token)
+            elif type_attribute_token is not None:
+                return ASTTypeAttribute(type_attribute_token)
+            else:
+                print(f"WARN: Skipping CST Node (returning null) with value {cst.getSymbol().text}")
+                return None
+
+
+def create_ast_expression(cst, lexer: CLexer):
+    if is_binary_expression(cst):
+
+        left_child = create_ast_from_concrete_syntax_tree(cst.children[0], lexer)
+        right_child = create_ast_from_concrete_syntax_tree(cst.children[2], lexer)
+
+        if is_assignment_expression(cst):
+
+            return ASTAssignmentExpression(left_child, right_child)
+
+        else:
+
+            binary_arithmetic_token = get_binary_arithmetic_expr_token(cst)
+            binary_compare_token = get_relational_expr_token(cst)
+
+            if binary_arithmetic_token is not None:
+                return ASTBinaryArithmeticExpression(binary_arithmetic_token, left_child, right_child)
+            elif binary_compare_token:
+                return ASTRelationalExpression(binary_compare_token, left_child, right_child)
+            else:
+                raise NotImplementedError
+
+    elif is_unary_expression(cst):
+
+        unary_arithmetic_expr_token = get_unary_arithmetic_expr_token(cst)
+        pointer_expr_token = get_pointer_expr_token(cst)
+
+        value_applied_to = create_ast_from_concrete_syntax_tree(cst.children[1], lexer)
+
+        if unary_arithmetic_expr_token is not None:
+            return ASTUnaryArithmeticExpression(unary_arithmetic_expr_token, value_applied_to)
+        elif pointer_expr_token is not None:
+            return ASTUnaryPointerExpression(pointer_expr_token, value_applied_to)
+        else:
+            raise NotImplementedError
 
 
 def create_ast_from_concrete_syntax_tree(cst, lexer: CLexer):
@@ -16,64 +105,16 @@ def create_ast_from_concrete_syntax_tree(cst, lexer: CLexer):
         ast_program = ASTInternal('program')
         append_child_asts_to_ast(ast_program, cst, lexer)
         return ast_program
-    elif isinstance(cst, CParser.InstructionsContext):
-        ast_instructions = ASTInternal('instructions')
-        append_child_asts_to_ast(ast_instructions, cst, lexer)
-        return ast_instructions
-    elif isinstance(cst, CParser.InstructionContext):
-        ast_instruction = ASTInternal('instruction')
-        append_child_asts_to_ast(ast_instruction, cst, lexer)
-        return ast_instruction
-    elif isinstance(cst, CParser.PrintfInstructionContext):
-        # TODO less hardcoding
-        ast_prinf_instruction = ASTPrintfInstruction(create_ast_from_concrete_syntax_tree(cst.children[2], lexer))
-        return ast_prinf_instruction
+    elif isinstance(cst, CParser.PrintfStatementContext):
+        return ASTPrintfInstruction(create_ast_from_concrete_syntax_tree(cst.children[2], lexer))
+    elif isinstance(cst, CParser.VarDeclarationAndInitContext):
+        return create_ast_var_declaration_and_init(cst, lexer)
     elif isinstance(cst, CParser.VarDeclarationContext):
-
-        data_type_and_attributes = create_ast_from_concrete_syntax_tree(cst.children[0], lexer)
-        assert isinstance(data_type_and_attributes, list)
-
-        if isinstance(cst.children[1], CParser.VarInitContext):
-
-            name_and_value = create_ast_from_concrete_syntax_tree(cst.children[1], lexer)
-            assert isinstance(name_and_value, list) and len(name_and_value) == 2
-
-            return ASTVariableDeclarationAndInit(data_type_and_attributes, name_and_value[0], name_and_value[1])
-        else:
-
-            name = create_ast_from_concrete_syntax_tree(cst.children[1], lexer)
-            return ASTVariableDeclaration(data_type_and_attributes, name)
-    elif isinstance(cst, CParser.VarInitContext):
-        children_to_return = list()
-        children_to_return.append(create_ast_from_concrete_syntax_tree(cst.children[0], lexer))
-        children_to_return.append(create_ast_from_concrete_syntax_tree(cst.children[2], lexer))
-        return children_to_return
+        return create_ast_var_declaration(cst, lexer)
     elif isinstance(cst, CParser.TypeDeclaration1Context) or isinstance(cst, CParser.TypeDeclaration2Context):
-        ast_children = list()
-        for child in cst.children:
-            ast_children.append(create_ast_from_concrete_syntax_tree(child, lexer))
-
-        return ast_children
+        return create_type_asts(cst, lexer)
     elif isinstance(cst, TerminalNodeImpl):
-
-        if can_be_skipped(cst, lexer):
-            return None
-        else:
-            if is_identifier(cst, lexer):
-                return ASTLValue(cst.getSymbol().text)
-            else:
-                data_type_token = get_data_type_token(cst, lexer)
-                type_attribute_token = get_type_attribute_token(cst)
-
-                if is_rvalue(cst, lexer):
-                    return ASTRValue(data_type_token, cst.getSymbol().text)
-                elif is_type_declaration(cst):
-                    return ASTDataType(data_type_token)
-                elif type_attribute_token is not None:
-                    return ASTTypeAttribute(type_attribute_token)
-                else:
-                    print(f"WARN: Skipping CST Node (returning null) with value {cst.getSymbol().text}")
-                    return None
+        return create_ast_from_terminal_node(cst, lexer)
     else:
 
         if len(cst.children) == 1:
@@ -81,42 +122,10 @@ def create_ast_from_concrete_syntax_tree(cst, lexer: CLexer):
             return create_ast_from_concrete_syntax_tree(cst.children[0], lexer)
         else:
 
-            if is_binary_expression(cst):
-
-                left_child = create_ast_from_concrete_syntax_tree(cst.children[0], lexer)
-                right_child = create_ast_from_concrete_syntax_tree(cst.children[2], lexer)
-
-                if is_assignment_expression(cst):
-
-                    return ASTAssignmentExpression(left_child, right_child)
-
-                else:
-
-                    binary_arithmetic_token = get_binary_arithmetic_expr_token(cst)
-                    binary_compare_token = get_relational_expr_token(cst)
-
-                    if binary_arithmetic_token is not None:
-                        return ASTBinaryArithmeticExpression(binary_arithmetic_token, left_child, right_child)
-                    elif binary_compare_token:
-                        return ASTRelationalExpression(binary_compare_token, left_child, right_child)
-                    else:
-                        raise NotImplementedError
-
-            elif is_unary_expression(cst):
-
-                unary_arithmetic_expr_token = get_unary_arithmetic_expr_token(cst)
-                pointer_expr_token = get_pointer_expr_token(cst)
-
-                value_applied_to = create_ast_from_concrete_syntax_tree(cst.children[1], lexer)
-
-                if unary_arithmetic_expr_token is not None:
-                    return ASTUnaryArithmeticExpression(unary_arithmetic_expr_token, value_applied_to)
-                elif pointer_expr_token is not None:
-                    return ASTUnaryPointerExpression(pointer_expr_token, value_applied_to)
-                else:
-                    raise NotImplementedError
-            elif is_bracket_expression(cst):
+            if is_bracket_expression(cst):
                 return create_ast_from_concrete_syntax_tree(cst.children[1], lexer)
+            else:
+                return create_ast_expression(cst, lexer)
 
 
 def can_be_skipped(cst: TerminalNodeImpl, lexer: CLexer):
