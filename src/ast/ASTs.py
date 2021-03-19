@@ -154,6 +154,9 @@ class ASTInternal(AST):
 
 class ASTScope(ASTInternal):
 
+    def __init__(self):
+        super().__init__('scope')
+
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_scope(self)
 
@@ -199,7 +202,13 @@ class ASTWhileLoop(ASTConditionalStatement):
         visitor.visit_ast_while_loop(self)
 
 
-class ASTUnaryExpression(AST):
+class ASTExpression(AST):
+
+    def accept(self, visitor: IASTVisitor):
+        raise NotImplementedError
+
+
+class ASTUnaryExpression(ASTExpression):
 
     def __init__(self, content: str, value_applied_to: AST):
         super().__init__(content)
@@ -253,7 +262,7 @@ class ASTUnaryPointerExpression(ASTUnaryExpression, IHasToken):
         visitor.visit_ast_unary_expression(self)
 
 
-class ASTBinaryExpression(AST, IHasDataType):
+class ASTBinaryExpression(ASTExpression, IHasDataType):
 
     def __init__(self, content: str, left: AST, right: AST):
         assert isinstance(left, AST) and isinstance(right, AST)
@@ -420,7 +429,7 @@ class ASTVariableDeclaration(AST):
         return data_type_ast, type_attribute_asts
 
 
-class ASTVariableDeclarationAndInit(ASTVariableDeclaration):
+class ASTVariableDeclarationAndInit(ASTVariableDeclaration, ASTExpression):
 
     def __init__(self, data_type_and_attributes: list, name: ASTLeaf, value: AST):
         super().__init__(data_type_and_attributes, name)

@@ -1,6 +1,7 @@
 grammar C;
 program:
-    statement+
+    // We start with a global scope which may contain statements
+    scope
 ;
 
 statement:
