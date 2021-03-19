@@ -230,11 +230,10 @@ class ASTBinaryExpression(AST, IHasDataType):
         visitor.visit_ast_binary_expression(self)
 
     def get_left(self):
-        assert isinstance(self.left, IHasDataType)
+        assert isinstance(self.left, ASTLeaf)
         return self.left
 
     def get_right(self):
-        assert isinstance(self.right, IHasDataType)
         return self.right
 
 

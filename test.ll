@@ -7,18 +7,11 @@ target triple = "x86_64-pc-linux-gnu"
 define i32 @main() #0 {
   %1 = alloca i32, align 4
   %2 = alloca i32, align 4
-  %3 = alloca float, align 4
-  %4 = alloca float, align 4
   store i32 5, i32* %1, align 4
   store i32 6, i32* %2, align 4
-  %5 = load i32, i32* %1, align 4
-  %6 = load i32, i32* %2, align 4
-  %7 = add nsw i32 %5, %6
-  %8 = sitofp i32 %7 to float
-  store float %8, float* %3, align 4
-  %9 = load float, float* %3, align 4
-  %10 = fadd float 1.000000e+01, %9
-  store float %10, float* %4, align 4
+  %3 = load i32, i32* %2, align 4
+  store i32 %3, i32* %1, align 4
+  store i32 6, i32* %2, align 4
   ret i32 0
 }
 

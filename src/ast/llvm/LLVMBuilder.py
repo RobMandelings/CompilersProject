@@ -133,12 +133,23 @@ class LLVMBuilder:
         self.register_count += 1
 
     def assign_value_to_variable(self, ast: ASTAssignmentExpression):
-        register = self._compute_expression(ast.right)
-        variable = self.symbol_table.lookup_variable(ast.get_left().get_content())
-        register = self._convert_float_register_to(register, variable.get_data_type())
+        #TODO Type conversions are not supported yet
+        right = ast.get_right()
 
-        variable.set_current_register(register)
-        # TODO conversions can be improved
+        variable = self.symbol_table.lookup_variable(ast.get_left().get_content())
+        current_register = variable.get_current_register()
+        left_datatype = LLVMBuilder.get_llvm_type_from_data_type(variable.get_data_type())
+
+        if not isinstance(right, ASTRValue):
+            value_register = self._compute_expression(right)
+            temporary_register = self.register_count # REGISTER NUMBER (without %)
+
+            self.instructions.append(f"%{temporary_register} = load {left_datatype}, {left_datatype}* {value_register}, align 4")
+            self.register_count += 1
+            self.instructions.append(f"store {left_datatype} %{temporary_register}, {left_datatype}* {current_register}, align 4")
+        else:
+
+            self.instructions.append(f"store {left_datatype} {right.get_content()}, {left_datatype}* {current_register}, align 4")
 
     def _generate_begin_of_file(self):
         begin_of_file = ""
