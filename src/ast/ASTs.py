@@ -152,6 +152,53 @@ class ASTInternal(AST):
             self.children.append(child)
 
 
+class ASTScope(ASTInternal):
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_scope(self)
+
+
+class ASTConditionalStatement(AST):
+
+    def __init__(self, content: str, condition, execution_body: ASTScope):
+        super().__init__(content)
+        self.condition = condition
+        self.execution_body = execution_body
+        assert (isinstance(self.condition, ASTUnaryExpression) or
+                isinstance(self.condition, ASTBinaryExpression) or
+                isinstance(self.condition, ASTVariableDeclarationAndInit))
+
+    def get_condition(self):
+        return self.condition
+
+    def get_execution_body(self):
+        assert isinstance(self.execution_body, ASTScope)
+        return self.execution_body
+
+
+class ASTIfStatement(ASTConditionalStatement):
+
+    def __init__(self, condition, execution_body: ASTScope, else_statement):
+        super().__init__("if", condition, execution_body)
+        self.else_statement = else_statement
+
+    def get_else_statement(self):
+        assert isinstance(self.else_statement, ASTIfStatement)
+        return self.else_statement
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_if_statement(self)
+
+
+class ASTWhileLoop(ASTConditionalStatement):
+
+    def __init__(self, condition, execution_body: ASTScope):
+        super().__init__('while', condition, execution_body)
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_while_loop(self)
+
+
 class ASTUnaryExpression(AST):
 
     def __init__(self, content: str, value_applied_to: AST):

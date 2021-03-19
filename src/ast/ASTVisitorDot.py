@@ -53,3 +53,5 @@ class ASTVisitorDot(ASTBaseVisitor):
     def visit_ast_printf_instruction(self, ast: ASTPrintfInstruction):
         super().visit_ast_printf_instruction(ast)
         self.add_to_dot_node(ast, f"printf({ast.get_content()})")
+
+

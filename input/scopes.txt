@@ -5,8 +5,14 @@
 
     {
 
-        for (int i = 6; 5 < 3; i + 1) {
-            int b = 10;
+        if (b == 10) {
+            for (int i = 6; 5 < 3; i + 1) {
+                int b = 10;
+            }
+        } else if (b == 5) {
+            i = b + 10;
+        } else {
+            b = 15;
         }
     }
 }

@@ -113,6 +113,10 @@ def create_ast_from_concrete_syntax_tree(cst, lexer: CLexer):
         return create_ast_var_declaration(cst, lexer)
     elif isinstance(cst, CParser.TypeDeclaration1Context) or isinstance(cst, CParser.TypeDeclaration2Context):
         return create_type_asts(cst, lexer)
+    elif isinstance(cst, CParser.LoopContext):
+        raise NotImplementedError
+    elif isinstance(cst, CParser.IfStatementContext):
+        raise NotImplementedError
     elif isinstance(cst, TerminalNodeImpl):
         return create_ast_from_terminal_node(cst, lexer)
     else:

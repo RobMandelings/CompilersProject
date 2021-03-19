@@ -65,7 +65,7 @@ class ASTBaseVisitor(IASTVisitor):
         ast.var_name_ast.accept(self)
 
     def visit_ast_variable_declaration_and_init(self, ast: ASTVariableDeclarationAndInit):
-        assert isinstance(ast, ASTVariableDeclarationAndInit), "The AST is not an ASTVariableDeclarationAndInit"
+        assert isinstance(ast, ASTVariableDeclarationAndInit)
         ast.data_type_ast.accept(self)
         for attribute in ast.type_attributes:
             attribute.accept(self)
@@ -74,6 +74,22 @@ class ASTBaseVisitor(IASTVisitor):
 
     def visit_ast_printf_instruction(self, ast: ASTPrintfInstruction):
         pass
+
+    def visit_ast_scope(self, ast):
+        assert isinstance(ast, ASTScope)
+        for child in ast.children:
+            child.accept(self)
+
+    def visit_ast_if_statement(self, ast):
+        assert isinstance(ast, ASTIfStatement)
+        ast.get_condition().accept(self)
+        ast.get_execution_body().accept(self)
+        ast.get_else_statement().accept(self)
+
+    def visit_ast_while_loop(self, ast):
+        assert isinstance(ast, ASTWhileLoop)
+        ast.get_condition().accept(self)
+        ast.get_execution_body().accept(self)
 
     def reset(self):
         """
