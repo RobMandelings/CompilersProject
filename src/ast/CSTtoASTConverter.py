@@ -121,7 +121,6 @@ def can_be_skipped(cst: TerminalNodeImpl, lexer: CLexer):
     Returns true if a certain terminal node can be skipped or not (braces for example)
     """
     # TODO IMPLEMENT THIS
-    pass
 
 
 def append_child_asts_to_ast(ast: ASTInternal, cst, lexer: CLexer):

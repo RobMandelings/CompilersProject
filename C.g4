@@ -115,6 +115,9 @@ CHAR: 'char';
 INT: 'int';
 FLOAT: 'float';
 
+// These nodes will be skipped when creating the AST as they have no purpose after conversion
+TO_SKIP: '{' | '}' | '(' | ')' | ';' ;
+
 // Literals and identifiers
 ID  :   [a-zA-Z_]+ [0-9_]* ;
 CHAR_LITERAL: '\''.'\'' ;
