@@ -10,7 +10,7 @@ class CSTVisitorToDot(CVisitor):
     def __init__(self):
         self.graph = Digraph('Concrete Syntax Tree')
 
-    def toDotCurrent(self, ctx):
+    def to_dot_current(self, ctx):
         if isinstance(ctx, TerminalNodeImpl):
             self.graph.node(str(id(ctx)), ctx.symbol.text)
         else:
@@ -18,62 +18,79 @@ class CSTVisitorToDot(CVisitor):
         if ctx.parentCtx is not None:
             self.graph.edge(str(id(ctx.parentCtx)), str(id(ctx)))
 
+    # Visit any node in the concrete syntax tree to create a dot node
+    def visit_node(self, ctx):
+        self.to_dot_current(ctx)
+        return super().visitChildren(ctx)
+
     def visitProgram(self, ctx: CParser.ProgramContext):
-        self.toDotCurrent(ctx)
-        return super().visitProgram(ctx)
+        self.visit_node(ctx)
 
-    def visitVarDeclaration(self, ctx: CParser.VarDeclarationContext):
-        self.toDotCurrent(ctx)
-        return super().visitVarDeclaration(ctx)
+    def visitStatement(self, ctx: CParser.StatementContext):
+        self.visit_node(ctx)
 
-    def visitExpression(self, ctx: CParser.ExpressionContext):
-        self.toDotCurrent(ctx)
-        return super().visitExpression(ctx)
+    def visitSingleLineStatement(self, ctx: CParser.SingleLineStatementContext):
+        self.visit_node(ctx)
 
-    def visitCompareExpression(self, ctx: CParser.CompareExpressionContext):
-        self.toDotCurrent(ctx)
-        return super().visitCompareExpression(ctx)
+    def visitScopedStatement(self, ctx: CParser.ScopedStatementContext):
+        self.visit_node(ctx)
 
-    def visitAddExpression(self, ctx: CParser.AddExpressionContext):
-        self.toDotCurrent(ctx)
-        return super().visitAddExpression(ctx)
+    def visitLoop(self, ctx: CParser.LoopContext):
+        self.visit_node(ctx)
 
-    def visitMultExpression(self, ctx: CParser.MultExpressionContext):
-        self.toDotCurrent(ctx)
-        return super().visitMultExpression(ctx)
+    def visitIfStatement(self, ctx: CParser.IfStatementContext):
+        self.visit_node(ctx)
 
-    def visitFinalExpression(self, ctx: CParser.FinalExpressionContext):
-        self.toDotCurrent(ctx)
-        return super().visitFinalExpression(ctx)
+    def visitElseStatement(self, ctx: CParser.ElseStatementContext):
+        self.visit_node(ctx)
 
-    def visitTypeDeclaration1(self, ctx: CParser.TypeDeclaration1Context):
-        self.toDotCurrent(ctx)
-        return super().visitTypeDeclaration1(ctx)
+    def visitScope(self, ctx: CParser.ScopeContext):
+        self.visit_node(ctx)
 
-    def visitTypeDeclaration2(self, ctx: CParser.TypeDeclaration2Context):
-        self.toDotCurrent(ctx)
-        return super().visitTypeDeclaration2(ctx)
-
-    def visitConstDeclaration(self, ctx: CParser.ConstDeclarationContext):
-        self.toDotCurrent(ctx)
-        return super().visitConstDeclaration(ctx)
-
-    def visitVarAssignment(self, ctx: CParser.VarAssignmentContext):
-        self.toDotCurrent(ctx)
-        return super().visitVarAssignment(ctx)
-
-    def visitTerminal(self, node):
-        self.toDotCurrent(node)
-        return super().visitTerminal(node)
-
-    def visitUnaryExpression(self, ctx: CParser.UnaryExpressionContext):
-        self.toDotCurrent(ctx)
-        return super().visitUnaryExpression(ctx)
-
-    def visitPointerExpression(self, ctx: CParser.PointerExpressionContext):
-        self.toDotCurrent(ctx)
-        return super().visitPointerExpression(ctx)
+    def visitControlFlowStatement(self, ctx: CParser.ControlFlowStatementContext):
+        self.visit_node(ctx)
 
     def visitPrintfStatement(self, ctx: CParser.PrintfStatementContext):
-        self.toDotCurrent(ctx)
-        return super().visitPrintfStatement(ctx)
+        self.visit_node(ctx)
+
+    def visitVarDeclaration(self, ctx: CParser.VarDeclarationContext):
+        self.visit_node(ctx)
+
+    def visitTypeDeclaration1(self, ctx: CParser.TypeDeclaration1Context):
+        self.visit_node(ctx)
+
+    def visitTypeDeclaration2(self, ctx: CParser.TypeDeclaration2Context):
+        self.visit_node(ctx)
+
+    def visitConstDeclaration(self, ctx: CParser.ConstDeclarationContext):
+        self.visit_node(ctx)
+
+    def visitVarDeclarationAndInit(self, ctx: CParser.VarDeclarationAndInitContext):
+        self.visit_node(ctx)
+
+    def visitVarAssignment(self, ctx: CParser.VarAssignmentContext):
+        self.visit_node(ctx)
+
+    def visitExpression(self, ctx: CParser.ExpressionContext):
+        self.visit_node(ctx)
+
+    def visitCompareExpression(self, ctx: CParser.CompareExpressionContext):
+        self.visit_node(ctx)
+
+    def visitAddExpression(self, ctx: CParser.AddExpressionContext):
+        self.visit_node(ctx)
+
+    def visitMultExpression(self, ctx: CParser.MultExpressionContext):
+        self.visit_node(ctx)
+
+    def visitUnaryExpression(self, ctx: CParser.UnaryExpressionContext):
+        self.visit_node(ctx)
+
+    def visitPointerExpression(self, ctx: CParser.PointerExpressionContext):
+        self.visit_node(ctx)
+
+    def visitEnclosedExpression(self, ctx: CParser.EnclosedExpressionContext):
+        self.visit_node(ctx)
+
+    def visitFinalExpression(self, ctx: CParser.FinalExpressionContext):
+        self.visit_node(ctx)
