@@ -56,21 +56,24 @@ def create_ast_from_concrete_syntax_tree(cst, lexer: CLexer):
         return ast_children
     elif isinstance(cst, TerminalNodeImpl):
 
-        if is_identifier(cst, lexer):
-            return ASTLValue(cst.getSymbol().text)
+        if can_be_skipped(cst, lexer):
+            return None
         else:
-            data_type_token = get_data_type_token(cst, lexer)
-            type_attribute_token = get_type_attribute_token(cst)
-
-            if is_rvalue(cst, lexer):
-                return ASTRValue(data_type_token, cst.getSymbol().text)
-            elif is_type_declaration(cst):
-                return ASTDataType(data_type_token)
-            elif type_attribute_token is not None:
-                return ASTTypeAttribute(type_attribute_token)
+            if is_identifier(cst, lexer):
+                return ASTLValue(cst.getSymbol().text)
             else:
-                print(f"WARN: Skipping CST Node (returning null) with value {cst.getSymbol().text}")
-                return None
+                data_type_token = get_data_type_token(cst, lexer)
+                type_attribute_token = get_type_attribute_token(cst)
+
+                if is_rvalue(cst, lexer):
+                    return ASTRValue(data_type_token, cst.getSymbol().text)
+                elif is_type_declaration(cst):
+                    return ASTDataType(data_type_token)
+                elif type_attribute_token is not None:
+                    return ASTTypeAttribute(type_attribute_token)
+                else:
+                    print(f"WARN: Skipping CST Node (returning null) with value {cst.getSymbol().text}")
+                    return None
     else:
 
         if len(cst.children) == 1:
@@ -120,7 +123,7 @@ def can_be_skipped(cst: TerminalNodeImpl, lexer: CLexer):
     """
     Returns true if a certain terminal node can be skipped or not (braces for example)
     """
-    # TODO IMPLEMENT THIS
+    return cst.getSymbol().type == lexer.TO_SKIP
 
 
 def append_child_asts_to_ast(ast: ASTInternal, cst, lexer: CLexer):

@@ -20,10 +20,6 @@ def main(argv):
     # tree.accept(cst_visitor_to_dot)
     # cst_visitor_to_dot.graph.render('output/cst.gv', view=False)
 
-    tree = parser.program()
-
-    cst_visitor_to_dot = CSTVisitorToDot()
-
     # try:
     # tree = parser.program()
     #
