@@ -1,4 +1,4 @@
-from CSTVisitors import CSTVisitorToDot
+from CSTVisitorToDot import CSTVisitorToDot
 from src.ast.CSTtoASTConverter import *
 from src.syntacticalAnalysis import CSTErrorListener
 
