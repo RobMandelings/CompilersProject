@@ -94,3 +94,7 @@ class CSTVisitorToDot(CVisitor):
 
     def visitFinalExpression(self, ctx: CParser.FinalExpressionContext):
         self.visit_node(ctx)
+
+    def visitTerminal(self, node):
+        self.to_dot_current(node)
+        super().visitTerminal(node)
