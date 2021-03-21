@@ -155,7 +155,7 @@ class ASTInternal(AST):
 class ASTScope(ASTInternal):
 
     def __init__(self):
-        super().__init__('scope')
+        super().__init__('body (scope)')
 
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_scope(self)
@@ -165,9 +165,11 @@ class ASTConditionalStatement(AST):
 
     def __init__(self, content: str, condition, execution_body: ASTScope):
         super().__init__(content)
-        execution_body.content = 'body (scope)'
         self.condition = condition
         self.execution_body = execution_body
+
+    def accept(self, visitor: IASTVisitor):
+        raise NotImplementedError
 
     def get_condition(self):
         return self.condition
