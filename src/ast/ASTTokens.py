@@ -53,7 +53,7 @@ class TypeAttributeToken(NamedEnum):
     def from_str(name: str):
 
         if name == 'const':
-            return DataTypeToken.CONST
+            return TypeAttributeToken.CONST
         else:
             return None
 
