@@ -365,7 +365,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         if len(self.symbol_table_stack) > 0:
             new_symbol_table.set_parent(self.get_last_symbol_table())
 
-        self.symbol_table_stack.append(SymbolTable())
+        self.symbol_table_stack.append(new_symbol_table)
 
     def on_scope_exit(self):
         self.symbol_table_stack.pop()

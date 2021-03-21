@@ -1,11 +1,14 @@
 {
-    //int i = 5;
+    int i = 5;
+    int b = 5;
 
     if (i == 5) {
 
     } else if (b == 3) {
 
     } else if (c == 9) {
+
+        int notGood = 10;
 
         while (i < 6) {
             int daWerkt = b * 20;
@@ -17,10 +20,11 @@
         }
 
     } else {
+        notGood = 3;
         int gekkeVariable = 5;
     }
 
-    /**float b = 6;
+    //float b = 6;
 
     {
 
@@ -33,5 +37,5 @@
         } else {
             b = 15;
         }
-    }*/
+    }
 }

@@ -78,6 +78,6 @@ class SymbolTable:
         self.parent = parent
 
     def insert_symbol(self, symbol: Symbol):
-        assert self.lookup(symbol.symbol_name) is None
+        assert self.lookup_local(symbol.symbol_name) is None
         self.symbols[symbol.symbol_name] = symbol
-        assert self.lookup(symbol.symbol_name) is not None
+        assert self.lookup_local(symbol.symbol_name) is not None
