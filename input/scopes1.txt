@@ -3,6 +3,10 @@
 
     if (i == 5) {
 
+    } else if (b == 3) {
+
+    } else {
+        int gekkeVariable = 5;
     }
 
     /**float b = 6;

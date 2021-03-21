@@ -82,7 +82,8 @@ class ASTBaseVisitor(IASTVisitor):
 
     def visit_ast_if_statement(self, ast: ASTIfStatement):
         assert isinstance(ast, ASTIfStatement)
-        ast.get_condition().accept(self)
+        if ast.get_condition() is not None:
+            ast.get_condition().accept(self)
         ast.get_execution_body().accept(self)
         if ast.get_else_statement() is not None:
             ast.get_else_statement().accept(self)

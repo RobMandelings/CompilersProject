@@ -168,9 +168,6 @@ class ASTConditionalStatement(AST):
         execution_body.content = 'body (scope)'
         self.condition = condition
         self.execution_body = execution_body
-        assert (isinstance(self.condition, ASTUnaryExpression) or
-                isinstance(self.condition, ASTBinaryExpression) or
-                isinstance(self.condition, ASTVariableDeclarationAndInit))
 
     def get_condition(self):
         return self.condition

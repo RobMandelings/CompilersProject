@@ -102,7 +102,9 @@ def create_ast_scope(cst: CParser.ScopeContext):
 
     # Skip the curly braces
     for i in range(1, len(cst.children) - 1):
-        ast_scope.add_child(create_ast_from_cst(cst.children[i]))
+        ast_child = create_ast_from_cst(cst.children[i])
+        assert ast_child is not None
+        ast_scope.add_child(ast_child)
 
     return ast_scope
 
@@ -121,8 +123,8 @@ def create_ast_loop(cst: CParser.LoopContext):
     return ASTWhileLoop(condition, execution_body)
 
 
-def create_ast_if_statement(cst: CParser.IfStatementContext):
-    assert isinstance(cst, CParser.IfStatementContext)
+def create_ast_if_statement(cst):
+    assert isinstance(cst, CParser.IfStatementContext) or isinstance(cst, CParser.ElseStatementContext)
 
     children_asts = list()
 
@@ -138,7 +140,6 @@ def create_ast_if_statement(cst: CParser.IfStatementContext):
     for child_ast in children_asts:
         if isinstance(child_ast, ASTExpression):
             condition = child_ast
-            condition
         elif isinstance(child_ast, ASTScope):
             execution_body = child_ast
         elif isinstance(child_ast, ASTIfStatement):
@@ -155,7 +156,10 @@ def create_ast_if_statement(cst: CParser.IfStatementContext):
 
     assert token is not None
     if_statement = ASTIfStatement(token, condition, execution_body, else_statement)
-    condition.parent = if_statement
+
+    if condition is not None:
+        condition.parent = if_statement
+        
     execution_body.parent = if_statement
 
     if else_statement is not None:
@@ -180,8 +184,13 @@ def create_ast_from_cst(cst):
         return create_ast_scope(cst)
     elif isinstance(cst, CParser.LoopContext):
         return create_ast_loop(cst)
-    elif isinstance(cst, CParser.IfStatementContext):
+    elif isinstance(cst, CParser.IfStatementContext) or isinstance(cst, CParser.ElseStatementContext):
         return create_ast_if_statement(cst)
+    elif isinstance(cst, CParser.StatementContext):
+        if isinstance(cst.children[0], CParser.SingleLineStatementContext):
+            return create_ast_from_cst(cst.children[0])
+        elif isinstance(cst.children[0], CParser.ScopedStatementContext):
+            return create_ast_from_cst(cst.children[0])
     elif isinstance(cst, CParser.EnclosedExpressionContext):
         return create_ast_from_cst(cst.children[1])
     elif isinstance(cst, TerminalNodeImpl):
@@ -191,8 +200,10 @@ def create_ast_from_cst(cst):
         if len(cst.children) == 1:
             # Just pass to the child
             return create_ast_from_cst(cst.children[0])
-        else:
+        elif is_unary_expression(cst) or is_binary_expression(cst):
             return create_ast_expression(cst)
+
+    raise NotImplementedError
 
 
 def append_child_asts_to_ast(ast: ASTInternal, cst):
