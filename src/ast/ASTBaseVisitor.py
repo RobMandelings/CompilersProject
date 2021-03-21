@@ -9,10 +9,10 @@ class ASTBaseVisitor(IASTVisitor):
     """
 
     def visit_ast_leaf(self, ast: ASTLeaf):
-        assert isinstance(ast, ASTLeaf), "The AST is not an ASTLeaf"
+        assert isinstance(ast, ASTLeaf)
 
     def visit_ast_literal(self, ast: ASTRValue):
-        assert isinstance(ast, ASTRValue), "The AST is not an ASTLiteral"
+        assert isinstance(ast, ASTRValue)
         self.visit_ast_leaf(ast)
 
     def visit_ast_data_type(self, ast: ASTDataType):
@@ -28,16 +28,16 @@ class ASTBaseVisitor(IASTVisitor):
         self.visit_ast_leaf(ast)
 
     def visit_ast_internal(self, ast: ASTInternal):
-        assert isinstance(ast, ASTInternal), "The AST is not an ASTInternal"
+        assert isinstance(ast, ASTInternal)
         for child in ast.children:
             child.accept(self)
 
     def visit_ast_unary_expression(self, ast: ASTUnaryExpression):
-        assert isinstance(ast, ASTUnaryExpression), "The AST is not an ASTUnaryExpression"
+        assert isinstance(ast, ASTUnaryExpression)
         ast.value_applied_to.accept(self)
 
     def visit_ast_binary_expression(self, ast: ASTBinaryExpression):
-        assert isinstance(ast, ASTBinaryExpression), "The AST is not an ASTBinaryExpression"
+        assert isinstance(ast, ASTBinaryExpression)
         ast.left.accept(self)
         ast.right.accept(self)
 
@@ -54,11 +54,11 @@ class ASTBaseVisitor(IASTVisitor):
         Does nothing special by default, just goes to the visit binary expression method.
         If you would want to do something special in case of the assignment expression, override this method
         """
-        assert isinstance(ast, ASTAssignmentExpression), "The AST is not an ASTAssignmentExpression"
+        assert isinstance(ast, ASTAssignmentExpression)
         self.visit_ast_binary_expression(ast)
 
     def visit_ast_variable_declaration(self, ast: ASTVariableDeclaration):
-        assert isinstance(ast, ASTVariableDeclaration), "The AST is not an ASTVariableDeclaration"
+        assert isinstance(ast, ASTVariableDeclaration)
         ast.data_type_ast.accept(self)
         for attribute in ast.type_attributes:
             attribute.accept(self)
