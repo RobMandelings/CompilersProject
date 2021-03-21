@@ -1,6 +1,7 @@
 from CSTVisitorToDot import CSTVisitorToDot
 from src.ast.ASTVisitorDot import ASTVisitorDot
 from src.ast.CSTtoASTConverter import *
+from src.ast.llvm.ASTVisitorToLLVM import ASTVisitorToLLVM
 from src.ast.semantic_analysis.ASTVisitorSemanticAnalysis import ASTVisitorSemanticAnalysis, SemanticError
 from src.syntacticalAnalysis import CSTErrorListener
 
@@ -36,9 +37,9 @@ def main(argv):
             ast.accept(ast_visitor_dot)
             ast_visitor_dot.graph.render('output/ast-optimized.gv', view=False)
 
-            # ast_visitor_to_llvm = ASTVisitorToLLVM()
-            # ast.accept(ast_visitor_to_llvm)
-            # ast_visitor_to_llvm.to_file("output/converted.b")
+            ast_visitor_to_llvm = ASTVisitorToLLVM()
+            ast.accept(ast_visitor_to_llvm)
+            ast_visitor_to_llvm.to_file("output/converted.ll")
 
         except SemanticError as e:
             print("A semantic error occurred: ")
