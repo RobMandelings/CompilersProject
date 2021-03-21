@@ -41,24 +41,21 @@ def create_type_asts(cst):
 
 
 def create_ast_from_terminal_node(cst: TerminalNodeImpl):
-    if can_be_skipped(cst):
-        return None
+    if is_identifier(cst):
+        return ASTLValue(cst.getSymbol().text)
     else:
-        if is_identifier(cst):
-            return ASTLValue(cst.getSymbol().text)
-        else:
-            data_type_token = get_data_type_token(cst)
-            type_attribute_token = get_type_attribute_token(cst)
+        data_type_token = get_data_type_token(cst)
+        type_attribute_token = get_type_attribute_token(cst)
 
-            if is_rvalue(cst):
-                return ASTRValue(data_type_token, cst.getSymbol().text)
-            elif is_type_declaration(cst):
-                return ASTDataType(data_type_token)
-            elif type_attribute_token is not None:
-                return ASTTypeAttribute(type_attribute_token)
-            else:
-                print(f"WARN: Skipping CST Node (returning null) with value {cst.getSymbol().text}")
-                return None
+        if is_rvalue(cst):
+            return ASTRValue(data_type_token, cst.getSymbol().text)
+        elif is_type_declaration(cst):
+            return ASTDataType(data_type_token)
+        elif type_attribute_token is not None:
+            return ASTTypeAttribute(type_attribute_token)
+
+    print(f"WARN: Skipping CST Terminal Node (returning None) with value '{cst.getSymbol().text}'")
+    return None
 
 
 def create_ast_expression(cst):
@@ -104,8 +101,10 @@ def create_ast_scope(cst: CParser.ScopeContext):
     ast_scope = ASTScope()
 
     # Skip the curly braces
-    for i in range(1, len(cst.children) - 2):
+    for i in range(1, len(cst.children) - 1):
         ast_scope.add_child(create_ast_from_cst(cst.children[i]))
+
+    return ast_scope
 
 
 def create_ast_loop(cst: CParser.LoopContext):
@@ -139,12 +138,29 @@ def create_ast_if_statement(cst: CParser.IfStatementContext):
     for child_ast in children_asts:
         if isinstance(child_ast, ASTExpression):
             condition = child_ast
+            condition
         elif isinstance(child_ast, ASTScope):
             execution_body = child_ast
         elif isinstance(child_ast, ASTIfStatement):
             else_statement = child_ast
 
-    return ASTIfStatement(condition, execution_body, else_statement)
+    token = None
+    if cst.children[0].getSymbol().type == CLexer.IF:
+        token = IfStatementToken.IF
+    elif cst.children[0].getSymbol().type == CLexer.ELSE:
+        if isinstance(cst.children[1], TerminalNodeImpl) and cst.children[1].getSymbol().type == CLexer.IF:
+            token = IfStatementToken.ELSE_IF
+        else:
+            token = IfStatementToken.ELSE
+
+    assert token is not None
+    if_statement = ASTIfStatement(token, condition, execution_body, else_statement)
+    condition.parent = if_statement
+    execution_body.parent = if_statement
+
+    if else_statement is not None:
+        else_statement.parent = if_statement
+    return if_statement
 
 
 def create_ast_from_cst(cst):
@@ -165,7 +181,7 @@ def create_ast_from_cst(cst):
     elif isinstance(cst, CParser.LoopContext):
         return create_ast_loop(cst)
     elif isinstance(cst, CParser.IfStatementContext):
-        raise create_ast_if_statement(cst)
+        return create_ast_if_statement(cst)
     elif isinstance(cst, CParser.EnclosedExpressionContext):
         return create_ast_from_cst(cst.children[1])
     elif isinstance(cst, TerminalNodeImpl):
@@ -176,15 +192,7 @@ def create_ast_from_cst(cst):
             # Just pass to the child
             return create_ast_from_cst(cst.children[0])
         else:
-
             return create_ast_expression(cst)
-
-
-def can_be_skipped(cst: TerminalNodeImpl):
-    """
-    Returns true if a certain terminal node can be skipped or not (braces for example)
-    """
-    return cst.getSymbol().type == CLexer.TO_SKIP
 
 
 def append_child_asts_to_ast(ast: ASTInternal, cst):

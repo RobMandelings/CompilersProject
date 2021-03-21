@@ -46,7 +46,7 @@ class ASTBaseVisitor(IASTVisitor):
         self.visit_ast_binary_expression(ast)
 
     def visit_ast_binary_compare_expression(self, ast: ASTRelationalExpression):
-        assert isinstance(ast, ASTBinaryArithmeticExpression)
+        assert isinstance(ast, ASTRelationalExpression)
         self.visit_ast_binary_expression(ast)
 
     def visit_ast_assignment_expression(self, ast: ASTAssignmentExpression):
@@ -84,7 +84,8 @@ class ASTBaseVisitor(IASTVisitor):
         assert isinstance(ast, ASTIfStatement)
         ast.get_condition().accept(self)
         ast.get_execution_body().accept(self)
-        ast.get_else_statement().accept(self)
+        if ast.get_else_statement() is not None:
+            ast.get_else_statement().accept(self)
 
     def visit_ast_while_loop(self, ast: ASTWhileLoop):
         assert isinstance(ast, ASTWhileLoop)

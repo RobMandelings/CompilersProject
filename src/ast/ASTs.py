@@ -165,6 +165,7 @@ class ASTConditionalStatement(AST):
 
     def __init__(self, content: str, condition, execution_body: ASTScope):
         super().__init__(content)
+        execution_body.content = 'body (scope)'
         self.condition = condition
         self.execution_body = execution_body
         assert (isinstance(self.condition, ASTUnaryExpression) or
@@ -179,14 +180,21 @@ class ASTConditionalStatement(AST):
         return self.execution_body
 
 
-class ASTIfStatement(ASTConditionalStatement):
+class ASTIfStatement(ASTConditionalStatement, IHasToken):
 
-    def __init__(self, condition, execution_body: ASTScope, else_statement):
-        super().__init__("if", condition, execution_body)
+    def __init__(self, token: IfStatementToken, condition, execution_body: ASTScope, else_statement):
+        super().__init__(token.token_name, condition, execution_body)
+        if token == IfStatementToken.ELSE:
+            assert else_statement is None
         self.else_statement = else_statement
+        self.token = token
+
+    def get_token(self):
+        assert isinstance(self.token, IfStatementToken)
+        return self.token
 
     def get_else_statement(self):
-        assert isinstance(self.else_statement, ASTIfStatement)
+        assert self.else_statement is None or isinstance(self.else_statement, ASTIfStatement)
         return self.else_statement
 
     def accept(self, visitor: IASTVisitor):

@@ -1,4 +1,5 @@
 from CSTVisitorToDot import CSTVisitorToDot
+from src.ast.ASTVisitorDot import ASTVisitorDot
 from src.ast.CSTtoASTConverter import *
 from src.syntacticalAnalysis import CSTErrorListener
 
@@ -20,6 +21,11 @@ def main(argv):
     tree.accept(cst_visitor_to_dot)
     cst_visitor_to_dot.graph.render('output/cst.gv', view=False)
 
+    ast = create_ast_from_cst(tree)
+    ast_visitor_dot = ASTVisitorDot()
+    ast.accept(ast_visitor_dot)
+    ast_visitor_dot.graph.render('output/ast.gv', view=False)
+    
     # try:
     # tree = parser.program()
     #
