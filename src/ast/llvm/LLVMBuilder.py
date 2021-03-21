@@ -11,7 +11,7 @@ class LLVMBuilder:
         pass
 
     @staticmethod
-    def get_llvm_type_from_data_type(data_type: DataTypeToken):
+    def get_llvm_type(data_type: DataTypeToken):
         if data_type == DataTypeToken.CHAR:
             return "i8"
         elif data_type == DataTypeToken.INT:
@@ -87,7 +87,7 @@ class LLVMBuilder:
 
         if to_type != DataTypeToken.FLOAT:
             self.instructions.append(
-                f"%{self.register_count} = fptosi float {register} to {self.get_llvm_type_from_data_type(to_type)}")
+                f"%{self.register_count} = fptosi float {register} to {self.get_llvm_type(to_type)}")
             self.register_count += 1
             return register_to_return
 
@@ -107,7 +107,7 @@ class LLVMBuilder:
         current_register = f"{self.register_count}"
 
         self.instructions.append(
-            f"%{current_register} = alloca {LLVMBuilder.get_llvm_type_from_data_type(declared_variable.get_data_type())}, align 4")
+            f"%{current_register} = alloca {LLVMBuilder.get_llvm_type(declared_variable.get_data_type())}, align 4")
 
         self.register_count += 1
         declared_variable.set_current_register(current_register)
@@ -124,7 +124,7 @@ class LLVMBuilder:
         declared_variable = LLVMVariableSymbol(ast.var_name_ast.get_content(), ast.data_type_ast.get_token(),
                                                register)
         self.symbol_table.insert_symbol(declared_variable)
-        datatype = LLVMBuilder.get_llvm_type_from_data_type(declared_variable.get_data_type())
+        datatype = LLVMBuilder.get_llvm_type(declared_variable.get_data_type())
 
         self.instructions.append(f"{register} = alloca {datatype}, align 4")
         self.instructions.append(f"store {datatype} {value_to_store}, {datatype}* {register}, align 4")
@@ -138,7 +138,7 @@ class LLVMBuilder:
 
         variable = self.symbol_table.lookup_variable(ast.get_left().get_content())
         current_register = variable.get_current_register()
-        left_datatype = LLVMBuilder.get_llvm_type_from_data_type(variable.get_data_type())
+        left_datatype = LLVMBuilder.get_llvm_type(variable.get_data_type())
 
         if not isinstance(right, ASTRValue):
             value_register = self._compute_expression(right)
