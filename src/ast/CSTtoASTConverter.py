@@ -120,7 +120,11 @@ def create_ast_loop(cst: CParser.LoopContext):
     else:
         raise NotImplementedError
 
-    return ASTWhileLoop(condition, execution_body)
+    loop = ASTWhileLoop(condition, execution_body)
+    condition.parent = loop
+    execution_body.parent = loop
+
+    return loop
 
 
 def create_ast_if_statement(cst):
@@ -159,7 +163,7 @@ def create_ast_if_statement(cst):
 
     if condition is not None:
         condition.parent = if_statement
-        
+
     execution_body.parent = if_statement
 
     if else_statement is not None:

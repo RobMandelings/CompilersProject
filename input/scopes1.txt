@@ -5,6 +5,17 @@
 
     } else if (b == 3) {
 
+    } else if (c == 9) {
+
+        while (i < 6) {
+            int daWerkt = b * 20;
+            if (daWerkt == 30) {
+                i = i + 2;
+            } else {
+                i = i + 1;
+            }
+        }
+
     } else {
         int gekkeVariable = 5;
     }
