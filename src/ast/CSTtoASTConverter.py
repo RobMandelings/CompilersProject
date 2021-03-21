@@ -95,36 +95,54 @@ def create_ast_expression(cst):
             raise NotImplementedError
 
 
-def create_ast_scope(cst: CParser.ScopeContext):
-    assert isinstance(cst, CParser.ScopeContext)
+def create_ast_scope(cst):
+    assert isinstance(cst, CParser.ScopeContext) or isinstance(cst, CParser.ProgramContext)
 
     ast_scope = ASTScope()
 
+    if isinstance(cst, CParser.ProgramContext):
+        ast_scope.content = 'global scope'
+
     # Skip the curly braces
-    for i in range(1, len(cst.children) - 1):
-        ast_child = create_ast_from_cst(cst.children[i])
-        assert ast_child is not None
-        ast_scope.add_child(ast_child)
+    for child in cst.children:
+        ast_child = create_ast_from_cst(child)
+        if ast_child is not None:
+            ast_scope.add_child(ast_child)
 
     return ast_scope
 
 
-def create_ast_loop(cst: CParser.LoopContext):
-    assert isinstance(cst, CParser.LoopContext)
+def create_ast_while_loop(cst: CParser.LoopContext):
+    assert isinstance(cst, CParser.LoopContext) and cst.children[0].getSymbol().type == CLexer.WHILE
 
-    if cst.children[0].getSymbol().type == CLexer.WHILE:
-        condition = create_ast_from_cst(cst.children[1])
-        execution_body = create_ast_from_cst(cst.children[2])
-    elif cst.children[0].getSymbol().type == CLexer.FOR:
-        raise NotImplementedError
-    else:
-        raise NotImplementedError
+    condition = create_ast_from_cst(cst.children[1])
+    execution_body = create_ast_from_cst(cst.children[2])
 
     loop = ASTWhileLoop(condition, execution_body)
     condition.parent = loop
     execution_body.parent = loop
 
     return loop
+
+
+def create_ast_for_loop(cst: CParser.LoopContext):
+    assert isinstance(cst, CParser.LoopContext) and cst.children[0].getSymbol().type == CLexer.FOR
+
+    start = create_ast_from_cst(cst.children[2])
+    condition = create_ast_from_cst(cst.children[4])
+    end = create_ast_from_cst(cst.children[6])
+    execution_body = create_ast_from_cst(cst.children[8])
+
+    execution_body.add_child(end)
+
+    while_loop = ASTWhileLoop(condition, execution_body)
+    condition.set_parent(while_loop)
+    execution_body.set_parent(while_loop)
+
+    to_return = list()
+    to_return.append(start)
+    to_return.append(while_loop)
+    return to_return
 
 
 def create_ast_if_statement(cst):
@@ -172,11 +190,7 @@ def create_ast_if_statement(cst):
 
 
 def create_ast_from_cst(cst):
-    if isinstance(cst, CParser.ProgramContext):
-        ast_program = ASTInternal('program')
-        append_child_asts_to_ast(ast_program, cst)
-        return ast_program
-    elif isinstance(cst, CParser.PrintfStatementContext):
+    if isinstance(cst, CParser.PrintfStatementContext):
         return ASTPrintfInstruction(create_ast_from_cst(cst.children[2]))
     elif isinstance(cst, CParser.VarDeclarationAndInitContext):
         return create_ast_var_declaration_and_init(cst)
@@ -184,10 +198,13 @@ def create_ast_from_cst(cst):
         return create_ast_var_declaration(cst)
     elif isinstance(cst, CParser.TypeDeclaration1Context) or isinstance(cst, CParser.TypeDeclaration2Context):
         return create_type_asts(cst)
-    elif isinstance(cst, CParser.ScopeContext):
+    elif isinstance(cst, CParser.ScopeContext) or isinstance(cst, CParser.ProgramContext):
         return create_ast_scope(cst)
     elif isinstance(cst, CParser.LoopContext):
-        return create_ast_loop(cst)
+        if cst.children[0].getSymbol().type == CLexer.WHILE:
+            return create_ast_while_loop(cst)
+        elif cst.children[0].getSymbol().type == CLexer.FOR:
+            return create_ast_for_loop(cst)
     elif isinstance(cst, CParser.IfStatementContext) or isinstance(cst, CParser.ElseStatementContext):
         return create_ast_if_statement(cst)
     elif isinstance(cst, CParser.StatementContext):
