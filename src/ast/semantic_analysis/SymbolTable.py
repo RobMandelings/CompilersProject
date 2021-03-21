@@ -40,15 +40,17 @@ class SymbolTable:
         self.parent = None
         self.symbols = dict()
 
-    def __lookup_local(self, symbol: str):
-        lookup = self.symbols[symbol]
-        assert lookup is None or isinstance(lookup, Symbol)
-        return lookup
+    def lookup_local(self, symbol: str):
+        if symbol in self.symbols:
+            lookup = self.symbols[symbol]
+            assert isinstance(lookup, Symbol)
+            return lookup
+        return None
 
     def lookup(self, symbol: str):
-        if symbol in self.symbols:
-            lookup_local = self.symbols[symbol]
-            return lookup_local
+        lookup = self.lookup_local(symbol)
+        if lookup is not None:
+            return lookup
         else:
             if self.parent is not None:
                 assert isinstance(self.parent, SymbolTable)
@@ -68,7 +70,14 @@ class SymbolTable:
         assert isinstance(variable, VariableSymbol)
         return variable
 
+    def set_parent(self, parent):
+        """
+        Sets the parent of this symbol table to another symbol table.
+        """
+        assert isinstance(parent, SymbolTable) and not id(self) == id(parent)
+        self.parent = parent
+
     def insert_symbol(self, symbol: Symbol):
-        assert self.lookup(symbol.symbol_name) is None
+        assert self.lookup_local(symbol.symbol_name) is None
         self.symbols[symbol.symbol_name] = symbol
-        assert self.lookup(symbol.symbol_name) is not None
+        assert self.lookup_local(symbol.symbol_name) is not None

@@ -1,5 +1,3 @@
-from abc import abstractmethod
-
 from src.ast.ASTTokens import *
 from src.ast.IAstVisitor import IASTVisitor
 
@@ -154,7 +152,70 @@ class ASTInternal(AST):
             self.children.append(child)
 
 
-class ASTUnaryExpression(AST):
+class ASTScope(ASTInternal):
+
+    def __init__(self):
+        super().__init__('body (scope)')
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_scope(self)
+
+
+class ASTConditionalStatement(AST):
+
+    def __init__(self, content: str, condition, execution_body: ASTScope):
+        super().__init__(content)
+        self.condition = condition
+        self.execution_body = execution_body
+
+    def accept(self, visitor: IASTVisitor):
+        raise NotImplementedError
+
+    def get_condition(self):
+        return self.condition
+
+    def get_execution_body(self):
+        assert isinstance(self.execution_body, ASTScope)
+        return self.execution_body
+
+
+class ASTIfStatement(ASTConditionalStatement, IHasToken):
+
+    def __init__(self, token: IfStatementToken, condition, execution_body: ASTScope, else_statement):
+        super().__init__(token.token_name, condition, execution_body)
+        if token == IfStatementToken.ELSE:
+            assert else_statement is None
+        self.else_statement = else_statement
+        self.token = token
+
+    def get_token(self):
+        assert isinstance(self.token, IfStatementToken)
+        return self.token
+
+    def get_else_statement(self):
+        assert self.else_statement is None or isinstance(self.else_statement, ASTIfStatement)
+        return self.else_statement
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_if_statement(self)
+
+
+class ASTWhileLoop(ASTConditionalStatement):
+
+    def __init__(self, condition, execution_body: ASTScope):
+        super().__init__('while', condition, execution_body)
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_while_loop(self)
+
+
+class ASTExpression(AST):
+
+    def accept(self, visitor: IASTVisitor):
+        raise NotImplementedError
+
+
+class ASTUnaryExpression(ASTExpression):
 
     def __init__(self, content: str, value_applied_to: AST):
         super().__init__(content)
@@ -208,7 +269,7 @@ class ASTUnaryPointerExpression(ASTUnaryExpression, IHasToken):
         visitor.visit_ast_unary_expression(self)
 
 
-class ASTBinaryExpression(AST, IHasDataType):
+class ASTBinaryExpression(ASTExpression, IHasDataType):
 
     def __init__(self, content: str, left: AST, right: AST):
         assert isinstance(left, AST) and isinstance(right, AST)
@@ -374,7 +435,7 @@ class ASTVariableDeclaration(AST):
         return data_type_ast, type_attribute_asts
 
 
-class ASTVariableDeclarationAndInit(ASTVariableDeclaration):
+class ASTVariableDeclarationAndInit(ASTVariableDeclaration, ASTExpression):
 
     def __init__(self, data_type_and_attributes: list, name: ASTLeaf, value: AST):
         super().__init__(data_type_and_attributes, name)

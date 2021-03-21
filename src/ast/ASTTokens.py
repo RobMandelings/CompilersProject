@@ -53,7 +53,25 @@ class TypeAttributeToken(NamedEnum):
     def from_str(name: str):
 
         if name == 'const':
-            return DataTypeToken.CONST
+            return TypeAttributeToken.CONST
+        else:
+            return None
+
+
+class IfStatementToken(NamedEnum):
+    IF = 'if'
+    ELSE_IF = 'else if'
+    ELSE = 'else'
+
+    @staticmethod
+    def from_str(name: str):
+
+        if name == 'if':
+            return IfStatementToken.IF
+        elif name == 'else if':
+            return IfStatementToken.ELSE_IF
+        elif name == 'else if':
+            return IfStatementToken.ELSE
         else:
             return None
 
@@ -142,6 +160,7 @@ class BitwiseExprToken(NamedEnum):
         else:
             return None
 
+
 class RelationalExprToken(NamedEnum):
     GREATER_THAN = '>'
     GREATER_THAN_OR_EQUALS = '>='
@@ -166,4 +185,3 @@ class RelationalExprToken(NamedEnum):
             return RelationalExprToken.NOT_EQUALS
         else:
             return None
-

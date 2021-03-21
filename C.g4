@@ -1,76 +1,127 @@
 grammar C;
-program: instructions;
-instructions: instruction+;
-instruction:
-    varDeclaration ';'
-    | varAssignment ';'
-    | expr ';'
-    | printfInstruction
+program:
+    // We start with a global scope which may contain statements
+    statement+
+;
+
+statement:
+    singleLineStatement ';' |
+    scopedStatement
     ;
-printfInstruction:
-    'printf' '(' (ID|CHAR|DOUBLE|INTEGER) ')' ';'
+
+singleLineStatement:
+    expression |
+    varDeclaration |
+    controlFlowStatement |
+    printfStatement
     ;
-varDeclaration:
-    // Declaration and initialization
-    typeDeclaration1 varInit
-    | typeDeclaration1 ID
+
+scopedStatement:
+    scope |
+    loop |
+    ifStatement
     ;
-varInit:
-    ID '=' expr
+
+// Everything to do with loops
+loop:
+    WHILE enclosedExpression scope |
+    FOR '(' expression ';' expression ';' expression ')' scope
     ;
-varAssignment:
-    ID '=' expr
+
+// Handles if, else if and else statement
+ifStatement:
+    IF enclosedExpression scope |
+    IF enclosedExpression scope elseStatement
     ;
-expr: compareExpr;
-compareExpr:
-    compareExpr '>' addExpr
-    | compareExpr '<' addExpr
-    | compareExpr '==' addExpr
-    | addExpr
+elseStatement:
+    ELSE IF enclosedExpression scope elseStatement |
+    ELSE IF enclosedExpression scope |
+    ELSE scope
     ;
-addExpr:
-    addExpr '+' multExpr
-    | addExpr '-' multExpr
-    | multExpr
-    ;
-multExpr:
-    multExpr '*' unaryExpr
-    | multExpr '/' unaryExpr
-    | unaryExpr
-    ;
-unaryExpr:
-    '+' pointerExpr
-    | '-' pointerExpr
-    | pointerExpr
-    ;
-pointerExpr:
-    '*' finalExpr
-    | '&' finalExpr
-    | finalExpr
-    ;
-finalExpr: ID
-     | CHAR
-     | INTEGER
-     | DOUBLE
-     | '(' expr ')'
-     ;
+
+// Handles scoping
+scope:
+    '{' '}' |
+    '{' statement+ '}';
+
+// TODO Should be checked semantically that break and continue is only allowed in loops or switch statements
+controlFlowStatement: BREAK | CONTINUE | RETURN ;
+printfStatement: 'printf' '(' (ID|CHAR_LITERAL|INT_LITERAL|DOUBLE_LITERAL) ')' ;
+varDeclaration: typeDeclaration1 ID ;
+
 typeDeclaration1:
     // TODO instead of 'const int' also support 'int const'?
     constDeclaration typeDeclaration2
     | typeDeclaration2
     ;
-typeDeclaration2:
-    'int'
-    | 'char'
-    | 'float'
+
+typeDeclaration2: INT | CHAR | FLOAT ;
+constDeclaration: CONST ;
+
+varDeclarationAndInit: typeDeclaration1 varAssignment ;
+varAssignment: ID '=' expression ;
+
+expression:
+    varDeclarationAndInit |
+    varAssignment |
+    compareExpression
     ;
-constDeclaration:
-    'const'
+compareExpression:
+    compareExpression '>' addExpression
+    | compareExpression '<' addExpression
+    | compareExpression '==' addExpression
+    | addExpression
     ;
-ID  :   [a-zA-Z_]+ [0-9_]* ;      // match identifiers
-CHAR: '\''.'\'' ;
-INTEGER: [0-9]+ ;
-DOUBLE :   [0-9]+'.'[0-9]+ ;
+addExpression:
+    addExpression '+' multExpression
+    | addExpression '-' multExpression
+    | multExpression
+    ;
+multExpression:
+    multExpression '*' unaryExpression
+    | multExpression '/' unaryExpression
+    | unaryExpression
+    ;
+unaryExpression:
+    '+' unaryExpression
+    | '-' unaryExpression
+    | pointerExpression
+    ;
+pointerExpression:
+    '*' finalExpression
+    | '&' finalExpression
+    | finalExpression
+    ;
+enclosedExpression: '(' expression ')';
+finalExpression: enclosedExpression | ID | CHAR_LITERAL | INT_LITERAL | DOUBLE_LITERAL ;
+
+// Reserved words
+BREAK: 'break';
+CONTINUE: 'continue';
+RETURN: 'return';
+
+IF: 'if';
+ELSE: 'else';
+WHILE: 'while';
+FOR: 'for';
+
+CONST: 'const';
+CHAR: 'char';
+INT: 'int';
+FLOAT: 'float';
+
+// These nodes will be skipped when creating the AST as they have no purpose after conversion
+TO_SKIP: '{' | '}' | '(' | ')' | ';' ;
+
+// Literals and identifiers
+ID  :   [a-zA-Z_]+ [0-9_]* ;
+CHAR_LITERAL: '\''.'\'' ;
+INT_LITERAL: [0-9]+ ;
+DOUBLE_LITERAL :   [0-9]+'.'[0-9]+ ;
+
+// Comments
 LineComment: '//' ~[\r\n]* -> channel(HIDDEN);
 BlockComment: '/*' .*? '*/' -> channel(HIDDEN);
+
+// Skip whitespace
 WS : [ \r\t\n]+ -> skip ;

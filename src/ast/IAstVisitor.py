@@ -61,3 +61,15 @@ class IASTVisitor:
     @abstractmethod
     def visit_ast_printf_instruction(self, ast):
         pass
+
+    @abstractmethod
+    def visit_ast_scope(self, ast):
+        pass
+
+    @abstractmethod
+    def visit_ast_if_statement(self, ast):
+        pass
+
+    @abstractmethod
+    def visit_ast_while_loop(self, ast):
+        pass

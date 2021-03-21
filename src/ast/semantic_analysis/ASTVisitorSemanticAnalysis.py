@@ -209,19 +209,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
     def __init__(self, optimize=False):
         super().__init__()
         self.symbol_table_stack = list()
-        # TODO needs to be removed once the concept of 'blocks' is introduced
-        self.create_symbol_table()
         self.optimize = optimize
-
-    def create_symbol_table(self):
-        if len(self.symbol_table_stack) == 0:
-            # First symbol table created
-            self.symbol_table_stack.append(SymbolTable())
-        else:
-            parent_symbol_table = self.symbol_table_stack[-1]
-            new_symbol_table = SymbolTable()
-            new_symbol_table.parent = parent_symbol_table
-            self.symbol_table_stack.append(new_symbol_table)
 
     def get_last_symbol_table(self):
         """
@@ -344,7 +332,10 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
             raise SemanticError(
                 f"Variable '{ast.var_name_ast.get_content()}' declared const must be initialized with its declaration")
 
-        if symbol_table.lookup(ast.var_name_ast.get_content()) is None:
+        if symbol_table.lookup_local(ast.var_name_ast.get_content()) is None:
+            if symbol_table.lookup(ast.var_name_ast.get_content()) is not None:
+                print(
+                    f"[SemanticAnalysis] Warning: declaration of '{ast.var_name_ast.get_content()}' shadows a local variable. You might want to rename it")
             symbol_table.insert_symbol(
                 VariableSymbol(ast.var_name_ast.get_content(), ast.get_data_type(), ast.is_const(), False))
         else:
@@ -370,3 +361,19 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
     # TODO implement this!
     def visit_ast_printf_instruction(self, ast: ASTPrintfInstruction):
         super().visit_ast_printf_instruction(ast)
+
+    def on_scope_entered(self):
+
+        new_symbol_table = SymbolTable()
+        if len(self.symbol_table_stack) > 0:
+            new_symbol_table.set_parent(self.get_last_symbol_table())
+
+        self.symbol_table_stack.append(new_symbol_table)
+
+    def on_scope_exit(self):
+        self.symbol_table_stack.pop()
+
+    def visit_ast_scope(self, ast: ASTScope):
+        self.on_scope_entered()
+        super().visit_ast_scope(ast)
+        self.on_scope_exit()

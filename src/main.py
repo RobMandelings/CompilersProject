@@ -1,7 +1,6 @@
-from CSTVisitors import CSTVisitorToDot
+from CSTVisitorToDot import CSTVisitorToDot
 from src.ast.ASTVisitorDot import ASTVisitorDot
 from src.ast.CSTtoASTConverter import *
-from src.ast.llvm.ASTVisitorToLLVM import ASTVisitorToLLVM
 from src.ast.semantic_analysis.ASTVisitorSemanticAnalysis import ASTVisitorSemanticAnalysis, SemanticError
 from src.syntacticalAnalysis import CSTErrorListener
 
@@ -24,7 +23,7 @@ def main(argv):
         tree.accept(cst_visitor_to_dot)
         cst_visitor_to_dot.graph.render('output/cst.gv', view=False)
 
-        ast = create_ast_from_concrete_syntax_tree(tree, lexer)
+        ast = create_ast_from_cst(tree)
         ast_visitor_dot = ASTVisitorDot()
         ast.accept(ast_visitor_dot)
         ast_visitor_dot.graph.render('output/ast.gv', view=False)
@@ -37,16 +36,15 @@ def main(argv):
             ast.accept(ast_visitor_dot)
             ast_visitor_dot.graph.render('output/ast-optimized.gv', view=False)
 
+            # ast_visitor_to_llvm = ASTVisitorToLLVM()
+            # ast.accept(ast_visitor_to_llvm)
+            # ast_visitor_to_llvm.to_file("output/converted.b")
+
         except SemanticError as e:
             print("A semantic error occurred: ")
             print(e)
             print("Stopping the compiler...")
             sys.exit(0)
-        print(argv[1])
-
-        ast_visitor_to_llvm = ASTVisitorToLLVM()
-        ast.accept(ast_visitor_to_llvm)
-        ast_visitor_to_llvm.to_file("output/converted.b")
 
     except SyntaxError:
         print("Exiting program...", file=sys.stderr)
