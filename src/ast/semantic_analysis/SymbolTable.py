@@ -1,3 +1,5 @@
+from symtable import SymbolTable
+
 from src.ast.ASTTokens import DataTypeToken
 
 
@@ -67,6 +69,13 @@ class SymbolTable:
         variable = symbol
         assert isinstance(variable, VariableSymbol)
         return variable
+
+    def set_parent(self, parent: SymbolTable):
+        """
+        Sets the parent of this symbol table to another symbol table.
+        """
+        assert isinstance(parent, SymbolTable) and not id(self) == id(parent)
+        self.parent = parent
 
     def insert_symbol(self, symbol: Symbol):
         assert self.lookup(symbol.symbol_name) is None

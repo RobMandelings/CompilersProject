@@ -75,18 +75,18 @@ class ASTBaseVisitor(IASTVisitor):
     def visit_ast_printf_instruction(self, ast: ASTPrintfInstruction):
         pass
 
-    def visit_ast_scope(self, ast):
+    def visit_ast_scope(self, ast: ASTScope):
         assert isinstance(ast, ASTScope)
         for child in ast.children:
             child.accept(self)
 
-    def visit_ast_if_statement(self, ast):
+    def visit_ast_if_statement(self, ast: ASTIfStatement):
         assert isinstance(ast, ASTIfStatement)
         ast.get_condition().accept(self)
         ast.get_execution_body().accept(self)
         ast.get_else_statement().accept(self)
 
-    def visit_ast_while_loop(self, ast):
+    def visit_ast_while_loop(self, ast: ASTWhileLoop):
         assert isinstance(ast, ASTWhileLoop)
         ast.get_condition().accept(self)
         ast.get_execution_body().accept(self)
