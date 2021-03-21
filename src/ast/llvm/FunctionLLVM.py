@@ -15,7 +15,11 @@ class FunctionLLVM:
         return self.basic_blocks[-1]
 
     def start_new_basic_block(self):
-        assert self.get_current_basic_block().terminator_instruction is not None
+        """
+        Creates a new basic block within this function and adds it to the list of basic blocks.
+        PRE-CONDITION: the current basic block must have ended (have a terminal instruction)
+        """
+        assert self.get_current_basic_block().get_terminal_instruction() is not None
         self.basic_blocks.append(BasicBlock())
 
     def add_instruction(self, instruction: Instruction):

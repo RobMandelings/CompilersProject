@@ -11,7 +11,11 @@ class Instruction:
 
     @abstractmethod
     def __str__(self):
-        pass
+        raise NotImplementedError
+
+    @abstractmethod
+    def is_terminal(self):
+        raise NotImplementedError
 
 
 class AssignInstruction(Instruction):
@@ -40,3 +44,6 @@ class AllocaInstruction(AssignInstruction):
 
     def __str__(self):
         return super().__str__() + f"alloca {LLVMBuilder.get_llvm_type(self.data_type_to_allocate)}, align 4"
+
+    def is_terminal(self):
+        return False

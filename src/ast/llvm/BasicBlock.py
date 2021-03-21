@@ -1,8 +1,15 @@
+from src.ast.llvm.Instruction import Instruction
+
+
 class BasicBlock:
 
     def __init__(self):
         self.instructions = list()
-        self.terminator_instruction = None
+        self.__terminator_instruction = None
 
-    def set_terminator_instruction(self):
-        assert self.terminator_instruction
+    def set_terminator_instruction(self, instruction: Instruction):
+        assert instruction.is_terminal()
+        self.__terminator_instruction = instruction
+
+    def get_terminal_instruction(self):
+        return self.__terminator_instruction
