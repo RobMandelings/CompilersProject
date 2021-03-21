@@ -333,6 +333,9 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                 f"Variable '{ast.var_name_ast.get_content()}' declared const must be initialized with its declaration")
 
         if symbol_table.lookup_local(ast.var_name_ast.get_content()) is None:
+            if symbol_table.lookup(ast.var_name_ast.get_content()) is not None:
+                print(
+                    f"[SemanticAnalysis] Warning: declaration of '{ast.var_name_ast.get_content()}' shadows a local variable. You might want to rename it")
             symbol_table.insert_symbol(
                 VariableSymbol(ast.var_name_ast.get_content(), ast.get_data_type(), ast.is_const(), False))
         else:
