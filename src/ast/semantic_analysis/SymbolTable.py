@@ -1,5 +1,3 @@
-from symtable import SymbolTable
-
 from src.ast.ASTTokens import DataTypeToken
 
 
@@ -42,15 +40,17 @@ class SymbolTable:
         self.parent = None
         self.symbols = dict()
 
-    def __lookup_local(self, symbol: str):
-        lookup = self.symbols[symbol]
-        assert lookup is None or isinstance(lookup, Symbol)
-        return lookup
+    def lookup_local(self, symbol: str):
+        if symbol in self.symbols:
+            lookup = self.symbols[symbol]
+            assert isinstance(lookup, Symbol)
+            return lookup
+        return None
 
     def lookup(self, symbol: str):
-        if symbol in self.symbols:
-            lookup_local = self.symbols[symbol]
-            return lookup_local
+        lookup = self.lookup_local(symbol)
+        if lookup is not None:
+            return lookup
         else:
             if self.parent is not None:
                 assert isinstance(self.parent, SymbolTable)
@@ -70,7 +70,7 @@ class SymbolTable:
         assert isinstance(variable, VariableSymbol)
         return variable
 
-    def set_parent(self, parent: SymbolTable):
+    def set_parent(self, parent):
         """
         Sets the parent of this symbol table to another symbol table.
         """

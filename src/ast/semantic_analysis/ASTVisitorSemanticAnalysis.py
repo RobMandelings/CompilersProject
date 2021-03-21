@@ -332,7 +332,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
             raise SemanticError(
                 f"Variable '{ast.var_name_ast.get_content()}' declared const must be initialized with its declaration")
 
-        if symbol_table.lookup(ast.var_name_ast.get_content()) is None:
+        if symbol_table.lookup_local(ast.var_name_ast.get_content()) is None:
             symbol_table.insert_symbol(
                 VariableSymbol(ast.var_name_ast.get_content(), ast.get_data_type(), ast.is_const(), False))
         else:
