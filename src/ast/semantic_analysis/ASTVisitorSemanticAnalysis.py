@@ -233,9 +233,11 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         if declared_data_type != resulting_data_type_visitor.resulting_data_type and not DataTypeToken.is_richer_than(
                 declared_data_type, resulting_data_type_visitor.resulting_data_type):
-            print(
-                "WARN: narrowing result of expression from datatype '" +
-                resulting_data_type_visitor.resulting_data_type.token_name + "' to datatype '" + declared_data_type.token_name + "'")
+            raise SemanticError("The result would be narrowed, and we do not yet support explicit or implicit casting")
+            # TODO support implicit and explicit casting
+            # print(
+            #     "WARN: narrowing result of expression from datatype '" +
+            #     resulting_data_type_visitor.resulting_data_type.token_name + "' to datatype '" + declared_data_type.token_name + "'")
 
     def check_r_value_assignment(self, bin_expr: ASTAssignmentExpression):
         # TODO Needs to be improved with derefencing and all that stuff
