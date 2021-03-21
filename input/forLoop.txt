@@ -1,3 +1,5 @@
-for (int i = 10; i < 20; i = i + 1) {
+int b = 12;
 
+for (int i = 10; i < 20; i = i + 1) {
+    const float c = b + 5;
 }
