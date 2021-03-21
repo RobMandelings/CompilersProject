@@ -1,5 +1,5 @@
-from src.ast.llvm.BasicBlock import BasicBlock
-from src.ast.llvm.Instruction import Instruction
+from src.ast.llvm.LLVMBasicBlock import BasicBlock
+from src.ast.llvm.LLVMInstruction import Instruction
 
 
 class FunctionLLVM:

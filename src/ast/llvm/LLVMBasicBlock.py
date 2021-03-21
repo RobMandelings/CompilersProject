@@ -1,4 +1,4 @@
-from src.ast.llvm.Instruction import Instruction
+from src.ast.llvm.LLVMInstruction import Instruction
 
 
 class BasicBlock:
