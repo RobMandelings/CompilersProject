@@ -14,7 +14,7 @@ class Instruction:
         raise NotImplementedError
 
     @abstractmethod
-    def is_terminal(self):
+    def is_terminator(self):
         raise NotImplementedError
 
 
@@ -45,5 +45,5 @@ class AllocaInstruction(AssignInstruction):
     def __str__(self):
         return super().__str__() + f"alloca {LLVMBuilder.get_llvm_type(self.data_type_to_allocate)}, align 4"
 
-    def is_terminal(self):
+    def is_terminator(self):
         return False

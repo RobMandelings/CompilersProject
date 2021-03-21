@@ -8,7 +8,7 @@ class BasicBlock:
         self.__terminator_instruction = None
 
     def set_terminator_instruction(self, instruction: Instruction):
-        assert instruction.is_terminal()
+        assert instruction.is_terminator()
         self.__terminator_instruction = instruction
 
     def get_terminal_instruction(self):
