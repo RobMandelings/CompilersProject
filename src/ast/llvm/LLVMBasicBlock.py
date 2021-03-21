@@ -1,15 +1,30 @@
+from src.ast.llvm.LLVMBuilder import IToLLVM
 from src.ast.llvm.LLVMInstruction import Instruction
 
 
-class BasicBlock:
+class LLVMBasicBlock(IToLLVM):
 
     def __init__(self):
         self.instructions = list()
-        self.__terminator_instruction = None
 
-    def set_terminator_instruction(self, instruction: Instruction):
-        assert instruction.is_terminator()
-        self.__terminator_instruction = instruction
+    def add_instruction(self, instruction: Instruction):
+        """
+        Safely adds a new instruction to the list of instructions
+        """
+        assert isinstance(instruction, Instruction)
+        assert not self.has_terminal_instruction()
+        self.instructions.append(instruction)
 
-    def get_terminal_instruction(self):
-        return self.__terminator_instruction
+    def has_terminal_instruction(self):
+        """
+        Checks whether or not this basic block has a terminator at the end (has a terminator at the end)
+        """
+        return self.instructions[-1].is_terminator()
+
+    def to_llvm(self):
+        llvm_code = ""
+
+        for instruction in self.instructions:
+            llvm_code += f"{instruction}\n"
+
+        return llvm_code

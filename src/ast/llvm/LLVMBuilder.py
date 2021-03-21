@@ -1,10 +1,22 @@
+from abc import ABC
+
 from src.ast.ASTs import *
 from src.ast.llvm.LLVMSymbolTable import *
 
 
-class LLVMBuilder:
+class IToLLVM(ABC):
+
+    def to_llvm(self):
+        """
+        returns: string which contains all the LLVM generated llvm code of the object
+        """
+        raise NotImplementedError
+
+
+class LLVMBuilder(IToLLVM):
 
     def __init__(self):
+        self.functions = list()
         self.instructions = list()
         self.symbol_table = LLVMSymbolTable()
         self.register_count = 0
@@ -12,6 +24,10 @@ class LLVMBuilder:
 
     @staticmethod
     def get_llvm_type(data_type: DataTypeToken):
+        """
+        Converts the given data type into a string which represents the corresponding data type in llvm
+        data_type: the datatype to get the string for
+        """
         if data_type == DataTypeToken.CHAR:
             return "i8"
         elif data_type == DataTypeToken.INT:
@@ -133,7 +149,7 @@ class LLVMBuilder:
         self.register_count += 1
 
     def assign_value_to_variable(self, ast: ASTAssignmentExpression):
-        #TODO Type conversions are not supported yet
+        # TODO Type conversions are not supported yet
         right = ast.get_right()
 
         variable = self.symbol_table.lookup_variable(ast.get_left().get_content())
@@ -142,14 +158,17 @@ class LLVMBuilder:
 
         if not isinstance(right, ASTRValue):
             value_register = self._compute_expression(right)
-            temporary_register = self.register_count # REGISTER NUMBER (without %)
+            temporary_register = self.register_count  # REGISTER NUMBER (without %)
 
-            self.instructions.append(f"%{temporary_register} = load {left_datatype}, {left_datatype}* {value_register}, align 4")
+            self.instructions.append(
+                f"%{temporary_register} = load {left_datatype}, {left_datatype}* {value_register}, align 4")
             self.register_count += 1
-            self.instructions.append(f"store {left_datatype} %{temporary_register}, {left_datatype}* {current_register}, align 4")
+            self.instructions.append(
+                f"store {left_datatype} %{temporary_register}, {left_datatype}* {current_register}, align 4")
         else:
 
-            self.instructions.append(f"store {left_datatype} {right.get_content()}, {left_datatype}* {current_register}, align 4")
+            self.instructions.append(
+                f"store {left_datatype} {right.get_content()}, {left_datatype}* {current_register}, align 4")
 
     def _generate_begin_of_file(self):
         begin_of_file = ""
@@ -169,12 +188,17 @@ class LLVMBuilder:
     def to_file(self, filename: str):
 
         f = open(filename, "w+")
-
-        f.write(self._generate_begin_of_file())
-
-        for instruction in self.instructions:
-            f.write(instruction + "\n")
-
-        f.write(self._generate_end_of_file())
-
+        f.write(self.to_llvm())
         f.close()
+
+    # TODO optimize
+    def to_llvm(self):
+
+        llvm_code = self._generate_begin_of_file()
+
+        for function in self.functions:
+            llvm_code += function.to_llvm()
+
+        llvm_code += self._generate_end_of_file()
+
+        return llvm_code
