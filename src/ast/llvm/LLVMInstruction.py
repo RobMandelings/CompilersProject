@@ -57,6 +57,18 @@ class AllocaInstruction(AssignInstruction):
         return False
 
 
+class StoreInstruction(Instruction):
+
+    def __init__(self, resulting_reg: str, value, data_type_to_store: DataTypeToken):
+        self.resulting_reg = resulting_reg
+        self.value = value
+        self.data_type_to_store = data_type_to_store
+
+    def to_llvm(self):
+        datatype_str = get_llvm_type(self.data_type_to_store)
+        return f"store {datatype_str} {self.value}, {datatype_str}* {self.resulting_reg}, align 4"
+
+
 class LoadInstruction(AssignInstruction):
     """
     Loads the value of a pointer type into a register (for example, load an i32 from register %1 of type i32* in register %2)

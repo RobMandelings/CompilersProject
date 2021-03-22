@@ -100,18 +100,13 @@ class LLVMBuilder(IToLLVM):
             f"call i32 (i8*, ...) @printf(i8* getelementptr inbounds([3 x i8], [3 x i8]* @.i, i64 0, i64 0), i32 {variable.get_current_register()})")
 
     def declare_variable(self, ast: ASTVariableDeclaration):
-        declared_variable = LLVMVariableSymbol(ast.var_name_ast.get_content(), ast.data_type_ast.get_token(), None)
+        resulting_register = self.get_current_function().get_new_register()
+        declared_variable = LLVMVariableSymbol(ast.var_name_ast.get_content(), ast.data_type_ast.get_token(), resulting_register)
         self.symbol_table.insert_symbol(
             declared_variable)
-        current_register = f"{self.register_count}"
 
-        self.instructions.append(
-            f"%{current_register} = alloca {get_llvm_type(declared_variable.get_data_type())}, align 4")
-
-        self.register_count += 1
-        declared_variable.set_current_register(current_register)
-
-        instruction = AllocaInstruction(f'%{self.register_count}', get_llvm_type(declared_variable.get_data_type()))
+        instruction = AllocaInstruction(f'%{resulting_register}', declared_variable.get_data_type())
+        self.get_current_function().add_instruction(instruction)
 
     def declare_and_init_variable(self, ast: ASTVariableDeclarationAndInit):
         if not isinstance(ast.value, ASTRValue):
@@ -120,18 +115,19 @@ class LLVMBuilder(IToLLVM):
         else:
             value_to_store = ast.value.get_content()
 
-        register = f"%{self.register_count}"
+        register = f"%{self.get_current_function().get_new_register()}"
 
         declared_variable = LLVMVariableSymbol(ast.var_name_ast.get_content(), ast.data_type_ast.get_token(),
                                                register)
         self.symbol_table.insert_symbol(declared_variable)
-        datatype = get_llvm_type(declared_variable.get_data_type())
+        datatype = declared_variable.get_data_type()
 
-        self.instructions.append(f"{register} = alloca {datatype}, align 4")
-        self.instructions.append(f"store {datatype} {value_to_store}, {datatype}* {register}, align 4")
 
-        declared_variable.set_current_register(register)
-        self.register_count += 1
+        alloca_instruction = AllocaInstruction(f'%{register}', datatype)
+        self.get_current_function().add_instruction(alloca_instruction)
+
+        store_instruction = StoreInstruction(f'%{register}', value_to_store, datatype)
+        self.get_current_function().add_instruction(store_instruction)
 
     def assign_value_to_variable(self, ast: ASTAssignmentExpression):
         # TODO Type conversions are not supported yet
