@@ -2,8 +2,14 @@ from abc import ABC
 
 from src.ast.ASTTokens import DataTypeToken, BinaryArithmeticExprToken, RelationalExprToken
 from src.ast.llvm import LLVMUtils
-from src.ast.llvm.LLVMBuilder import LLVMBuilder
-from src.ast.llvm.LLVMUtils import IToLLVM, ComparisonDataType
+from src.ast.llvm.LLVMUtils import ComparisonDataType
+from src.ast.llvm.LLVMUtils import IToLLVM, get_llvm_type
+
+
+def isConstant(operand: str):
+    if operand.startswith('%'):
+        return False
+    return True
 
 
 class Instruction(IToLLVM, ABC):
@@ -45,7 +51,7 @@ class AllocaInstruction(AssignInstruction):
         self.data_type_to_allocate = data_type_to_allocate
 
     def to_llvm(self):
-        return super().to_llvm() + f"alloca {LLVMBuilder.get_llvm_type(self.data_type_to_allocate)}, align 4"
+        return super().to_llvm() + f"alloca {get_llvm_type(self.data_type_to_allocate)}, align 4"
 
     def is_terminator(self):
         return False
@@ -62,7 +68,7 @@ class LoadInstruction(AssignInstruction):
         self.load_from_reg = load_from_reg
 
     def to_llvm(self):
-        llvm_type = LLVMBuilder.get_llvm_type(self.data_type_to_allocate)
+        llvm_type = get_llvm_type(self.data_type_to_allocate)
         return super().to_llvm() + f"load {llvm_type}, {llvm_type}* {self.load_from_reg}"
 
 
@@ -106,9 +112,35 @@ class BinaryArithmeticInstruction(AssignInstruction):
     """
 
     def __init__(self, resulting_reg: str, operation: BinaryArithmeticExprToken, data_type_reg1: DataTypeToken,
-                 operand_reg1: str,
-                 data_type_reg2: DataTypeToken, operand_reg2: str):
+                 operand1: str,
+                 data_type_reg2: DataTypeToken, operand2: str):
         super().__init__(resulting_reg)
+        self.operation = operation
+        self.data_type_reg1 = data_type_reg1
+        self.operand1 = operand1
+        self.data_type_reg2 = data_type_reg2
+        self.operand2 = operand2
+
+    def get_operation(self):
+
+        if self.operation == BinaryArithmeticExprToken.ADD:
+            operation_string = 'fadd'
+        elif self.operation == BinaryArithmeticExprToken.SUB:
+            operation_string = 'fsub'
+        elif self.operation == BinaryArithmeticExprToken.MUL:
+            operation_string = 'fmul'
+        elif self.operation == BinaryArithmeticExprToken.DIV:
+            # TODO sdiv or udiv?
+            operation_string = 'fdiv'
+        else:
+            # TODO less than,...
+            raise NotImplementedError
+
+        return operation_string
+
+    def get_operand_string(self, operand: str):
+        if operand.startswith('%'):
+            pass
 
     def to_llvm(self):
         return super().to_llvm()
