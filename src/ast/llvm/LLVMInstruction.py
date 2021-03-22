@@ -60,6 +60,7 @@ class AllocaInstruction(AssignInstruction):
 class StoreInstruction(Instruction):
 
     def __init__(self, resulting_reg: str, value, data_type_to_store: DataTypeToken):
+        super().__init__()
         self.resulting_reg = resulting_reg
         self.value = value
         self.data_type_to_store = data_type_to_store
