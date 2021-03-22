@@ -127,6 +127,8 @@ class BinaryArithmeticInstruction(AssignInstruction):
             return 'i32'
         elif self.data_type_reg1 == 'float' and self.data_type_reg2 == 'float':
             return 'float'
+        else:
+            raise NotImplementedError
 
     def get_operation(self):
         operation_string = None
@@ -154,11 +156,10 @@ class BinaryArithmeticInstruction(AssignInstruction):
                 raise NotImplementedError
 
         assert operation_string is not None
-        return operation_string + f' {self.operation_type}'
+        return operation_string + f'{self.operation_type}'
 
     def to_llvm(self):
         operation_string = self.get_operation()
-
         return super().to_llvm() + operation_string + f'{self.operand1}, {self.operand2}'
 
 

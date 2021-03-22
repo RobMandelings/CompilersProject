@@ -3,6 +3,7 @@
 from src.ast.ASTs import *
 from src.ast.llvm.LLVMSymbolTable import *
 from src.ast.llvm.LLVMUtils import IToLLVM, get_llvm_type
+from src.ast.llvm.LLVMInstruction import *
 
 
 class LLVMBuilder(IToLLVM):
@@ -105,6 +106,8 @@ class LLVMBuilder(IToLLVM):
 
         self.register_count += 1
         declared_variable.set_current_register(current_register)
+
+        instruction = AllocaInstruction(f'%{self.register_count}', get_llvm_type(declared_variable.get_data_type()))
 
     def declare_and_init_variable(self, ast: ASTVariableDeclarationAndInit):
         if not isinstance(ast.value, ASTRValue):
