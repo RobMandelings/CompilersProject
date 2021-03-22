@@ -10,7 +10,6 @@ class Instruction(IToLLVM, ABC):
     def __init__(self):
         pass
 
-
     def is_terminator(self):
         raise NotImplementedError
 
@@ -64,6 +63,40 @@ class LoadInstruction(AssignInstruction):
     def to_llvm(self):
         llvm_type = LLVMBuilder.get_llvm_type(self.data_type_to_allocate)
         return super().to_llvm() + f"load {llvm_type}, {llvm_type}* {self.load_from_reg}"
+
+
+class ConditionalBranchInstruction(Instruction):
+    """
+    Conditional Branch instruction for LLVM
+    """
+
+    def __init__(self, condition_reg: str, label_iftrue: str, label_iffalse):
+        super().__init__()
+        self.condition_reg = condition_reg
+        self.label_iftrue = label_iftrue
+        self.label_iffalse = label_iffalse
+
+    def to_llvm(self):
+        return f"br i1 {self.condition_reg}, label {self.label_iftrue}, label {self.label_iffalse}"
+
+    def is_terminator(self):
+        return True
+
+
+class UnconditionalBranchInstruction(Instruction):
+
+    def __init__(self, dest_label: str):
+        """
+        dest label: the label to branch to
+        """
+        super().__init__()
+        self.dest_label = dest_label
+
+    def to_llvm(self):
+        return f"br label {self.dest_label}"
+
+    def is_terminator(self):
+        return True
 
 
 class BinaryArithmeticInstruction(AssignInstruction):
