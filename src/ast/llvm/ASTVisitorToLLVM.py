@@ -14,9 +14,10 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
         # The basic block the function was at before the if statement began (branch will be added to the correct beginning-of-if-statement label)
         before_if_basic_block = current_function.get_current_basic_block()
 
+        # This one becomes the new 'current' basic block of the function where instructions will automatically be added
         exec_body_label = current_function.add_basic_block()
 
-        # First, construct the body of the function in llvm, adding basic blocks to the function (these will be added to the exec_body_label)
+        # First, construct the body of the function in llvm, adding instructions and basic blocks to the current function
         if_statement_ast.get_execution_body().accept(self)
 
         if if_statement_ast.has_condition():
