@@ -1,7 +1,8 @@
 from abc import ABC
 
-from src.ast.ASTTokens import DataTypeToken, BinaryArithmeticExprToken
-from src.ast.llvm.LLVMBuilder import LLVMBuilder
+from src.ast.ASTTokens import DataTypeToken, BinaryArithmeticExprToken, RelationalExprToken
+from src.ast.llvm import LLVMUtils
+from src.ast.llvm.LLVMUtils import ComparisonDataType
 from src.ast.llvm.LLVMUtils import IToLLVM, get_llvm_type
 
 
@@ -126,8 +127,6 @@ class BinaryArithmeticInstruction(AssignInstruction):
             return 'i32'
         elif self.data_type_reg1 == 'float' and self.data_type_reg2 == 'float':
             return 'float'
-        else:
-            raise NotImplementedError
 
     def get_operation(self):
         operation_string = None
@@ -161,3 +160,27 @@ class BinaryArithmeticInstruction(AssignInstruction):
         operation_string = self.get_operation()
 
         return super().to_llvm() + operation_string + f'{self.operand1}, {self.operand2}'
+
+
+class CompareInstruction(AssignInstruction):
+
+    def __init__(self, resulting_reg: str, operation: RelationalExprToken, data_type1: DataTypeToken, reg1: str,
+                 data_type2: DataTypeToken, reg2: str):
+        super().__init__(resulting_reg)
+        self.operation = LLVMUtils.get_llvm_for_relational_operation(operation)
+        self.data_type1 = LLVMUtils.get_llvm_type(data_type1)
+        self.data_type2 = LLVMUtils.get_llvm_type(data_type2)
+        self.reg1 = reg1
+        self.reg2 = reg2
+        self.comparison_type, self.llvm_type = self.deduce_comparison_type()
+
+    def deduce_comparison_type(self):
+        if self.data_type1 == DataTypeToken.INT and self.data_type2 == DataTypeToken.INT:
+            return ComparisonDataType.INT, LLVMUtils.get_llvm_type(DataTypeToken.INT)
+        elif self.data_type1 == DataTypeToken.FLOAT or self.data_type2 == DataTypeToken.FLOAT:
+            return ComparisonDataType.FLOAT, LLVMUtils.get_llvm_type(DataTypeToken.FLOAT)
+        else:
+            raise NotImplementedError
+
+    def to_llvm(self):
+        return super().to_llvm() + f"{self.comparison_type} {self.operation} {self.llvm_type} {self.data_type1} {self.reg1}, {self.data_type2} {self.reg2}"
