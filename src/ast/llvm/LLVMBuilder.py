@@ -1,7 +1,6 @@
 from abc import ABC
 
 from src.ast.ASTs import *
-from src.ast.llvm.LLVMInstruction import AllocaInstruction
 from src.ast.llvm.LLVMSymbolTable import *
 
 
