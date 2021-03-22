@@ -2,7 +2,7 @@ from src.ast.llvm.LLVMBasicBlock import LLVMBasicBlock
 from src.ast.llvm.LLVMInstruction import *
 
 
-class FunctionLLVM(IToLLVM):
+class LLVMFunction(IToLLVM):
 
     def __init__(self, name: str):
         # Counts the number of registers

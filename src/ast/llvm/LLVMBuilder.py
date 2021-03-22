@@ -1,6 +1,5 @@
-
-
 from src.ast.ASTs import *
+from src.ast.llvm.LLVMFunction import *
 from src.ast.llvm.LLVMSymbolTable import *
 from src.ast.llvm.LLVMUtils import IToLLVM, get_llvm_type
 
@@ -14,13 +13,18 @@ class LLVMBuilder(IToLLVM):
         self.register_count = 0
         pass
 
-    def _compute_expression(self, ast: AST):
+    def get_current_function(self):
+        function = self.functions[-1]
+        assert isinstance(function, LLVMFunction)
+        return function
+
+    def compute_expression(self, ast: AST):
         """
         """
 
         if isinstance(ast, ASTBinaryArithmeticExpression):
-            left_register = self._compute_expression(ast.left)
-            right_register = self._compute_expression(ast.right)
+            left_register = self.compute_expression(ast.left)
+            right_register = self.compute_expression(ast.right)
 
             operation_string = None
             if ast.get_token() == BinaryArithmeticExprToken.ADD:
@@ -51,7 +55,7 @@ class LLVMBuilder(IToLLVM):
                 else:
                     raise NotImplementedError
 
-                value_register = self._compute_expression(ast.value_applied_to)
+                value_register = self.compute_expression(ast.value_applied_to)
 
                 self.instructions.append(f"%{self.register_count} = fmul float {factor}, {value_register}")
 
@@ -108,7 +112,7 @@ class LLVMBuilder(IToLLVM):
 
     def declare_and_init_variable(self, ast: ASTVariableDeclarationAndInit):
         if not isinstance(ast.value, ASTRValue):
-            value_to_store = self._compute_expression(ast.value)
+            value_to_store = self.compute_expression(ast.value)
             value_to_store = self._convert_float_register_to(value_to_store, ast.get_data_type())
         else:
             value_to_store = ast.value.get_content()
@@ -135,7 +139,7 @@ class LLVMBuilder(IToLLVM):
         left_datatype = get_llvm_type(variable.get_data_type())
 
         if not isinstance(right, ASTRValue):
-            value_register = self._compute_expression(right)
+            value_register = self.compute_expression(right)
             temporary_register = self.register_count  # REGISTER NUMBER (without %)
 
             self.instructions.append(
