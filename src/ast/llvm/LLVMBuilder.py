@@ -122,12 +122,8 @@ class LLVMBuilder(IToLLVM):
         self.symbol_table.insert_symbol(declared_variable)
         datatype = declared_variable.get_data_type()
 
-
-        alloca_instruction = AllocaInstruction(f'%{register}', datatype)
-        self.get_current_function().add_instruction(alloca_instruction)
-
-        store_instruction = StoreInstruction(f'%{register}', value_to_store, datatype)
-        self.get_current_function().add_instruction(store_instruction)
+        self.get_current_function().add_instruction(AllocaInstruction(f'%{register}', datatype))
+        self.get_current_function().add_instruction(StoreInstruction(f'%{register}', value_to_store, datatype))
 
     def assign_value_to_variable(self, ast: ASTAssignmentExpression):
         # TODO Type conversions are not supported yet
