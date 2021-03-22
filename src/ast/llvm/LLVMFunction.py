@@ -15,13 +15,13 @@ class FunctionLLVM(IToLLVM):
     def get_current_basic_block(self):
         return self.basic_blocks[-1]
 
-    def start_new_basic_block(self):
+    def add_basic_block(self, basic_block: LLVMBasicBlock):
         """
-        Creates a new basic block within this function and adds it to the list of basic blocks.
-        PRE-CONDITION: the current basic block must have ended (have a terminal instruction)
+        Adds a new basic block to the list of basic blocks which will now be current
+        PRE-CONDITION: the previous basic block must have ended (have a terminal instruction in the end)
         """
         assert self.get_current_basic_block().has_terminal_instruction()
-        self.basic_blocks.append(LLVMBasicBlock())
+        self.basic_blocks.append(basic_block)
 
     def add_instruction(self, instruction: Instruction):
         assert isinstance(instruction, Instruction)

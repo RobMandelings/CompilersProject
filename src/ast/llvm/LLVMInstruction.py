@@ -1,6 +1,6 @@
-from abc import abstractmethod, ABC
+from abc import ABC
 
-from src.ast.ASTTokens import DataTypeToken
+from src.ast.ASTTokens import DataTypeToken, BinaryArithmeticExprToken
 from src.ast.llvm.LLVMBuilder import LLVMBuilder, IToLLVM
 
 
@@ -21,25 +21,25 @@ class AssignInstruction(Instruction):
     Instruction which has a resulting register
     """
 
-    def __init__(self, resulting_register: str):
+    def __init__(self, resulting_reg: str):
         super().__init__()
-        assert resulting_register is not None
-        self.resulting_register = resulting_register
+        assert resulting_reg is not None
+        self.resulting_reg = resulting_reg
 
     def is_terminator(self):
         return False
 
     def get_resulting_register(self):
-        return self.resulting_register
+        return self.resulting_reg
 
     def to_llvm(self):
-        return f"{self.resulting_register} = "
+        return f"{self.resulting_reg} = "
 
 
 class AllocaInstruction(AssignInstruction):
 
-    def __init__(self, resulting_register: str, data_type_to_allocate: DataTypeToken):
-        super().__init__(resulting_register)
+    def __init__(self, resulting_reg: str, data_type_to_allocate: DataTypeToken):
+        super().__init__(resulting_reg)
         self.data_type_to_allocate = data_type_to_allocate
 
     def to_llvm(self):
@@ -47,3 +47,32 @@ class AllocaInstruction(AssignInstruction):
 
     def is_terminator(self):
         return False
+
+
+class LoadInstruction(AssignInstruction):
+    """
+    Loads the value of a pointer type into a register (for example, load an i32 from register %1 of type i32* in register %2)
+    """
+
+    def __init__(self, resulting_reg: str, data_type_to_load: DataTypeToken, load_from_reg: str):
+        super().__init__(resulting_reg)
+        self.data_type_to_allocate = data_type_to_load
+        self.load_from_reg = load_from_reg
+
+    def to_llvm(self):
+        llvm_type = LLVMBuilder.get_llvm_type(self.data_type_to_allocate)
+        return super().to_llvm() + f"load {llvm_type}, {llvm_type}* {self.load_from_reg}"
+
+
+class BinaryArithmeticInstruction(AssignInstruction):
+    """
+    Instructions which apply arithmetics on registers and puts the result in another register
+    """
+
+    def __init__(self, resulting_reg: str, operation: BinaryArithmeticExprToken, data_type_reg1: DataTypeToken,
+                 operand_reg1: str,
+                 data_type_reg2: DataTypeToken, operand_reg2: str):
+        super().__init__(resulting_reg)
+
+    def to_llvm(self):
+        return super().to_llvm()
