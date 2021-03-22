@@ -1,16 +1,8 @@
-from abc import ABC
+
 
 from src.ast.ASTs import *
 from src.ast.llvm.LLVMSymbolTable import *
-
-
-class IToLLVM(ABC):
-
-    def to_llvm(self):
-        """
-        returns: string which contains all the LLVM generated llvm code of the object
-        """
-        raise NotImplementedError
+from src.ast.llvm.LLVMUtils import IToLLVM, get_llvm_type
 
 
 class LLVMBuilder(IToLLVM):
@@ -22,19 +14,6 @@ class LLVMBuilder(IToLLVM):
         self.register_count = 0
         pass
 
-    @staticmethod
-    def get_llvm_type(data_type: DataTypeToken):
-        """
-        Converts the given data type into a string which represents the corresponding data type in llvm
-        data_type: the datatype to get the string for
-        """
-        if data_type == DataTypeToken.CHAR:
-            return "i8"
-        elif data_type == DataTypeToken.INT:
-            return "i32"
-        elif data_type == DataTypeToken.FLOAT:
-            return "float"
-
     def _compute_expression(self, ast: AST):
         """
         """
@@ -44,7 +23,6 @@ class LLVMBuilder(IToLLVM):
             right_register = self._compute_expression(ast.right)
 
             operation_string = None
-
             if ast.get_token() == BinaryArithmeticExprToken.ADD:
                 operation_string = 'fadd'
             elif ast.get_token() == BinaryArithmeticExprToken.SUB:
@@ -103,7 +81,7 @@ class LLVMBuilder(IToLLVM):
 
         if to_type != DataTypeToken.FLOAT:
             self.instructions.append(
-                f"%{self.register_count} = fptosi float {register} to {self.get_llvm_type(to_type)}")
+                f"%{self.register_count} = fptosi float {register} to {get_llvm_type(to_type)}")
             self.register_count += 1
             return register_to_return
 
@@ -123,7 +101,7 @@ class LLVMBuilder(IToLLVM):
         current_register = f"{self.register_count}"
 
         self.instructions.append(
-            f"%{current_register} = alloca {LLVMBuilder.get_llvm_type(declared_variable.get_data_type())}, align 4")
+            f"%{current_register} = alloca {get_llvm_type(declared_variable.get_data_type())}, align 4")
 
         self.register_count += 1
         declared_variable.set_current_register(current_register)
@@ -140,7 +118,7 @@ class LLVMBuilder(IToLLVM):
         declared_variable = LLVMVariableSymbol(ast.var_name_ast.get_content(), ast.data_type_ast.get_token(),
                                                register)
         self.symbol_table.insert_symbol(declared_variable)
-        datatype = LLVMBuilder.get_llvm_type(declared_variable.get_data_type())
+        datatype = get_llvm_type(declared_variable.get_data_type())
 
         self.instructions.append(f"{register} = alloca {datatype}, align 4")
         self.instructions.append(f"store {datatype} {value_to_store}, {datatype}* {register}, align 4")
@@ -154,7 +132,7 @@ class LLVMBuilder(IToLLVM):
 
         variable = self.symbol_table.lookup_variable(ast.get_left().get_content())
         current_register = variable.get_current_register()
-        left_datatype = LLVMBuilder.get_llvm_type(variable.get_data_type())
+        left_datatype = get_llvm_type(variable.get_data_type())
 
         if not isinstance(right, ASTRValue):
             value_register = self._compute_expression(right)

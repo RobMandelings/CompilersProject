@@ -1,5 +1,4 @@
-from src.ast.llvm.LLVMBuilder import IToLLVM
-from src.ast.llvm.LLVMInstruction import Instruction
+from src.ast.llvm.LLVMInstruction import *
 
 
 class LLVMBasicBlock(IToLLVM):
