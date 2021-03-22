@@ -192,6 +192,12 @@ class ASTIfStatement(ASTConditionalStatement, IHasToken):
         assert isinstance(self.token, IfStatementToken)
         return self.token
 
+    def has_condition(self):
+        return self.get_condition() is not None
+
+    def has_else_statement(self):
+        return self.get_else_statement() is not None
+
     def get_else_statement(self):
         assert self.else_statement is None or isinstance(self.else_statement, ASTIfStatement)
         return self.else_statement

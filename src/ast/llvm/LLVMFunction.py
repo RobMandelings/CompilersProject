@@ -12,6 +12,9 @@ class LLVMFunction(IToLLVM):
         self.basic_blocks = dict()
         self.basic_blocks[-1] = LLVMBasicBlock()
 
+    def get_basic_block(self, label):
+        return self.basic_blocks[label]
+
     def get_current_basic_block(self):
         return self.basic_blocks[-1]
 
@@ -22,7 +25,7 @@ class LLVMFunction(IToLLVM):
         label_to_return = self.counter
         self.basic_blocks[label_to_return] = LLVMBasicBlock()
         self.counter += 1
-        return label_to_return, self.basic_blocks[label_to_return]
+        return label_to_return
 
     def add_instruction(self, instruction: Instruction):
         assert isinstance(instruction, Instruction)

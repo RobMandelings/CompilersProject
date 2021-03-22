@@ -10,15 +10,38 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
     def build_if_statement(self, if_statement_ast: ASTIfStatement):
         assert isinstance(if_statement_ast, ASTIfStatement)
 
-        # First, construct the body of the function in llvm, adding basic blocks to the function
+        current_function = self.builder.get_current_function()
+        # The basic block the function was at before the if statement began (branch will be added to the correct beginning-of-if-statement label)
+        before_if_basic_block = current_function.get_current_basic_block()
+
+        exec_body_label = current_function.add_basic_block()
+
+        # First, construct the body of the function in llvm, adding basic blocks to the function (these will be added to the exec_body_label)
         if_statement_ast.get_execution_body().accept(self)
 
-        current_function = self.builder.get_current_function()
+        if if_statement_ast.has_condition():
 
-        if if_statement_ast.get_condition() is not None:
-            self.builder.compute_expression(if_statement_ast.get_condition())
+            # Calculates the expression as a condition, which either returns (TODO: True or False)
+            resulting_reg = self.builder.compute_expression(if_statement_ast.get_condition())
 
-        if_statement_ast.get_execution_body().accept()
+            if if_statement_ast.has_else_statement():
+                else_exec_body_label = self.build_if_statement(if_statement_ast.get_else_statement())
+            else:
+                # This means there is are no more else statements in this chain, so we can continue writing to the newest basic block
+                else_exec_body_label = current_function.add_basic_block()
+
+            instruction = ConditionalBranchInstruction(resulting_reg, exec_body_label, else_exec_body_label)
+
+            # Finish up the before_if_basic block
+            before_if_basic_block.add_instruction(instruction)
+
+        else:
+
+            # Must be an if statements which never has any other conditions
+            instruction = UnconditionalBranchInstruction(exec_body_label)
+            before_if_basic_block.add_instruction(instruction)
+
+        return exec_body_label
 
     def visit_ast_leaf(self, ast: ASTLeaf):
         super().visit_ast_leaf(ast)
