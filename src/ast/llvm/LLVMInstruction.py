@@ -4,10 +4,12 @@ from src.ast.ASTTokens import DataTypeToken, BinaryArithmeticExprToken
 from src.ast.llvm.LLVMBuilder import LLVMBuilder
 from src.ast.llvm.LLVMUtils import IToLLVM, get_llvm_type
 
+
 def isConstant(operand: str):
     if operand.startswith('%'):
         return False
     return True
+
 
 class Instruction(IToLLVM, ABC):
 
@@ -117,32 +119,45 @@ class BinaryArithmeticInstruction(AssignInstruction):
         self.operand1 = operand1
         self.data_type_reg2 = data_type_reg2
         self.operand2 = operand2
+        self.operation_type = self.get_operation_type()
 
-    def get_operation(self):
-
-
-        if self.operation == BinaryArithmeticExprToken.ADD:
-            operation_string = 'fadd'
-        elif self.operation ==  BinaryArithmeticExprToken.SUB:
-            operation_string = 'fsub'
-        elif self.operation == BinaryArithmeticExprToken.MUL:
-            operation_string = 'fmul'
-        elif self.operation == BinaryArithmeticExprToken.DIV:
-            # TODO sdiv or udiv?
-            operation_string = 'fdiv'
+    def get_operation_type(self):
+        if self.data_type_reg1 == 'i32' and self.data_type_reg2 == 'i32':
+            return 'i32'
+        elif self.data_type_reg1 == 'float' and self.data_type_reg2 == 'float':
+            return 'float'
         else:
-            # TODO less than,...
             raise NotImplementedError
 
-        return operation_string
+    def get_operation(self):
+        operation_string = None
+        if self.operation_type == 'i32':
+            if self.operation == BinaryArithmeticExprToken.ADD:
+                operation_string = 'add nsw'
+            elif self.operation == BinaryArithmeticExprToken.SUB:
+                operation_string = 'sub nsw'
+            elif self.operation == BinaryArithmeticExprToken.MUL:
+                operation_string = 'mul nsw'
+            elif self.operation == BinaryArithmeticExprToken.DIV:
+                operation_string = 'sdiv'
+            else:
+                raise NotImplementedError
+        elif self.operation_type == 'float':
+            if self.operation == BinaryArithmeticExprToken.ADD:
+                operation_string = 'fadd'
+            elif self.operation == BinaryArithmeticExprToken.SUB:
+                operation_string = 'fsub'
+            elif self.operation == BinaryArithmeticExprToken.MUL:
+                operation_string = 'fmul'
+            elif self.operation == BinaryArithmeticExprToken.DIV:
+                operation_string = 'fdiv'
+            else:
+                raise NotImplementedError
 
-    def get_operand_string(self, operand: str):
-        if operand.startswith('%'):
-
-
+        assert operation_string is not None
+        return operation_string + f' {self.operation_type}'
 
     def to_llvm(self):
-        op = self.get_operation()
+        operation_string = self.get_operation()
 
-        get_operand_str
-        return super().to_llvm() + op + f'{self.data_type_reg1}* {self.operand1}, {self.data_type_reg2}* {self.operand2}'
+        return super().to_llvm() + operation_string + f'{self.operand1}, {self.operand2}'
