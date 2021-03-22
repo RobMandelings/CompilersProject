@@ -9,6 +9,7 @@ class LLVMBuilder(IToLLVM):
 
     def __init__(self):
         self.functions = list()
+        self.functions.append(LLVMFunction("main"))
         self.instructions = list()
         self.symbol_table = LLVMSymbolTable()
         self.register_count = 0
@@ -101,7 +102,8 @@ class LLVMBuilder(IToLLVM):
 
     def declare_variable(self, ast: ASTVariableDeclaration):
         resulting_register = self.get_current_function().get_new_register()
-        declared_variable = LLVMVariableSymbol(ast.var_name_ast.get_content(), ast.data_type_ast.get_token(), resulting_register)
+        declared_variable = LLVMVariableSymbol(ast.var_name_ast.get_content(), ast.data_type_ast.get_token(),
+                                               resulting_register)
         self.symbol_table.insert_symbol(
             declared_variable)
 

@@ -160,7 +160,7 @@ def create_ast_if_statement(cst):
     else_statement = None
 
     for child_ast in children_asts:
-        if isinstance(child_ast, ASTExpression):
+        if isinstance(child_ast, ASTExpression) or isinstance(child_ast, ASTRValue):
             condition = child_ast
         elif isinstance(child_ast, ASTScope):
             execution_body = child_ast

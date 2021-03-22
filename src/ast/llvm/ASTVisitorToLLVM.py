@@ -31,7 +31,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
                 # This means there is are no more else statements in this chain, so we can continue writing to the newest basic block
                 else_exec_body_label = current_function.add_basic_block()
 
-            instruction = ConditionalBranchInstruction(resulting_reg, exec_body_label, else_exec_body_label)
+            instruction = ConditionalBranchInstruction(resulting_reg, f"%{exec_body_label}", f"%{else_exec_body_label}")
 
             # Finish up the before_if_basic block
             before_if_basic_block.add_instruction(instruction)
@@ -49,6 +49,9 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
 
     def visit_ast_internal(self, ast: ASTInternal):
         super().visit_ast_internal(ast)
+
+    def visit_ast_if_statement(self, ast: ASTIfStatement):
+        self.build_if_statement(ast)
 
     def visit_ast_binary_expression(self, ast: ASTBinaryExpression):
         raise NotImplementedError
