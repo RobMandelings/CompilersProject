@@ -4,6 +4,10 @@ from src.ast.ASTTokens import DataTypeToken, BinaryArithmeticExprToken
 from src.ast.llvm.LLVMBuilder import LLVMBuilder
 from src.ast.llvm.LLVMUtils import IToLLVM, get_llvm_type
 
+def isConstant(operand: str):
+    if operand.startswith('%'):
+        return False
+    return True
 
 class Instruction(IToLLVM, ABC):
 
@@ -105,14 +109,14 @@ class BinaryArithmeticInstruction(AssignInstruction):
     """
 
     def __init__(self, resulting_reg: str, operation: BinaryArithmeticExprToken, data_type_reg1: DataTypeToken,
-                 operand_reg1: str,
-                 data_type_reg2: DataTypeToken, operand_reg2: str):
+                 operand1: str,
+                 data_type_reg2: DataTypeToken, operand2: str):
         super().__init__(resulting_reg)
         self.operation = operation
         self.data_type_reg1 = data_type_reg1
-        self.operand_reg1 = operand_reg1
+        self.operand1 = operand1
         self.data_type_reg2 = data_type_reg2
-        self.operand_reg2 = operand_reg2
+        self.operand2 = operand2
 
     def get_operation(self):
 
@@ -132,5 +136,13 @@ class BinaryArithmeticInstruction(AssignInstruction):
 
         return operation_string
 
+    def get_operand_string(self, operand: str):
+        if operand.startswith('%'):
 
 
+
+    def to_llvm(self):
+        op = self.get_operation()
+
+        get_operand_str
+        return super().to_llvm() + op + f'{self.data_type_reg1}* {self.operand1}, {self.data_type_reg2}* {self.operand2}'
