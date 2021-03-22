@@ -1,13 +1,15 @@
 from abc import ABC
 
 from src.ast.ASTTokens import DataTypeToken, BinaryArithmeticExprToken
-from src.ast.llvm.LLVMBuilder import LLVMBuilder, IToLLVM
+from src.ast.llvm.LLVMBuilder import LLVMBuilder
+from src.ast.llvm.LLVMUtils import IToLLVM
 
 
 class Instruction(IToLLVM, ABC):
 
     def __init__(self):
         pass
+
 
     def is_terminator(self):
         raise NotImplementedError
