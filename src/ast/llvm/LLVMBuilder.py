@@ -20,16 +20,15 @@ class LLVMBuilder(IToLLVM):
         assert isinstance(function, LLVMFunction)
         return function
 
-    def compute_expression(self, ast: AST, instructions: list):
+    def compute_expression(self, ast: AST):
+        """
+        """
 
         if isinstance(ast, ASTBinaryArithmeticExpression):
-            left_register = self.compute_expression(ast.left, instructions)
-            right_register = self.compute_expression(ast.right, instructions)
+            left_register = self.compute_expression(ast.left)
+            right_register = self.compute_expression(ast.right)
 
             operation_string = None
-            if isinstance(ast.get_token(), BinaryArithmeticExprToken):
-                instruction = BinaryArithmeticInstruction(self.get_current_function().get_new_register(),
-                                                          ast.get_token(), )
             if ast.get_token() == BinaryArithmeticExprToken.ADD:
                 operation_string = 'fadd'
             elif ast.get_token() == BinaryArithmeticExprToken.SUB:

@@ -32,9 +32,6 @@ class LLVMFunction(IToLLVM):
         self.get_current_basic_block().add_instruction(instruction)
 
     def get_new_register(self):
-        """
-        Returns a new (free) local register in string form (%x)
-        """
         register_to_return = f"%{self.counter}"
         self.counter += 1
         return register_to_return
