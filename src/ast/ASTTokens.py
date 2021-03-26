@@ -22,7 +22,8 @@ class DataTypeToken(NamedEnum):
     Ordered from lowest precedence to highest precedence
     """
     # Indicates the richness of the datatype, from low to high
-    _order_ = 'CHAR INT FLOAT'
+    _order_ = 'BOOL CHAR INT FLOAT'
+    BOOL = 'bool'
     CHAR = 'char'
     INT = 'int'
     FLOAT = 'float'
@@ -35,6 +36,8 @@ class DataTypeToken(NamedEnum):
             return DataTypeToken.FLOAT
         elif name == 'char':
             return DataTypeToken.CHAR
+        elif name == 'bool':
+            return DataTypeToken.BOOL
         else:
             return None
 
