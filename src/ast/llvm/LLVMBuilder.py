@@ -144,7 +144,7 @@ class LLVMBuilder(IToLLVM):
         current_variable_reg = variable_symbol.get_current_register()
 
         # The data type of the variable to-be-assigned
-        llvm_data_type_of_var = LLVMUtils.get_llvm_type(variable_symbol.get_data_type())
+        current_variable_data_type = variable_symbol.get_data_type()
 
         computed_expression_value, data_type = self.compute_expression(right)
 
@@ -152,9 +152,9 @@ class LLVMBuilder(IToLLVM):
         temporary_register = self.get_current_function().get_new_register()
 
         self.get_current_function().add_instruction(
-            LoadInstruction(temporary_register, llvm_data_type_of_var, computed_expression_value))
+            LoadInstruction(temporary_register, current_variable_data_type, computed_expression_value))
         self.get_current_function().add_instruction(
-            StoreInstruction(current_variable_reg, temporary_register, llvm_data_type_of_var))
+            StoreInstruction(current_variable_reg, temporary_register, current_variable_data_type))
 
     def _generate_begin_of_file(self):
         begin_of_file = ""
