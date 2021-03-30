@@ -28,6 +28,9 @@ class LLVMFunction(IToLLVM):
         return label_to_return
 
     def add_instruction(self, instruction: Instruction):
+        """
+        Adds an instruction to the current basic block of this function, for later llvm code generation
+        """
         assert isinstance(instruction, Instruction)
         self.get_current_basic_block().add_instruction(instruction)
 
@@ -35,6 +38,9 @@ class LLVMFunction(IToLLVM):
         """
         Returns the first local available register in LLVM (e.g. if registers %0-%6 are already in use, the newest register will be %7)
         The register will be returned in string notation (e.g. '%7')
+
+        After this call, the returned register will be seen as 'reserved', thus, the counter (for registers & labels) increases (by one)
+        afterwards for retrieval of new available registers.
         """
         register_to_return = f"%{self.counter}"
         self.counter += 1

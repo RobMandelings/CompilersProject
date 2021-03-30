@@ -15,6 +15,10 @@ class LLVMBuilder(IToLLVM):
         pass
 
     def get_current_function(self):
+        """
+        Returns the current function that is being generated in LLVM code. Instructions should be appended to this
+        function's current basic block
+        """
         function = self.functions[-1]
         assert isinstance(function, LLVMFunction)
         return function
@@ -24,9 +28,11 @@ class LLVMBuilder(IToLLVM):
         Computes an expression of the given AST, generating the corresponding instructions in the process
         ast: the AST to compute the expression for
 
-        returns: <reg, data_type>:
-        - reg: the register that was last used to compute this expression (should hold the value of the expression)
-        - data_type: the resulting data type of the operation (INT, FLOAT,...)
+        returns: <value, data_type>:
+        - value: holds the value of the computed expression. Can either be
+            - The register that was last used to compute this expression
+            - Or a literal if possible
+        - data_type: the resulting data type of the operation (DataTypeToken.INT, FLOAT,...)
         """
 
         if isinstance(ast, ASTBinaryArithmeticExpression):
@@ -114,7 +120,7 @@ class LLVMBuilder(IToLLVM):
 
         register = self.get_current_function().get_new_register()
 
-        # TODO remove from code
+        # TODO remove from code: don't work with symbol table anymore
         declared_variable = LLVMVariableSymbol(ast.var_name_ast.get_content(), ast.data_type_ast.get_token(),
                                                register)
         self.symbol_table.insert_symbol(declared_variable)
@@ -124,58 +130,59 @@ class LLVMBuilder(IToLLVM):
         self.get_current_function().add_instruction(StoreInstruction(f'%{register}', value_to_store, data_type))
 
     def assign_value_to_variable(self, ast: ASTAssignmentExpression):
+        """
+        Assigns a value to an existing variable (which has a current register),
+        generating instructions in the process and adding them to the current basic block
+        """
         # TODO Type conversions are not supported yet
         right = ast.get_right()
 
-        variable = self.symbol_table.lookup_variable(ast.get_left().get_content())
-        current_register = variable.get_current_register()
-        left_datatype = get_llvm_type(variable.get_data_type())
+        # TODO remove from code: don't work with symbol table anymore
+        variable_symbol = self.symbol_table.lookup_variable(ast.get_variable().get_content())
 
-        if not isinstance(right, ASTLiteral):
-            value_register = self.compute_expression(right)
-            temporary_register = self.register_count  # REGISTER NUMBER (without %)
+        # The current register of the variable to-be-assigned
+        current_variable_reg = variable_symbol.get_current_register()
 
-            self.instructions.append(
-                f"%{temporary_register} = load {left_datatype}, {left_datatype}* {value_register}, align 4")
-            self.register_count += 1
-            self.instructions.append(
-                f"store {left_datatype} %{temporary_register}, {left_datatype}* {current_register}, align 4")
-        else:
+        # The data type of the variable to-be-assigned
+        llvm_data_type_of_var = LLVMUtils.get_llvm_type(variable_symbol.get_data_type())
 
-            self.instructions.append(
-                f"store {left_datatype} {right.get_content()}, {left_datatype}* {current_register}, align 4")
+        computed_expression_value, data_type = self.compute_expression(right)
 
+        # TODO: Temporary register used to load the computed expression value in (?)
+        temporary_register = self.get_current_function().get_new_register()
 
-def _generate_begin_of_file(self):
-    begin_of_file = ""
-    begin_of_file += "declare i32 @printf(i8*, ...)\n"
-    begin_of_file += "@.i = private unnamed_addr constant [3 x i8] c\"%i\\00\", align 1\n"
-    begin_of_file += "define i32 @main() {\n"
-    begin_of_file += "    start:\n"
-    return begin_of_file
+        self.get_current_function().add_instruction(
+            LoadInstruction(temporary_register, llvm_data_type_of_var, computed_expression_value))
+        self.get_current_function().add_instruction(
+            StoreInstruction(current_variable_reg, temporary_register, llvm_data_type_of_var))
 
+    def _generate_begin_of_file(self):
+        begin_of_file = ""
+        begin_of_file += "declare i32 @printf(i8*, ...)\n"
+        begin_of_file += "@.i = private unnamed_addr constant [3 x i8] c\"%i\\00\", align 1\n"
+        begin_of_file += "define i32 @main() {\n"
+        begin_of_file += "    start:\n"
+        return begin_of_file
 
-def _generate_end_of_file(self):
-    end_of_file = ""
-    end_of_file += "; we exit with code 0 = success\n"
-    end_of_file += "ret i32 0\n"
-    end_of_file += "}\n"
-    return end_of_file
+    def _generate_end_of_file(self):
+        end_of_file = ""
+        end_of_file += "; we exit with code 0 = success\n"
+        end_of_file += "ret i32 0\n"
+        end_of_file += "}\n"
+        return end_of_file
 
+    def to_file(self, filename: str):
+        f = open(filename, "w+")
+        f.write(self.to_llvm())
+        f.close()
 
-def to_file(self, filename: str):
-    f = open(filename, "w+")
-    f.write(self.to_llvm())
-    f.close()
+    # TODO optimize
+    def to_llvm(self):
+        llvm_code = self._generate_begin_of_file()
 
+        for function in self.functions:
+            llvm_code += function.to_llvm()
 
-# TODO optimize
-def to_llvm(self):
-    llvm_code = self._generate_begin_of_file()
+        llvm_code += self._generate_end_of_file()
 
-    for function in self.functions:
-        llvm_code += function.to_llvm()
-
-    llvm_code += self._generate_end_of_file()
-
-    return llvm_code
+        return llvm_code
