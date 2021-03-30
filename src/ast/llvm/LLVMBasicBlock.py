@@ -18,7 +18,8 @@ class LLVMBasicBlock(IToLLVM):
         """
         Checks whether or not this basic block has a terminator at the end (has a terminator at the end)
         """
-        return self.instructions[-1].is_terminator()
+        
+        return len(self.instructions) > 0 and self.instructions[-1].is_terminator()
 
     def to_llvm(self):
         llvm_code = ""
