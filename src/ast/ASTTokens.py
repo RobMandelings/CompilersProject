@@ -22,27 +22,94 @@ class DataTypeToken(NamedEnum):
     Ordered from lowest precedence to highest precedence
     """
     # Indicates the richness of the datatype, from low to high
-    _order_ = 'BOOL CHAR INT FLOAT'
-    BOOL = 'bool'
-    CHAR = 'char'
-    INT = 'int'
-    FLOAT = 'float'
+    BOOL = ('bool', False)
+    CHAR = ('char', False)
+    INT = ('int', False)
+    FLOAT = ('float', False)
+    BOOL_POINTER = ('bool*', True)
+    CHAR_POINTER = ('char*', True)
+    INT_POINTER = ('int*', True)
+    FLOAT_POINTER = ('float*', True)
+
+    def __init__(self, token_name: str, pointer_type: bool):
+        super().__init__(token_name)
+        self.pointer_type = pointer_type
+
+    def is_pointer_type(self):
+        return self.pointer_type
 
     @staticmethod
     def from_str(name: str):
-        if name == 'bool':
-            return DataTypeToken.BOOL
-        elif name == 'char':
-            return DataTypeToken.CHAR
-        elif name == 'int':
-            return DataTypeToken.INT
-        elif name == 'float':
-            return DataTypeToken.FLOAT
+        if name.startswith('bool'):
+            if name == 'bool*':
+                return DataTypeToken.BOOL_POINTER
+            else:
+                return DataTypeToken.BOOL
+        elif name.startswith('char'):
+            if name == 'char*':
+                return DataTypeToken.CHAR_POINTER
+            else:
+                return DataTypeToken.CHAR
+        elif name.startswith('int'):
+            if name == 'int*':
+                return DataTypeToken.INT_POINTER
+            else:
+                return DataTypeToken.INT
+        elif name.startswith('float'):
+            if name == 'float*':
+                return DataTypeToken.FLOAT_POINTER
+            else:
+                return DataTypeToken.FLOAT
         else:
             return None
 
+    # Improve the methods below, maybe don't use them anymore as it would be part of the class
+
+    @staticmethod
+    def get_pointer_version(data_type):
+        """
+        Retrieves the pointer version of the given datatype (pointer = true)
+        E.g. int -> int*
+        Used in: computeExpression, ASTVariable. Take a look there
+        """
+        assert isinstance(data_type, DataTypeToken) and not data_type.is_pointer_type()
+
+        if data_type == DataTypeToken.BOOL:
+            return DataTypeToken.BOOL_POINTER
+        elif data_type == DataTypeToken.CHAR:
+            return DataTypeToken.CHAR_POINTER
+        elif data_type == DataTypeToken.INT:
+            return DataTypeToken.INT_POINTER
+        elif data_type == DataTypeToken.FLOAT:
+            return DataTypeToken.FLOAT_POINTER
+        else:
+            raise NotImplementedError
+
+    @staticmethod
+    def get_normal_version(data_type):
+        """
+        Retrieves the normal version of the given datatype (pointer == false)
+        E.g. int* -> int
+        Used in: computeExpression. Take a look there
+        """
+        assert isinstance(data_type, DataTypeToken) and data_type.is_pointer_type()
+
+        if data_type == DataTypeToken.BOOL_POINTER:
+            return DataTypeToken.BOOL
+        elif data_type == DataTypeToken.CHAR_POINTER:
+            return DataTypeToken.CHAR
+        elif data_type == DataTypeToken.INT_POINTER:
+            return DataTypeToken.INT
+        elif data_type == DataTypeToken.FLOAT_POINTER:
+            return DataTypeToken.FLOAT
+        else:
+            raise NotImplementedError
+
     @staticmethod
     def is_richer_than(datatype1, datatype2):
+
+        assert isinstance(datatype1, DataTypeToken) and isinstance(datatype2, DataTypeToken)
+        assert not (datatype1.is_pointer_type() or datatype2.is_pointer_type())
         """
         Checks whether the first data_type given is richer than the second (richness can be checked above in the _order_ variable)
         """

@@ -2,16 +2,16 @@ from src.ast.ASTs import *
 from src.ast.llvm.LLVMFunction import *
 from src.ast.llvm.LLVMInstruction import *
 from src.ast.llvm.LLVMSymbolTable import *
+from src.ast.llvm.LLVMGlobalContainer import LLVMGlobalContainer
 
 
 class LLVMBuilder(IToLLVM):
 
     def __init__(self):
+        self.global_container = LLVMGlobalContainer()
         self.functions = list()
         self.functions.append(LLVMFunction("main"))
-        self.instructions = list()
         self.symbol_table = LLVMSymbolTable()
-        self.register_count = 0
         pass
 
     def get_current_function(self):
@@ -22,6 +22,10 @@ class LLVMBuilder(IToLLVM):
         function = self.functions[-1]
         assert isinstance(function, LLVMFunction)
         return function
+
+    def get_global_container(self):
+        assert isinstance(self.global_container, LLVMGlobalContainer)
+        return self.global_container
 
     def compute_expression(self, ast: AST):
         """
@@ -41,13 +45,13 @@ class LLVMBuilder(IToLLVM):
 
             instruction = None
             operation = ast.get_token()
-            new_register = self.get_current_function().get_new_register()
+            register_to_return = self.get_current_function().get_new_register()
 
             if isinstance(operation, BinaryArithmeticExprToken):
-                instruction = BinaryArithmeticInstruction(new_register,
+                instruction = BinaryArithmeticInstruction(register_to_return,
                                                           operation, data_type1, operand1, data_type2, operand2)
             elif isinstance(operation, RelationalExprToken):
-                instruction = CompareInstruction(new_register, operation, data_type1,
+                instruction = CompareInstruction(register_to_return, operation, data_type1,
                                                  operand1, data_type2, operand2)
             else:
                 raise NotImplementedError("This type of instructions are not yet supported")
@@ -55,7 +59,7 @@ class LLVMBuilder(IToLLVM):
             assert isinstance(instruction, AssignInstruction)
             self.get_current_function().add_instruction(instruction)
 
-            return new_register, instruction.get_resulting_data_type()
+            return register_to_return, instruction.get_resulting_data_type()
 
         elif isinstance(ast, ASTUnaryExpression):
             # TODO compute unary expressions
@@ -78,12 +82,18 @@ class LLVMBuilder(IToLLVM):
             # First look up the variable in the symbol table, then retrieve the data type of this variable
             # TODO remove symbol table and put into some kind of dictionary
             variable = self.symbol_table.lookup_variable(ast.get_content())
-            return variable.get_current_register(), variable.get_data_type()
+            variable_data_type = variable.get_data_type()
+
+            # We're assuming the variable register is always of pointer type, so first load the variable value into a register and return it
+
+            register_to_return = self.get_current_function().get_new_register()
+            self.get_current_function().add_instruction(
+                LoadInstruction(register_to_return, variable.get_data_type(), variable.get_current_register()))
+            return register_to_return, variable.get_data_type()
         else:
-            raise NotImplementedError
+            return NotImplementedError
 
     def _convert_float_register_to(self, register, to_type: DataTypeToken):
-
         register_to_return = f"%{self.register_count}"
 
         if to_type != DataTypeToken.FLOAT:
@@ -98,8 +108,17 @@ class LLVMBuilder(IToLLVM):
     def print_variable(self, variable_name):
         variable = self.symbol_table.lookup_variable(variable_name)
         assert variable is not None
-        self.instructions.append(
-            f"call i32 (i8*, ...) @printf(i8* getelementptr inbounds([3 x i8], [3 x i8]* @.i, i64 0, i64 0), i32 {variable.get_current_register()})")
+
+        register_to_print = self.get_current_function().get_new_register()
+
+        self.get_current_function().add_instruction(
+            LoadInstruction(register_to_print, variable.get_data_type(),
+                            variable.get_current_register()))
+
+        # The global variable that contains the string of the corresponding type of variable to call (printf(%i, your_int))
+        # has the string %i\00 as type to use for the print. The global variable contains this string
+        global_var_data_type = self.get_global_container().get_printf_type_string(variable.get_data_type())
+        self.get_current_function().add_instruction(PrintfInstruction(register_to_print, global_var_data_type))
 
     def declare_variable(self, ast: ASTVariableDeclaration):
         resulting_register = self.get_current_function().get_new_register()
@@ -146,20 +165,23 @@ class LLVMBuilder(IToLLVM):
         # The data type of the variable to-be-assigned
         current_variable_data_type = variable_symbol.get_data_type()
 
-        computed_expression_value, data_type = self.compute_expression(right)
+        computed_expression_value, computed_data_type = self.compute_expression(right)
 
-        # TODO: Temporary register used to load the computed expression value in (?)
-        temporary_register = self.get_current_function().get_new_register()
+        if computed_data_type.is_pointer_type():
+            # TODO: This register is used to load from pointer type into an actual value of that data type (sure?)
+            value_to_store = self.get_current_function().get_new_register()
+            self.get_current_function().add_instruction(
+                LoadInstruction(value_to_store, current_variable_data_type, computed_expression_value))
+        else:
+            value_to_store = computed_expression_value
 
         self.get_current_function().add_instruction(
-            LoadInstruction(temporary_register, current_variable_data_type, computed_expression_value))
-        self.get_current_function().add_instruction(
-            StoreInstruction(current_variable_reg, temporary_register, current_variable_data_type))
+            StoreInstruction(current_variable_reg, value_to_store, current_variable_data_type))
 
     def _generate_begin_of_file(self):
         begin_of_file = ""
         begin_of_file += "declare i32 @printf(i8*, ...)\n"
-        begin_of_file += "@.i = private unnamed_addr constant [3 x i8] c\"%i\\00\", align 1\n"
+        # begin_of_file += "@.i = private unnamed_addr constant [3 x i8] c\"%i\\00\", align 1\n"
         begin_of_file += "define i32 @main() {\n"
         begin_of_file += "    start:\n"
         return begin_of_file
@@ -178,7 +200,10 @@ class LLVMBuilder(IToLLVM):
 
     # TODO optimize
     def to_llvm(self):
-        llvm_code = self._generate_begin_of_file()
+        llvm_code = self.get_global_container().to_llvm() + "\n"
+
+        # Remove this and replace with just function things and other initializations
+        llvm_code += self._generate_begin_of_file() + "\n"
 
         for function in self.functions:
             llvm_code += function.to_llvm()

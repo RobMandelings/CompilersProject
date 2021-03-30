@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 
 from src.ast.ASTTokens import DataTypeToken, BinaryArithmeticExprToken, RelationalExprToken
 from src.ast.llvm import LLVMUtils
@@ -277,3 +278,26 @@ class UnaryArithmeticInstruction(AssignInstruction):
     def to_llvm(self):
         raise NotImplementedError
         return super().to_llvm()
+
+
+class PrintfInstruction(Instruction):
+
+    def __init__(self, register_to_print: str, global_variable_data_type: str):
+        """
+        Creates a PrintfInstructions string
+        type_to_print: the type to print (most likely a global constant you have defined)
+        global_variable_data_type: the global variable which contains the string of the datatype to print (e.g. @.str.1 -> '%i\00')
+        """
+        super().__init__()
+        self.register_to_print = register_to_print
+        self.type_to_print = global_variable_data_type
+
+    def get_instruction_type(self):
+        return self.type_to_print
+
+    def is_terminator(self):
+        return False
+
+    def to_llvm(self):
+        # TODO remove call from @.i ot
+        return f"call i32 (i8*, ...) @printf(i8* getelementptr inbounds([3 x i8], [3 x i8]* {self.type_to_print}, i64 0, i64 0), i32 {self.register_to_print})"

@@ -1,0 +1,58 @@
+from src.ast.ASTTokens import DataTypeToken
+from src.ast.llvm.LLVMUtils import IToLLVM
+
+
+class LLVMGlobalContainer(IToLLVM):
+
+    def __init__(self):
+        self.global_declaration_instructions = list()
+        self.__printf_type_strings = dict()
+        pass
+
+    def __add_printf_type_string(self, data_type_to_print: DataTypeToken):
+
+        global_variable = f'@.str.{len(self.global_declaration_instructions)}'
+
+        # E.g. %i for printf('%i', int)
+        # Null termination is necessary
+        c_type_selection = None
+        if data_type_to_print == DataTypeToken.CHAR:
+            c_type_selection = '%c'
+        elif data_type_to_print == DataTypeToken.INT:
+            c_type_selection = '%i'
+        elif data_type_to_print == DataTypeToken.FLOAT:
+            c_type_selection = '%f'
+        else:
+            raise NotImplementedError
+
+        global_declaration_instruction = f'{global_variable} = private unnamed_addr constant [3 x i8] c"{c_type_selection}\\00", align 1'
+        self.global_declaration_instructions.append(global_declaration_instruction)
+        self.__printf_type_strings[data_type_to_print] = global_variable
+
+    def get_printf_type_string(self, data_type_to_print: DataTypeToken):
+        """
+        Returns the global constant that holds the type to print
+        For example, they would be defined as follows: @.i = private unnamed_addr constant [3 x i8] c"%i\00", align 1
+        This @.i corresponds to '%i' type to print in c ( printf('%i', your_int) )
+        """
+        if data_type_to_print.is_pointer_type():
+            # TODO implement
+            raise NotImplementedError
+        else:
+
+            data_type_name = data_type_to_print.name
+
+            printf_type_string = self.__printf_type_strings.get(data_type_to_print.name)
+
+            if printf_type_string is None:
+                self.__add_printf_type_string(data_type_to_print)
+                printf_type_string = self.__printf_type_strings.get(data_type_to_print)
+
+            assert printf_type_string is not None
+            return printf_type_string
+
+    def to_llvm(self):
+        string_to_return = ''
+        for global_declaration in self.global_declaration_instructions:
+            string_to_return += global_declaration + "\n"
+        return string_to_return
