@@ -24,6 +24,8 @@ def get_llvm_type(data_type: DataTypeToken):
         return "i32"
     elif data_type == DataTypeToken.FLOAT:
         return "float"
+    else:
+        raise NotImplementedError
 
 
 class ComparisonDataType(Enum):
