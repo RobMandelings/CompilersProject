@@ -3,6 +3,9 @@ from src.ast.llvm.LLVMUtils import IToLLVM
 
 
 class LLVMGlobalContainer(IToLLVM):
+    """
+    Contains all global instructions that do not belong in any function
+    """
 
     def __init__(self):
         self.global_declaration_instructions = list()
