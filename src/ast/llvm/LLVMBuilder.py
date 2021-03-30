@@ -88,7 +88,7 @@ class LLVMBuilder(IToLLVM):
 
         if to_type != DataTypeToken.FLOAT:
             self.instructions.append(
-                f"%{self.register_count} = fptosi float {register} to {get_llvm_type(to_type)}")
+                f"{self.register_count} = fptosi float {register} to {get_llvm_type(to_type)}")
             self.register_count += 1
             return register_to_return
 
@@ -108,7 +108,7 @@ class LLVMBuilder(IToLLVM):
         self.symbol_table.insert_symbol(
             declared_variable)
 
-        instruction = AllocaInstruction(f'%{resulting_register}', declared_variable.get_data_type())
+        instruction = AllocaInstruction(f'{resulting_register}', declared_variable.get_data_type())
         self.get_current_function().add_instruction(instruction)
 
     def declare_and_init_variable(self, ast: ASTVariableDeclarationAndInit):
@@ -126,8 +126,8 @@ class LLVMBuilder(IToLLVM):
         self.symbol_table.insert_symbol(declared_variable)
 
         data_type = declared_variable.get_data_type()
-        self.get_current_function().add_instruction(AllocaInstruction(f'%{register}', data_type))
-        self.get_current_function().add_instruction(StoreInstruction(f'%{register}', value_to_store, data_type))
+        self.get_current_function().add_instruction(AllocaInstruction(f'{register}', data_type))
+        self.get_current_function().add_instruction(StoreInstruction(f'{register}', value_to_store, data_type))
 
     def assign_value_to_variable(self, ast: ASTAssignmentExpression):
         """

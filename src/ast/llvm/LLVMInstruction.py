@@ -222,7 +222,7 @@ class BinaryArithmeticInstruction(BinaryAssignInstruction):
                 raise NotImplementedError
 
         assert operation_string is not None
-        return operation_string + f'{self.operation_type}'
+        return operation_string + f' {self.operation_type} '
 
     def to_llvm(self):
         operation_string = self.get_llvm_for_operation()
