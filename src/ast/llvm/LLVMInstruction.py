@@ -141,6 +141,9 @@ class BinaryAssignInstruction(AssignInstruction):
     def __init__(self, resulting_reg: str, operation, data_type1: DataTypeToken,
                  operand1: str,
                  data_type2: DataTypeToken, operand2: str):
+        """
+        Instruction that has a resulting register
+        """
         super().__init__(resulting_reg)
         self.operation = operation
         self.data_type1 = data_type1
@@ -231,11 +234,7 @@ class CompareInstruction(BinaryAssignInstruction):
     def __init__(self, resulting_reg: str, operation: RelationalExprToken, data_type1: DataTypeToken, operand1: str,
                  data_type2: DataTypeToken, operand2: str):
         super().__init__(resulting_reg, operation, data_type1, operand1, data_type2, operand2)
-        self.operation = LLVMUtils.get_llvm_for_self.operation(operation)
-        self.data_type1 = LLVMUtils.get_llvm_type(data_type1)
-        self.data_type2 = LLVMUtils.get_llvm_type(data_type2)
-        self.operand1 = operand1
-        self.operand2 = operand2
+        self.operation = operation
         self.comparison_type, self.llvm_type = self.deduce_comparison_type()
 
     def get_resulting_data_type(self):
@@ -265,7 +264,7 @@ class CompareInstruction(BinaryAssignInstruction):
             raise NotImplementedError
 
     def to_llvm(self):
-        return super().to_llvm() + f"{self.comparison_type} {self.operation} {self.llvm_type} {self.data_type1} {self.operand1}, {self.data_type2} {self.operand2}"
+        return super().to_llvm() + f'{self.comparison_type} {self.operation} {self.llvm_type} {self.data_type1} {self.operand1}, {self.data_type2} {self.operand2}'
 
 
 # TODO must be implemented
