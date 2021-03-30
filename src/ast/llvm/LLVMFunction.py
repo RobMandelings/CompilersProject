@@ -32,6 +32,10 @@ class LLVMFunction(IToLLVM):
         self.get_current_basic_block().add_instruction(instruction)
 
     def get_new_register(self):
+        """
+        Returns the first local available register in LLVM (e.g. if registers %0-%6 are already in use, the newest register will be %7)
+        The register will be returned in string notation (e.g. '%7')
+        """
         register_to_return = f"%{self.counter}"
         self.counter += 1
         return register_to_return

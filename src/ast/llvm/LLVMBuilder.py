@@ -27,19 +27,19 @@ class LLVMBuilder(IToLLVM):
         """
 
         if isinstance(ast, ASTBinaryArithmeticExpression):
-            value1, data_type1 = self.compute_expression(ast.left)
-            value2, data_type2 = self.compute_expression(ast.right)
+            operand1, data_type1 = self.compute_expression(ast.left)
+            operand2, data_type2 = self.compute_expression(ast.right)
 
             instruction = None
             operation = ast.get_token()
-            new_register
+            new_register = self.get_current_function().get_new_register()
 
             if isinstance(operation, BinaryArithmeticExprToken):
-                instruction = BinaryArithmeticInstruction(self.get_current_function().get_new_register(),
-                                                          operation, data_type1, value1, data_type2, value2)
+                instruction = BinaryArithmeticInstruction(new_register,
+                                                          operation, data_type1, operand1, data_type2, operand2)
             elif isinstance(operation, RelationalExprToken):
                 instruction = CompareInstruction(self.get_current_function().get_new_register(), operation, data_type1,
-                                                 value1, data_type2, value2)
+                                                 operand1, data_type2, operand2)
             else:
                 raise NotImplementedError("This type of instructions are not yet supported")
 
