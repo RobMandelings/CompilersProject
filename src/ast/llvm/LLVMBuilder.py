@@ -1,8 +1,7 @@
 from src.ast.ASTs import *
 from src.ast.llvm.LLVMFunction import *
-from src.ast.llvm.LLVMSymbolTable import *
-from src.ast.llvm.LLVMUtils import IToLLVM, get_llvm_type
 from src.ast.llvm.LLVMInstruction import *
+from src.ast.llvm.LLVMSymbolTable import *
 
 
 class LLVMBuilder(IToLLVM):
@@ -24,6 +23,10 @@ class LLVMBuilder(IToLLVM):
         """
         Computes an expression of the given AST, generating the corresponding instructions in the process
         ast: the AST to compute the expression for
+
+        returns: <reg, data_type>:
+        - reg: the register that was last used to compute this expression (should hold the value of the expression)
+        - data_type: the resulting data type of the operation (INT, FLOAT,...)
         """
 
         if isinstance(ast, ASTBinaryArithmeticExpression):
@@ -38,14 +41,18 @@ class LLVMBuilder(IToLLVM):
                 instruction = BinaryArithmeticInstruction(new_register,
                                                           operation, data_type1, operand1, data_type2, operand2)
             elif isinstance(operation, RelationalExprToken):
-                instruction = CompareInstruction(self.get_current_function().get_new_register(), operation, data_type1,
+                instruction = CompareInstruction(new_register, operation, data_type1,
                                                  operand1, data_type2, operand2)
             else:
                 raise NotImplementedError("This type of instructions are not yet supported")
 
+            assert isinstance(instruction, AssignInstruction)
             self.get_current_function().add_instruction(instruction)
 
+            return new_register, instruction.get_resulting_data_type()
+
         elif isinstance(ast, ASTUnaryExpression):
+            # TODO compute unary expressions
 
             if isinstance(ast, ASTUnaryArithmeticExpression):
 
@@ -68,8 +75,6 @@ class LLVMBuilder(IToLLVM):
             return variable.get_current_register(), variable.get_data_type()
         else:
             raise NotImplementedError
-
-        return register_to_return
 
     def _convert_float_register_to(self, register, to_type: DataTypeToken):
 
@@ -101,21 +106,22 @@ class LLVMBuilder(IToLLVM):
         self.get_current_function().add_instruction(instruction)
 
     def declare_and_init_variable(self, ast: ASTVariableDeclarationAndInit):
-        if not isinstance(ast.value, ASTLiteral):
-            value_to_store = self.compute_expression(ast.value)
-            value_to_store = self._convert_float_register_to(value_to_store, ast.get_data_type())
-        else:
-            value_to_store = ast.value.get_content()
+        """
+        Declares and initializes a variable using LLVM instructions. Computes expressions if necessary
+        Adds the corresponding instructions to the current basic block
+        """
+        value_to_store, data_type = self.compute_expression(ast.value)
 
-        register = f"%{self.get_current_function().get_new_register()}"
+        register = self.get_current_function().get_new_register()
 
+        # TODO remove from code
         declared_variable = LLVMVariableSymbol(ast.var_name_ast.get_content(), ast.data_type_ast.get_token(),
                                                register)
         self.symbol_table.insert_symbol(declared_variable)
-        datatype = declared_variable.get_data_type()
 
-        self.get_current_function().add_instruction(AllocaInstruction(f'%{register}', datatype))
-        self.get_current_function().add_instruction(StoreInstruction(f'%{register}', value_to_store, datatype))
+        data_type = declared_variable.get_data_type()
+        self.get_current_function().add_instruction(AllocaInstruction(f'%{register}', data_type))
+        self.get_current_function().add_instruction(StoreInstruction(f'%{register}', value_to_store, data_type))
 
     def assign_value_to_variable(self, ast: ASTAssignmentExpression):
         # TODO Type conversions are not supported yet
@@ -139,35 +145,37 @@ class LLVMBuilder(IToLLVM):
             self.instructions.append(
                 f"store {left_datatype} {right.get_content()}, {left_datatype}* {current_register}, align 4")
 
-    def _generate_begin_of_file(self):
-        begin_of_file = ""
-        begin_of_file += "declare i32 @printf(i8*, ...)\n"
-        begin_of_file += "@.i = private unnamed_addr constant [3 x i8] c\"%i\\00\", align 1\n"
-        begin_of_file += "define i32 @main() {\n"
-        begin_of_file += "    start:\n"
-        return begin_of_file
 
-    def _generate_end_of_file(self):
-        end_of_file = ""
-        end_of_file += "; we exit with code 0 = success\n"
-        end_of_file += "ret i32 0\n"
-        end_of_file += "}\n"
-        return end_of_file
+def _generate_begin_of_file(self):
+    begin_of_file = ""
+    begin_of_file += "declare i32 @printf(i8*, ...)\n"
+    begin_of_file += "@.i = private unnamed_addr constant [3 x i8] c\"%i\\00\", align 1\n"
+    begin_of_file += "define i32 @main() {\n"
+    begin_of_file += "    start:\n"
+    return begin_of_file
 
-    def to_file(self, filename: str):
 
-        f = open(filename, "w+")
-        f.write(self.to_llvm())
-        f.close()
+def _generate_end_of_file(self):
+    end_of_file = ""
+    end_of_file += "; we exit with code 0 = success\n"
+    end_of_file += "ret i32 0\n"
+    end_of_file += "}\n"
+    return end_of_file
 
-    # TODO optimize
-    def to_llvm(self):
 
-        llvm_code = self._generate_begin_of_file()
+def to_file(self, filename: str):
+    f = open(filename, "w+")
+    f.write(self.to_llvm())
+    f.close()
 
-        for function in self.functions:
-            llvm_code += function.to_llvm()
 
-        llvm_code += self._generate_end_of_file()
+# TODO optimize
+def to_llvm(self):
+    llvm_code = self._generate_begin_of_file()
 
-        return llvm_code
+    for function in self.functions:
+        llvm_code += function.to_llvm()
+
+    llvm_code += self._generate_end_of_file()
+
+    return llvm_code
