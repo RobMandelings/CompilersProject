@@ -54,7 +54,7 @@ class ASTLeaf(AST):
         visitor.visit_ast_leaf(self)
 
 
-class ASTLValue(ASTLeaf):
+class ASTVariable(ASTLeaf):
     """
     Representation of an L-Value in an Abstract Syntax Tree
     Name which refers to a specific location in memory (l-values, such as variables for example)
@@ -67,7 +67,7 @@ class ASTLValue(ASTLeaf):
         visitor.visit_ast_identifier(self)
 
 
-class ASTRValue(ASTLeaf, IHasToken, IHasDataType):
+class ASTLiteral(ASTLeaf, IHasToken, IHasDataType):
     """
     Representation of an R-Value in an Abstract Syntax Tree
     Basically just literals, they don't refer to any location in memory (r-values)
@@ -84,6 +84,25 @@ class ASTRValue(ASTLeaf, IHasToken, IHasDataType):
     def get_token(self):
         assert isinstance(self.token, DataTypeToken)
         return self.token
+
+    def get_content(self):
+        """
+        Returns a string of the content this node is holding
+        If you want to get the actual content of corresponding datatype, use get_value() instead!
+        """
+        return super().get_content()
+
+    def get_value(self):
+        """
+        Same as get_content but used to return the actual value of corresponding type (such as int or float), instead of string
+        """
+        if self.get_data_type() == DataTypeToken.INT or self.get_data_type() == DataTypeToken.CHAR:
+            # Char and ints are both numerical so return this
+            return int(self.get_content())
+        elif self.get_data_type() == DataTypeToken.FLOAT:
+            return float(self.get_content())
+        else:
+            raise NotImplementedError
 
     def accept(self, visitor: IASTVisitor):
         assert isinstance(visitor, IASTVisitor)
@@ -318,7 +337,7 @@ class ASTAssignmentExpression(ASTBinaryExpression):
         """
         Inherits get_left from ASTBinaryExpression to do an extra check: the left must be an identifier in this case
         """
-        assert isinstance(self.left, ASTLValue)
+        assert isinstance(self.left, ASTVariable)
         return self.left
 
 

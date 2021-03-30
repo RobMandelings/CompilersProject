@@ -2,7 +2,7 @@ from graphviz import Digraph
 
 from src.ast.ASTBaseVisitor import ASTBaseVisitor
 from src.ast.ASTTokens import *
-from src.ast.ASTs import ASTPrintfInstruction, ASTUnaryExpression, ASTRValue
+from src.ast.ASTs import ASTPrintfInstruction, ASTUnaryExpression, ASTLiteral
 
 
 class ASTVisitorDot(ASTBaseVisitor):
@@ -23,7 +23,7 @@ class ASTVisitorDot(ASTBaseVisitor):
     def visit_ast_leaf(self, ast):
         self.add_to_dot_node(ast)
 
-    def visit_ast_literal(self, ast: ASTRValue):
+    def visit_ast_literal(self, ast: ASTLiteral):
         content = None
         if ast.get_token() == DataTypeToken.CHAR:
             content = "'" + str(chr(int(ast.get_content()))) + "'"

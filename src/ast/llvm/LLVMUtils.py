@@ -1,14 +1,14 @@
 from abc import ABC
 from enum import Enum
 
-from src.ast.ASTTokens import DataTypeToken, RelationalExprToken
+from src.ast.ASTTokens import DataTypeToken
 
 
 class IToLLVM(ABC):
 
     def to_llvm(self):
         """
-        returns: string which contains all the LLVM generated llvm code of the object
+        Returns a string which contains all the LLVM generated llvm code of the object
         """
         raise NotImplementedError
 
@@ -24,19 +24,6 @@ def get_llvm_type(data_type: DataTypeToken):
         return "i32"
     elif data_type == DataTypeToken.FLOAT:
         return "float"
-
-
-def get_llvm_for_relational_operation(relational_operation: RelationalExprToken):
-    if relational_operation == RelationalExprToken.EQUALS:
-        return 'oeq'
-    elif relational_operation == RelationalExprToken.NOT_EQUALS:
-        return 'one'
-    elif relational_operation == RelationalExprToken.GREATER_THAN:
-        return 'ogt'
-    elif relational_operation == RelationalExprToken.LESS_THAN:
-        return 'olt'
-    else:
-        raise NotImplementedError
 
 
 class ComparisonDataType(Enum):

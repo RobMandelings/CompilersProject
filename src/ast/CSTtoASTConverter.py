@@ -42,13 +42,13 @@ def create_type_asts(cst):
 
 def create_ast_from_terminal_node(cst: TerminalNodeImpl):
     if is_identifier(cst):
-        return ASTLValue(cst.getSymbol().text)
+        return ASTVariable(cst.getSymbol().text)
     else:
         data_type_token = get_data_type_token(cst)
         type_attribute_token = get_type_attribute_token(cst)
 
         if is_rvalue(cst):
-            return ASTRValue(data_type_token, cst.getSymbol().text)
+            return ASTLiteral(data_type_token, cst.getSymbol().text)
         elif is_type_declaration(cst):
             return ASTDataType(data_type_token)
         elif type_attribute_token is not None:
@@ -160,7 +160,7 @@ def create_ast_if_statement(cst):
     else_statement = None
 
     for child_ast in children_asts:
-        if isinstance(child_ast, ASTExpression) or isinstance(child_ast, ASTRValue):
+        if isinstance(child_ast, ASTExpression) or isinstance(child_ast, ASTLiteral):
             condition = child_ast
         elif isinstance(child_ast, ASTScope):
             execution_body = child_ast

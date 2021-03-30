@@ -22,28 +22,41 @@ class DataTypeToken(NamedEnum):
     Ordered from lowest precedence to highest precedence
     """
     # Indicates the richness of the datatype, from low to high
-    _order_ = 'CHAR INT FLOAT'
+    _order_ = 'BOOL CHAR INT FLOAT'
+    BOOL = 'bool'
     CHAR = 'char'
     INT = 'int'
     FLOAT = 'float'
 
     @staticmethod
     def from_str(name: str):
-        if name == 'int':
+        if name == 'bool':
+            return DataTypeToken.BOOL
+        elif name == 'char':
+            return DataTypeToken.CHAR
+        elif name == 'int':
             return DataTypeToken.INT
         elif name == 'float':
             return DataTypeToken.FLOAT
-        elif name == 'char':
-            return DataTypeToken.CHAR
         else:
             return None
 
     @staticmethod
     def is_richer_than(datatype1, datatype2):
         """
-        Must be placed outside the DataType class because it would not be fully 'defined' when setting the expected parameter types, weird stuff
+        Checks whether the first data_type given is richer than the second (richness can be checked above in the _order_ variable)
         """
         return datatype1.value > datatype2.value
+
+    @staticmethod
+    def get_resulting_data_type(data_type1, data_type2):
+        """
+        Returns the richest of the two data_types given to be the resulting data type (of an operation)
+        """
+        if DataTypeToken.is_richer_than(data_type1, data_type2):
+            return data_type1
+        else:
+            return data_type2
 
 
 class TypeAttributeToken(NamedEnum):

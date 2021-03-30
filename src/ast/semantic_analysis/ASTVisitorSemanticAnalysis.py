@@ -37,7 +37,7 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
             if DataTypeToken.is_richer_than(other_data_type, self.resulting_data_type):
                 self.resulting_data_type = other_data_type
 
-    def visit_ast_literal(self, ast: ASTRValue):
+    def visit_ast_literal(self, ast: ASTLiteral):
         if ast.get_token() == DataTypeToken.CHAR:
             self.update_current_data_type(DataTypeToken.CHAR)
         elif ast.get_token() == DataTypeToken.INT:
@@ -47,7 +47,7 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
         else:
             raise NotImplementedError(f"Token type '{ast.get_token()}' not recognized as literal")
 
-    def visit_ast_identifier(self, ast: ASTLValue):
+    def visit_ast_identifier(self, ast: ASTVariable):
         variable = self.last_symbol_table.lookup_variable(ast.get_content())
         assert variable.is_initialized()
         self.update_current_data_type(variable.data_type)
@@ -64,7 +64,7 @@ class ASTVisitorUndeclaredVariableUsed(ASTBaseVisitor):
         self.undeclared_variables_used = list()
         assert last_symbol_table is not None
 
-    def visit_ast_identifier(self, ast: ASTLValue):
+    def visit_ast_identifier(self, ast: ASTVariable):
         table_element = self.last_symbol_table.lookup(ast.get_content())
         if not table_element:
             self.undeclared_variables_used.append(ast)
@@ -81,7 +81,7 @@ class ASTVisitorUninitializedVariableUsed(ASTBaseVisitor):
         self.uninitialized_variables_used = list()
         assert last_symbol_table is not None
 
-    def visit_ast_identifier(self, ast: ASTLValue):
+    def visit_ast_identifier(self, ast: ASTVariable):
         super().visit_ast_identifier(ast)
         table_element = self.last_symbol_table.lookup(ast.get_content())
         if table_element:
@@ -100,8 +100,8 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
         self.last_symbol_table = last_symbol_table
         self.optimized_ast = None
 
-    def replace_identifier_if_applicable(self, ast: ASTLValue):
-        assert isinstance(ast, ASTLValue)
+    def replace_identifier_if_applicable(self, ast: ASTVariable):
+        assert isinstance(ast, ASTVariable)
 
     def do_constant_propagation(self, ast: AST):
 
@@ -110,7 +110,7 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
             ast.right = self.do_constant_propagation(ast.right)
         elif isinstance(ast, ASTUnaryExpression):
             ast.value_applied_to = self.do_constant_propagation(ast.value_applied_to)
-        elif isinstance(ast, ASTLValue):
+        elif isinstance(ast, ASTVariable):
             variable = self.last_symbol_table.lookup_variable(ast.get_content())
             # The variable in the symbol table still has a reaching definition, so we can replace this variable with the reaching definition
             if variable.has_reaching_defintion():
@@ -130,7 +130,7 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
             ast.left = self.do_constant_folding(ast.left)
             ast.right = self.do_constant_folding(ast.right)
 
-            if isinstance(ast.left, ASTRValue) and isinstance(ast.right, ASTRValue):
+            if isinstance(ast.left, ASTLiteral) and isinstance(ast.right, ASTLiteral):
 
                 resulting_data_type = ast.get_data_type()
 
@@ -164,13 +164,13 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
                         raise NotImplementedError
 
                 assert result is not None
-                return ASTRValue(resulting_data_type, str(result)).set_parent(ast.parent)
+                return ASTLiteral(resulting_data_type, str(result)).set_parent(ast.parent)
 
         elif isinstance(ast, ASTUnaryArithmeticExpression):
 
             ast.value_applied_to = self.do_constant_folding(ast.value_applied_to)
 
-            if isinstance(ast.value_applied_to, ASTRValue):
+            if isinstance(ast.value_applied_to, ASTLiteral):
                 if ast.get_token() == UnaryArithmeticExprToken.PLUS:
                     factor = 1
                 elif ast.get_token() == UnaryArithmeticExprToken.MINUS:
@@ -178,8 +178,8 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
                 else:
                     raise NotImplementedError
 
-                return ASTRValue(ast.value_applied_to.token,
-                                 str(
+                return ASTLiteral(ast.value_applied_to.token,
+                                  str(
                                      factor * ast.value_applied_to.get_content_depending_on_data_type())).set_parent(
                     ast.parent)
 
@@ -196,10 +196,10 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
     def visit_ast_unary_expression(self, ast: ASTUnaryExpression):
         self.optimize(ast)
 
-    def visit_ast_identifier(self, ast: ASTLValue):
+    def visit_ast_identifier(self, ast: ASTVariable):
         self.optimize(ast)
 
-    def visit_ast_literal(self, ast: ASTRValue):
+    def visit_ast_literal(self, ast: ASTLiteral):
         # Do nothing, literals can't be optimized
         self.optimized_ast = ast
 
@@ -242,7 +242,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
     def check_r_value_assignment(self, bin_expr: ASTAssignmentExpression):
         # TODO Needs to be improved with derefencing and all that stuff
 
-        if isinstance(bin_expr.left, ASTRValue):
+        if isinstance(bin_expr.left, ASTLiteral):
             raise SemanticError(
                 f"Assignment to an R-VALUE of type {bin_expr.left.token.token_name} (value is {bin_expr.left.get_content()})")
 

@@ -22,63 +22,53 @@ class LLVMBuilder(IToLLVM):
 
     def compute_expression(self, ast: AST):
         """
+        Computes an expression of the given AST, generating the corresponding instructions in the process
+        ast: the AST to compute the expression for
         """
 
         if isinstance(ast, ASTBinaryArithmeticExpression):
-            left_register = self.compute_expression(ast.left)
-            right_register = self.compute_expression(ast.right)
+            value1, data_type1 = self.compute_expression(ast.left)
+            value2, data_type2 = self.compute_expression(ast.right)
 
-            operation_string = None
-            if ast.get_token() == BinaryArithmeticExprToken.ADD:
-                operation_string = 'fadd'
-            elif ast.get_token() == BinaryArithmeticExprToken.SUB:
-                operation_string = 'fsub'
-            elif ast.get_token() == BinaryArithmeticExprToken.MUL:
-                operation_string = 'fmul'
-            elif ast.get_token() == BinaryArithmeticExprToken.DIV:
-                # TODO sdiv or udiv?
-                operation_string = 'fdiv'
+            instruction = None
+            operation = ast.get_token()
+            new_register
+
+            if isinstance(operation, BinaryArithmeticExprToken):
+                instruction = BinaryArithmeticInstruction(self.get_current_function().get_new_register(),
+                                                          operation, data_type1, value1, data_type2, value2)
+            elif isinstance(operation, RelationalExprToken):
+                instruction = CompareInstruction(self.get_current_function().get_new_register(), operation, data_type1,
+                                                 value1, data_type2, value2)
             else:
-                # TODO less than,...
-                raise NotImplementedError
+                raise NotImplementedError("This type of instructions are not yet supported")
 
-            self.instructions.append(
-                f"%{self.register_count} = {operation_string} float {left_register}, {right_register}")
-
-            assert operation_string is not None
+            self.get_current_function().add_instruction(instruction)
 
         elif isinstance(ast, ASTUnaryExpression):
 
             if isinstance(ast, ASTUnaryArithmeticExpression):
-                if ast.get_token() == UnaryArithmeticExprToken.PLUS:
-                    factor = 1.0
-                elif ast.get_token() == UnaryArithmeticExprToken.MINUS:
-                    factor = -1.0
-                else:
-                    raise NotImplementedError
 
+                raise NotImplementedError
                 value_register = self.compute_expression(ast.value_applied_to)
 
-                self.instructions.append(f"%{self.register_count} = fmul float {factor}, {value_register}")
-
             elif isinstance(ast, ASTUnaryPointerExpression):
-                pass
+                raise NotImplementedError
             else:
                 raise NotImplementedError
 
-        elif isinstance(ast, ASTRValue):
-            # Generate a single instructions and return the register for this instruction
-            value = float(ast.get_content())
-            self.instructions.append(f"%{self.register_count} = fadd float 0.0, {float(value)}")
-        elif isinstance(ast, ASTLValue):
+        elif isinstance(ast, ASTLiteral):
+            # If it's a literal, just return the value and data type of this value instead of creating a register for it
+            return ast.get_value(), ast.get_data_type()
+        elif isinstance(ast, ASTVariable):
 
+            # First look up the variable in the symbol table, then retrieve the data type of this variable
+            # TODO remove symbol table and put into some kind of dictionary
             variable = self.symbol_table.lookup_variable(ast.get_content())
-            return variable.get_current_register()
+            return variable.get_current_register(), variable.get_data_type()
         else:
             raise NotImplementedError
 
-        register_to_return = f"%{self.register_count}"
-        self.register_count += 1
         return register_to_return
 
     def _convert_float_register_to(self, register, to_type: DataTypeToken):
@@ -111,7 +101,7 @@ class LLVMBuilder(IToLLVM):
         self.get_current_function().add_instruction(instruction)
 
     def declare_and_init_variable(self, ast: ASTVariableDeclarationAndInit):
-        if not isinstance(ast.value, ASTRValue):
+        if not isinstance(ast.value, ASTLiteral):
             value_to_store = self.compute_expression(ast.value)
             value_to_store = self._convert_float_register_to(value_to_store, ast.get_data_type())
         else:
@@ -135,7 +125,7 @@ class LLVMBuilder(IToLLVM):
         current_register = variable.get_current_register()
         left_datatype = get_llvm_type(variable.get_data_type())
 
-        if not isinstance(right, ASTRValue):
+        if not isinstance(right, ASTLiteral):
             value_register = self.compute_expression(right)
             temporary_register = self.register_count  # REGISTER NUMBER (without %)
 

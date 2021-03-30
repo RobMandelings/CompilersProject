@@ -11,8 +11,8 @@ class ASTBaseVisitor(IASTVisitor):
     def visit_ast_leaf(self, ast: ASTLeaf):
         assert isinstance(ast, ASTLeaf)
 
-    def visit_ast_literal(self, ast: ASTRValue):
-        assert isinstance(ast, ASTRValue)
+    def visit_ast_literal(self, ast: ASTLiteral):
+        assert isinstance(ast, ASTLiteral)
         self.visit_ast_leaf(ast)
 
     def visit_ast_data_type(self, ast: ASTDataType):
@@ -23,8 +23,8 @@ class ASTBaseVisitor(IASTVisitor):
         assert isinstance(ast, ASTTypeAttribute)
         self.visit_ast_leaf(ast)
 
-    def visit_ast_identifier(self, ast: ASTLValue):
-        assert isinstance(ast, ASTLValue)
+    def visit_ast_identifier(self, ast: ASTVariable):
+        assert isinstance(ast, ASTVariable)
         self.visit_ast_leaf(ast)
 
     def visit_ast_internal(self, ast: ASTInternal):
