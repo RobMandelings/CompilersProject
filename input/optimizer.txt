@@ -4,7 +4,7 @@
 
 // Tests constant folding
 
-int i = 5;
+float i = 5;
 i = 10 + -15 * 20 / 5 + 30 * -(-1000 + 999.5);
 
 // Tests constant propagation
