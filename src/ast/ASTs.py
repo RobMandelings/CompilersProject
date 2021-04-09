@@ -1,3 +1,5 @@
+from abc import abstractmethod
+
 from src.ast.ASTTokens import *
 from src.ast.IAstVisitor import IASTVisitor
 

@@ -1,4 +1,3 @@
-from abc import abstractmethod
 from enum import Enum
 
 
@@ -39,6 +38,20 @@ class DataTypeToken(NamedEnum):
 
     def is_pointer_type(self):
         return self.pointer_type
+
+    def is_integral_type(self):
+        if self.is_pointer_type():
+            print("WARN: what to do with pointer types?")
+            raise NotImplementedError
+        else:
+            return self == DataTypeToken.BOOL or self == DataTypeToken.CHAR or self == DataTypeToken.INT
+
+    def is_floating_point_type(self):
+        print("WARN: no integral type automatically results in floating point type currently. Could be wrong")
+        if self.is_pointer_type():
+            return False
+        else:
+            return not self.is_integral_type()
 
     @staticmethod
     def from_str(name: str):
@@ -121,6 +134,17 @@ class DataTypeToken(NamedEnum):
         Checks whether the first data_type given is richer than the second (richness can be checked above in the _order_ variable)
         """
         return datatype1.value > datatype2.value
+
+    @staticmethod
+    def get_richest_data_type(datatype1, data_type2):
+        """
+        Gets the richest of the two datatypes given. If equally rich, return one of the two
+        """
+
+        if DataTypeToken.is_richer_than(datatype1, data_type2):
+            return datatype1
+        else:
+            return data_type2
 
     @staticmethod
     def get_resulting_data_type(data_type1, data_type2):

@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from enum import Enum
 
 from src.ast.ASTTokens import DataTypeToken, BinaryArithmeticExprToken, RelationalExprToken
 from src.ast.llvm import LLVMUtils
@@ -137,6 +136,29 @@ class UnconditionalBranchInstruction(Instruction):
         return True
 
 
+class UnaryAssignInstruction(AssignInstruction):
+
+    def __init__(self, resulting_reg: str, operand: str, data_type: DataTypeToken):
+        """
+        Constructs a unary assignment instruction (one register as operand -> one register as result)
+        operand: the operand register
+        data_type: the data type of the operand
+        """
+        super().__init__(resulting_reg)
+        self.operand_reg = operand
+        self.data_type = data_type
+
+    def get_data_type(self):
+        return self.data_type
+
+    def get_llvm_data_type(self):
+        return LLVMUtils.get_llvm_type(self.data_type)
+
+    @abstractmethod
+    def get_resulting_data_type(self):
+        raise NotImplementedError
+
+
 class BinaryAssignInstruction(AssignInstruction):
 
     def __init__(self, resulting_reg: str, operation, data_type1: DataTypeToken,
@@ -230,30 +252,76 @@ class BinaryArithmeticInstruction(BinaryAssignInstruction):
         return super().to_llvm() + operation_string + f'{self.operand1}, {self.operand2}'
 
 
+class DataTypeConvertInstruction(UnaryAssignInstruction):
+
+    def __init__(self, resulting_reg: str, operand: str, data_type: DataTypeToken, resulting_data_type: DataTypeToken):
+        """
+        Creates an instruction to convert a given register with data type 'data_type' to a resulting data type 'resulting_data_type'
+        llvm operation: specifies the conversions, such as fptosi
+        llvm_to_data_type: to which data type you want to convert (llvm code such as 'to double')
+        """
+        super().__init__(resulting_reg, operand, data_type)
+
+        self.resulting_data_type = resulting_data_type
+        self.llvm_operation, self.llvm_to_data_type = self.get_llvm_for_operation()
+
+    def get_llvm_for_operation(self):
+        """
+        Returns the corresponding llvm code for the operation, given the two data types
+        returns: <operation, to <llvm_data_type>>
+        """
+        assert not self.data_type == self.resulting_data_type, "Converting to the same data type has no point"
+        if not DataTypeToken.is_richer_than(self.resulting_data_type, self.data_type):
+            raise NotImplementedError
+
+        # TODO What to do with bool conversion and such? Is it a signed integer conversion or no?
+        if self.data_type.is_integral_type() and self.resulting_data_type.is_floating_point_type():
+            return 'sitofp', f'to {LLVMUtils.get_llvm_type(self.resulting_data_type)}'
+        elif self.data_type.is_floating_point_type() and self.resulting_data_type.is_integral_type():
+            return 'fptosi', f'to {LLVMUtils.get_llvm_type(self.resulting_data_type)}'
+        else:
+            raise NotImplementedError
+
+    def get_resulting_data_type(self):
+        return self.resulting_data_type
+
+    def to_llvm(self):
+        return super().to_llvm() + f'{self.llvm_operation} {LLVMUtils.get_llvm_type(self.get_data_type())} {self.operand_reg} {self.llvm_to_data_type}'
+
+
 class CompareInstruction(BinaryAssignInstruction):
+    """
+    Creates 1 compare instruction for the two resulting registers. Does not do any type conversions first, so make
+    sure you do that. The LLVMBuilder has such a method to create the full compare statement (with type conversions)
+    # TODO comparing with constants such as 0 and stuff
+    """
 
     def __init__(self, resulting_reg: str, operation: RelationalExprToken, data_type1: DataTypeToken, operand1: str,
                  data_type2: DataTypeToken, operand2: str):
         super().__init__(resulting_reg, operation, data_type1, operand1, data_type2, operand2)
+        assert data_type1 == data_type2, "Data types to compare must be equal. Perform an instruction to convert a" \
+                                         "lower data type to a higher one (e.g. sitofp for i32 -> float)"
         self.operation = operation
-        self.comparison_type, self.data_type_to_compare = self.deduce_comparison_type()
+        self.data_type_to_compare = self.data_type1
+        self.comparison_type = self.get_comparison_type()
 
     def get_resulting_data_type(self):
         return DataTypeToken.BOOL
 
-    def deduce_comparison_type(self):
+    def get_comparison_type(self):
         """
         Checks the entered datatypes to determine which ComparisonDataType will be used and what the llvm code will be as comparison type (for example, i32)
         """
-        if DataTypeToken.is_richer_than(self.data_type1, self.data_type2):
-            richest_data_type = self.data_type1
-        else:
-            richest_data_type = self.data_type2
 
-        if richest_data_type == DataTypeToken.FLOAT or richest_data_type == DataTypeToken.DOUBLE:
-            return ComparisonDataType.FLOAT, richest_data_type
+        if self.data_type_to_compare == DataTypeToken.DOUBLE or self.data_type_to_compare == DataTypeToken.FLOAT:
+            return ComparisonDataType.FLOAT
+        elif self.data_type_to_compare == DataTypeToken.INT:
+            return ComparisonDataType.INT
+        elif self.data_type_to_compare == DataTypeToken.CHAR:
+            print("WARN: data type to compare is char, returning comparison data type INT. Not tested yet")
+            return ComparisonDataType.INT
         else:
-            return ComparisonDataType.INT, richest_data_type
+            raise NotImplementedError
 
     def get_llvm_comparison_type(self):
         if self.comparison_type == ComparisonDataType.INT:

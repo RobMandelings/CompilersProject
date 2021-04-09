@@ -27,6 +27,37 @@ class LLVMBuilder(IToLLVM):
         assert isinstance(self.global_container, LLVMGlobalContainer)
         return self.global_container
 
+    def compute_compare_expression(self, operation: RelationalExprToken, operand1_reg: str,
+                                   operand1_data_type: DataTypeToken, operand2_reg: str,
+                                   operand2_data_type: DataTypeToken):
+
+        if operand1_data_type != operand2_data_type:
+            converted_register = self.get_current_function().get_new_register()
+            if DataTypeToken.is_richer_than(operand1_data_type, operand2_data_type):
+                resulting_data_type = operand1_data_type
+                data_type_to_convert = operand2_data_type
+                register_to_convert = operand2_reg
+
+                operand2_reg = converted_register
+                operand2_data_type = resulting_data_type
+            else:
+                resulting_data_type = operand2_data_type
+                data_type_to_convert = operand1_data_type
+                register_to_convert = operand1_reg
+
+                operand1_reg = converted_register
+                operand1_data_type = resulting_data_type
+
+            self.get_current_function().add_instruction(
+                DataTypeConvertInstruction(converted_register, register_to_convert, data_type_to_convert,
+                                           resulting_data_type))
+
+        register_to_return = self.get_current_function().get_new_register()
+        self.get_current_function().add_instruction(
+            CompareInstruction(register_to_return, operation, operand1_data_type, operand1_reg, operand2_data_type,
+                               operand2_reg))
+        return register_to_return, DataTypeToken.BOOL
+
     def compute_expression(self, ast: AST):
         """
         Computes an expression of the given AST, generating the corresponding instructions in the process
@@ -40,26 +71,28 @@ class LLVMBuilder(IToLLVM):
         """
 
         if isinstance(ast, ASTBinaryExpression):
-            operand1, data_type1 = self.compute_expression(ast.left)
-            operand2, data_type2 = self.compute_expression(ast.right)
+            operand1_reg, operand1_data_type = self.compute_expression(ast.left)
+            operand2_reg, operand2_data_type = self.compute_expression(ast.right)
 
             instruction = None
             operation = ast.get_token()
-            register_to_return = self.get_current_function().get_new_register()
 
             if isinstance(operation, BinaryArithmeticExprToken):
+                register_to_return = self.get_current_function().get_new_register()
                 instruction = BinaryArithmeticInstruction(register_to_return,
-                                                          operation, data_type1, operand1, data_type2, operand2)
+                                                          operation, operand1_data_type, operand1_reg,
+                                                          operand2_data_type, operand2_reg)
             elif isinstance(operation, RelationalExprToken):
-                instruction = CompareInstruction(register_to_return, operation, data_type1,
-                                                 operand1, data_type2, operand2)
+
+                return self.compute_compare_expression(operation, operand1_reg, operand1_data_type, operand2_reg,
+                                                       operand2_data_type)
             else:
                 raise NotImplementedError("This type of instructions are not yet supported")
 
-            assert isinstance(instruction, AssignInstruction)
-            self.get_current_function().add_instruction(instruction)
-
-            return register_to_return, instruction.get_resulting_data_type()
+            if instruction is not None:
+                assert isinstance(instruction, AssignInstruction)
+                self.get_current_function().add_instruction(instruction)
+                return register_to_return, instruction.get_resulting_data_type()
 
         elif isinstance(ast, ASTUnaryExpression):
             # TODO compute unary expressions
