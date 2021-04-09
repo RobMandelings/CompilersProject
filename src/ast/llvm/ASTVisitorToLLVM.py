@@ -8,7 +8,28 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
         self.builder = LLVMBuilder()
 
     def build_while_loop(self, while_loop_ast: ASTWhileLoop):
-        pass
+        assert isinstance(while_loop_ast, ASTWhileLoop)
+
+        current_function = self.builder.get_current_function()
+        # The basic block the function was at before the while began (branch will be added to the correct beginning-of-while-loop label)
+        before_while_basic_block = current_function.get_current_basic_block()
+        label_of_condition = current_function.add_basic_block()
+        before_while_basic_block.add_instruction(UnconditionalBranchInstruction(f'%{label_of_condition}'))
+
+        resulting_reg_of_condition, data_type_of_condition = self.builder.compute_expression(while_loop_ast.get_condition())
+
+        # First we need to keep track of the label of the condition block, then we make two new blocks: one for the code within the loop and one label for what happens after the loop
+        basic_block_of_condition = current_function.get_current_basic_block()
+        label_of_condition_if_true = current_function.add_basic_block()
+        while_loop_ast.get_execution_body().accept(self)
+        current_function.get_current_basic_block().add_instruction(UnconditionalBranchInstruction(f'%{label_of_condition}'))
+
+        label_of_condition_if_false = current_function.add_basic_block()
+
+        # Branch to the body of the loop or branch to the location after the loop, based on the outcome of the while loop condition
+        basic_block_of_condition.add_instruction(ConditionalBranchInstruction(resulting_reg_of_condition, label_of_condition_if_true, label_of_condition_if_false))
+
+
 
     def build_if_statement(self, if_statement_ast: ASTIfStatement):
         assert isinstance(if_statement_ast, ASTIfStatement)
