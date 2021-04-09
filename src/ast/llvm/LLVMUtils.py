@@ -19,11 +19,13 @@ def get_llvm_type(data_type: DataTypeToken):
     data_type: the datatype to get the string for
     """
     if data_type == DataTypeToken.CHAR:
-        return "i8"
+        return 'i8'
     elif data_type == DataTypeToken.INT:
-        return "i32"
+        return 'i32'
     elif data_type == DataTypeToken.FLOAT:
-        return "float"
+        return 'float'
+    elif data_type == DataTypeToken.DOUBLE:
+        return 'double'
     else:
         raise NotImplementedError
 

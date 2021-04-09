@@ -179,6 +179,9 @@ class ASTScope(ASTInternal):
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_scope(self)
 
+    def is_empty(self):
+        return len(self.children) == 0
+
 
 class ASTConditionalStatement(AST):
 

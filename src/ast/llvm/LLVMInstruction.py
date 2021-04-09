@@ -236,7 +236,7 @@ class CompareInstruction(BinaryAssignInstruction):
                  data_type2: DataTypeToken, operand2: str):
         super().__init__(resulting_reg, operation, data_type1, operand1, data_type2, operand2)
         self.operation = operation
-        self.comparison_type, self.llvm_type = self.deduce_comparison_type()
+        self.comparison_type, self.data_type_to_compare = self.deduce_comparison_type()
 
     def get_resulting_data_type(self):
         return DataTypeToken.BOOL
@@ -245,27 +245,49 @@ class CompareInstruction(BinaryAssignInstruction):
         """
         Checks the entered datatypes to determine which ComparisonDataType will be used and what the llvm code will be as comparison type (for example, i32)
         """
-        if self.data_type1 == DataTypeToken.INT and self.data_type2 == DataTypeToken.INT:
-            return ComparisonDataType.INT, LLVMUtils.get_llvm_type(DataTypeToken.INT)
-        elif self.data_type1 == DataTypeToken.FLOAT or self.data_type2 == DataTypeToken.FLOAT:
-            return ComparisonDataType.FLOAT, LLVMUtils.get_llvm_type(DataTypeToken.FLOAT)
+        if DataTypeToken.is_richer_than(self.data_type1, self.data_type2):
+            richest_data_type = self.data_type1
         else:
-            raise NotImplementedError
+            richest_data_type = self.data_type2
+
+        if richest_data_type == DataTypeToken.FLOAT or richest_data_type == DataTypeToken.DOUBLE:
+            return ComparisonDataType.FLOAT, richest_data_type
+        else:
+            return ComparisonDataType.INT, richest_data_type
+
+    def get_llvm_comparison_type(self):
+        if self.comparison_type == ComparisonDataType.INT:
+            return 'icmp'
+        else:
+            return 'fcmp'
 
     def get_llvm_for_operation(self):
         if self.operation == RelationalExprToken.EQUALS:
-            return 'oeq'
+            if self.comparison_type == ComparisonDataType.INT:
+                return 'eq'
+            else:
+                return 'oeq'
         elif self.operation == RelationalExprToken.NOT_EQUALS:
-            return 'one'
+            if self.comparison_type == ComparisonDataType.INT:
+                return 'ne'
+            else:
+                return 'one'
         elif self.operation == RelationalExprToken.GREATER_THAN:
-            return 'ogt'
+            if self.comparison_type == ComparisonDataType.INT:
+                return 'gt'
+            else:
+                return 'ogt'
         elif self.operation == RelationalExprToken.LESS_THAN:
-            return 'olt'
+            if self.comparison_type == ComparisonDataType.INT:
+                return 'lt'
+            else:
+                return 'olt'
         else:
             raise NotImplementedError
 
     def to_llvm(self):
-        return super().to_llvm() + f'{self.comparison_type} {self.operation} {self.llvm_type} {self.data_type1} {self.operand1}, {self.data_type2} {self.operand2}'
+        return super().to_llvm() + f'{self.get_llvm_comparison_type()} {self.get_llvm_for_operation()} ' \
+                                   f'{get_llvm_type(self.data_type_to_compare)} {self.operand1}, {self.operand2}'
 
 
 # TODO must be implemented

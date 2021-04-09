@@ -26,10 +26,12 @@ class DataTypeToken(NamedEnum):
     CHAR = ('char', False)
     INT = ('int', False)
     FLOAT = ('float', False)
+    DOUBLE = ('double', False)
     BOOL_POINTER = ('bool*', True)
     CHAR_POINTER = ('char*', True)
     INT_POINTER = ('int*', True)
     FLOAT_POINTER = ('float*', True)
+    DOUBLE_POINTER = ('double*', True)
 
     def __init__(self, token_name: str, pointer_type: bool):
         super().__init__(token_name)
@@ -60,6 +62,11 @@ class DataTypeToken(NamedEnum):
                 return DataTypeToken.FLOAT_POINTER
             else:
                 return DataTypeToken.FLOAT
+        elif name.startswith('double'):
+            if name == 'double*':
+                return DataTypeToken.DOUBLE_POINTER
+            else:
+                return DataTypeToken.DOUBLE
         else:
             return None
 

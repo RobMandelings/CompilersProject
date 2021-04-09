@@ -39,7 +39,7 @@ class LLVMBuilder(IToLLVM):
         - data_type: the resulting data type of the operation (DataTypeToken.INT, FLOAT,...)
         """
 
-        if isinstance(ast, ASTBinaryArithmeticExpression):
+        if isinstance(ast, ASTBinaryExpression):
             operand1, data_type1 = self.compute_expression(ast.left)
             operand2, data_type2 = self.compute_expression(ast.right)
 
@@ -91,7 +91,7 @@ class LLVMBuilder(IToLLVM):
                 LoadInstruction(register_to_return, variable.get_data_type(), variable.get_current_register()))
             return register_to_return, variable.get_data_type()
         else:
-            return NotImplementedError
+            raise NotImplementedError
 
     def _convert_float_register_to(self, register, to_type: DataTypeToken):
         register_to_return = f"%{self.register_count}"

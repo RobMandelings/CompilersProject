@@ -39,7 +39,7 @@ def main(argv):
 
             ast_visitor_to_llvm = ASTVisitorToLLVM()
             ast.accept(ast_visitor_to_llvm)
-            ast_visitor_to_llvm.to_file("output/converted.ll")
+            ast_visitor_to_llvm.to_file("testinput/output.ll")
 
         except SemanticError as e:
             print("A semantic error occurred: ")

@@ -14,16 +14,21 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
         # The basic block the function was at before the if statement began (branch will be added to the correct beginning-of-if-statement label)
         before_if_basic_block = current_function.get_current_basic_block()
 
-        # This one becomes the new 'current' basic block of the function where instructions will automatically be added
-        exec_body_label = current_function.add_basic_block()
-
-        # First, construct the body of the function in llvm, adding instructions and basic blocks to the current function
-        if_statement_ast.get_execution_body().accept(self)
-
         if if_statement_ast.has_condition():
 
             # Calculates the expression as a condition, which either returns (TODO: True or False)
-            resulting_reg = self.builder.compute_expression(if_statement_ast.get_condition())
+            resulting_reg, data_type = self.builder.compute_expression(if_statement_ast.get_condition())
+
+            if data_type is not DataTypeToken.BOOL:
+                raise NotImplementedError
+
+            # This one becomes the new 'current' basic block of the function where instructions will automatically be added
+            # Execution body of the if statement
+            exec_body_label = current_function.add_basic_block()
+
+            if not if_statement_ast.get_execution_body().is_empty():
+                # First, construct the body of the function in llvm, adding instructions (starting from exec body) and basic blocks to the current function
+                if_statement_ast.get_execution_body().accept(self)
 
             if if_statement_ast.has_else_statement():
                 else_exec_body_label = self.build_if_statement(if_statement_ast.get_else_statement())
@@ -31,16 +36,25 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
                 # This means there is are no more else statements in this chain, so we can continue writing to the newest basic block
                 else_exec_body_label = current_function.add_basic_block()
 
+            if if_statement_ast.get_execution_body().is_empty():
+                current_function.get_basic_block(exec_body_label).add_instruction(
+                    UnconditionalBranchInstruction(f'%{else_exec_body_label}'))
+
             instruction = ConditionalBranchInstruction(resulting_reg, f"%{exec_body_label}", f"%{else_exec_body_label}")
 
-            # Finish up the before_if_basic block
+            # Finish up the before_if_basic block with a conditional branch instruction to go either to the exec_body label or to the else_exec_body_label
             before_if_basic_block.add_instruction(instruction)
 
         else:
 
-            # Must be an if statements which never has any other conditions
+            exec_body_label = current_function.add_basic_block()
+            if_statement_ast.get_execution_body().accept(self)
+
+            # Must be an else statement (doesn't have any conditions)
             instruction = UnconditionalBranchInstruction(exec_body_label)
             before_if_basic_block.add_instruction(instruction)
+
+        # Add a final branch instruction to the
 
         return exec_body_label
 
