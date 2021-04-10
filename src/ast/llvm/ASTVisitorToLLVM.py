@@ -21,20 +21,22 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
         label_of_condition = current_function.add_basic_block()
         before_while_basic_block.add_instruction(UnconditionalBranchInstruction(f'%{label_of_condition}'))
 
-        resulting_reg_of_condition, data_type_of_condition = self.builder.compute_expression(while_loop_ast.get_condition())
+        resulting_reg_of_condition, data_type_of_condition = self.builder.compute_expression(
+            while_loop_ast.get_condition())
 
         # First we need to keep track of the label of the condition block, then we make two new blocks: one for the code within the loop and one label for what happens after the loop
         basic_block_of_condition = current_function.get_current_basic_block()
         label_of_condition_if_true = current_function.add_basic_block()
         while_loop_ast.get_execution_body().accept(self)
-        current_function.get_current_basic_block().add_instruction(UnconditionalBranchInstruction(f'%{label_of_condition}'))
+        current_function.get_current_basic_block().add_instruction(
+            UnconditionalBranchInstruction(f'%{label_of_condition}'))
 
         label_of_condition_if_false = current_function.add_basic_block()
 
         # Branch to the body of the loop or branch to the location after the loop, based on the outcome of the while loop condition
-        basic_block_of_condition.add_instruction(ConditionalBranchInstruction(resulting_reg_of_condition, label_of_condition_if_true, label_of_condition_if_false))
-
-
+        basic_block_of_condition.add_instruction(
+            ConditionalBranchInstruction(resulting_reg_of_condition, label_of_condition_if_true,
+                                         label_of_condition_if_false))
 
     def build_comparison_statement(self):
         """
@@ -56,6 +58,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
 
             if data_type is not DataTypeToken.BOOL:
                 raise NotImplementedError
+                # resulting_reg, data_type = self.builder.compute_compare_expression(RelationalExprToken.NOT_EQUALS, op)
 
             # Execution body of the if statement
             exec_body_label = current_function.add_basic_block()

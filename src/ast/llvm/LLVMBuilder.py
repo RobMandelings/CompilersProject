@@ -27,8 +27,8 @@ class LLVMBuilder(IToLLVM):
         assert isinstance(self.global_container, LLVMGlobalContainer)
         return self.global_container
 
-    def compute_compare_expression(self, operation: RelationalExprToken, operand1_reg: str,
-                                   operand1_data_type: DataTypeToken, operand2_reg: str,
+    def compute_compare_expression(self, operation: RelationalExprToken, operand1: str,
+                                   operand1_data_type: DataTypeToken, operand2: str,
                                    operand2_data_type: DataTypeToken):
 
         if operand1_data_type != operand2_data_type:
@@ -36,16 +36,16 @@ class LLVMBuilder(IToLLVM):
             if DataTypeToken.is_richer_than(operand1_data_type, operand2_data_type):
                 resulting_data_type = operand1_data_type
                 data_type_to_convert = operand2_data_type
-                register_to_convert = operand2_reg
+                register_to_convert = operand2
 
-                operand2_reg = converted_register
+                operand2 = converted_register
                 operand2_data_type = resulting_data_type
             else:
                 resulting_data_type = operand2_data_type
                 data_type_to_convert = operand1_data_type
-                register_to_convert = operand1_reg
+                register_to_convert = operand1
 
-                operand1_reg = converted_register
+                operand1 = converted_register
                 operand1_data_type = resulting_data_type
 
             self.get_current_function().add_instruction(
@@ -54,8 +54,8 @@ class LLVMBuilder(IToLLVM):
 
         register_to_return = self.get_current_function().get_new_register()
         self.get_current_function().add_instruction(
-            CompareInstruction(register_to_return, operation, operand1_data_type, operand1_reg, operand2_data_type,
-                               operand2_reg))
+            CompareInstruction(register_to_return, operation, operand1_data_type, operand1, operand2_data_type,
+                               operand2))
         return register_to_return, DataTypeToken.BOOL
 
     def compute_expression(self, ast: AST):
