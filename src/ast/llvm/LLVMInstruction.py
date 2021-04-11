@@ -342,7 +342,8 @@ class CompareInstruction(BinaryAssignInstruction):
                 return 'one'
         elif self.operation == RelationalExprToken.GREATER_THAN:
             if self.comparison_type == ComparisonDataType.INT:
-                return 'gt'
+                # TODO maybe later do with unsigned as well
+                return 'sgt'
             else:
                 return 'ogt'
         elif self.operation == RelationalExprToken.LESS_THAN:
