@@ -68,6 +68,9 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
             if not if_statement_ast.get_execution_body().is_empty():
                 if_statement_ast.get_execution_body().accept(self)
 
+            # The last basic block of the execution body that was added (after the accept)
+            end_exec_body_label = current_function.get_current_basic_block_label()
+
             # 2) If the if statement has an else statement (else if {} ... or else {} ...) construct it as well
             if if_statement_ast.has_else_statement():
                 else_exec_body_label = self.build_if_statement(if_statement_ast.get_else_statement())
@@ -78,8 +81,18 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
 
             # 3) If the if statement has no execution body, do an unconditional branch
             # This becomes a label with only 1 instruction: the unconditional branch
+
+            should_add_unconditional_branch = None
             if if_statement_ast.get_execution_body().is_empty():
-                current_function.get_basic_block(exec_body_label).add_instruction(
+                should_add_unconditional_branch = True
+            elif not if_statement_ast.has_else_statement() and not current_function.get_basic_block(
+                    end_exec_body_label).has_terminal_instruction():
+                should_add_unconditional_branch = True
+            else:
+                should_add_unconditional_branch = False
+
+            if should_add_unconditional_branch:
+                current_function.get_basic_block(end_exec_body_label).add_instruction(
                     UnconditionalBranchInstruction(f'%{else_exec_body_label}'))
 
             # 4) Finish up the before_if_basic block with a conditional branch instruction to go either

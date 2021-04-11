@@ -20,6 +20,9 @@ class LLVMFunction(IToLLVM):
         assert self.basic_blocks[self.last_added_basic_block_label] is not None
         return self.basic_blocks[self.last_added_basic_block_label]
 
+    def get_current_basic_block_label(self):
+        return self.last_added_basic_block_label
+
     def add_basic_block(self):
         """
         Adds a new basic block to the list of basic blocks and returns this basic block
