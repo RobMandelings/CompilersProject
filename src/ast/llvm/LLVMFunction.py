@@ -10,28 +10,25 @@ class LLVMFunction(IToLLVM):
         self.name = name
         self.local_variables_registers = dict()
         self.basic_blocks = dict()
-        self.basic_blocks[-1] = LLVMBasicBlock()
-        self.last_added_basic_block_label = -1
+        self.basic_blocks[-1] = LLVMBasicBlock(-1)
+        self.last_added_basic_block_number = -1
 
     def get_basic_block(self, label):
         return self.basic_blocks[label]
 
     def get_current_basic_block(self):
-        assert self.basic_blocks[self.last_added_basic_block_label] is not None
-        return self.basic_blocks[self.last_added_basic_block_label]
-
-    def get_current_basic_block_label(self):
-        return self.last_added_basic_block_label
+        assert self.basic_blocks[self.last_added_basic_block_number] is not None
+        return self.basic_blocks[self.last_added_basic_block_number]
 
     def add_basic_block(self):
         """
         Adds a new basic block to the list of basic blocks and returns this basic block
         """
-        label_to_return = self.counter
-        self.basic_blocks[label_to_return] = LLVMBasicBlock()
+        new_basic_block = LLVMBasicBlock(self.counter)
+        self.last_added_basic_block_number = new_basic_block.get_number()
+        self.basic_blocks[new_basic_block.get_number()] = new_basic_block
         self.counter += 1
-        self.last_added_basic_block_label = label_to_return
-        return label_to_return
+        return new_basic_block
 
     def add_instruction(self, instruction: Instruction):
         """

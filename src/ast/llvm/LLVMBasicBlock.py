@@ -3,8 +3,9 @@ from src.ast.llvm.LLVMInstruction import *
 
 class LLVMBasicBlock(IToLLVM):
 
-    def __init__(self):
+    def __init__(self, number: int):
         self.instructions = list()
+        self.number = number
 
     def add_instruction(self, instruction: Instruction):
         """
@@ -20,6 +21,12 @@ class LLVMBasicBlock(IToLLVM):
         """
 
         return len(self.instructions) > 0 and self.instructions[-1].is_terminator()
+
+    def get_number(self):
+        """
+        Returns the number of this basic block
+        """
+        return self.number
 
     def to_llvm(self):
         llvm_code = ""
