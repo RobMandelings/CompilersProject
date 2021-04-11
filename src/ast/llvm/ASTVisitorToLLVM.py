@@ -39,6 +39,11 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
                                          label_of_condition_if_false))
 
     def build_if_statement_execution(self, if_statement_ast: ASTIfStatement, if_statement_ending_basic_blocks):
+        """
+        if_statement_ending_basic_blocks: a list of the last basic block of the execution body that was added (after the accept)
+        append_to_list: true if you want to append the basic block to the list of 'if statement ending basic blocks'
+        false if not. For example, for the 'else' statement you wouldn't want to do this as it would result in branching to itself
+        """
         # Execution body of the if statement
         exec_body_entry = self.builder.get_current_function().add_basic_block()
 
@@ -99,6 +104,8 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
         # This must be an else {} statement
         else:
             exec_body_entry = self.build_if_statement_execution(if_statement_ast, if_statement_ending_basic_blocks)
+
+            self.builder.get_current_function().add_basic_block()
 
             # Just return the execution body as there are no checks to be made
             return exec_body_entry
