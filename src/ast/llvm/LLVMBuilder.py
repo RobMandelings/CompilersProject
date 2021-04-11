@@ -31,32 +31,68 @@ class LLVMBuilder(IToLLVM):
                                    operand1_data_type: DataTypeToken, operand2: str,
                                    operand2_data_type: DataTypeToken):
 
+        # TODO remove duplicate code
         if operand1_data_type != operand2_data_type:
-            converted_register = self.get_current_function().get_new_register()
             if DataTypeToken.is_richer_than(operand1_data_type, operand2_data_type):
+
                 resulting_data_type = operand1_data_type
-                data_type_to_convert = operand2_data_type
-                register_to_convert = operand2
 
-                operand2 = converted_register
+                # Must be a literal so just change the notation of the operand
+                if isinstance(operand2, int) or isinstance(operand2, float):
+
+                    operand2 = LLVMUtils.get_llvm_for_literal(operand2, resulting_data_type)
+
+                # Must be a register
+                else:
+
+                    register_to_convert = operand2
+                    data_type_to_convert = operand2_data_type
+                    converted_register = self.get_current_function().get_new_register()
+                    operand2 = converted_register
+
+                    self.get_current_function().add_instruction(
+                        DataTypeConvertInstruction(converted_register, register_to_convert, data_type_to_convert,
+                                                   resulting_data_type))
+
                 operand2_data_type = resulting_data_type
-            else:
-                resulting_data_type = operand2_data_type
-                data_type_to_convert = operand1_data_type
-                register_to_convert = operand1
 
-                operand1 = converted_register
+                # Convert the richest register to scientific notation as well if necessary
+                if operand1_data_type == DataTypeToken.FLOAT or operand1_data_type == DataTypeToken.DOUBLE:
+                    operand1 = LLVMUtils.get_llvm_for_literal(operand1, operand1_data_type)
+
+
+            else:
+
+                resulting_data_type = operand2_data_type
+
+                # Must be a literal so just change the notation of the operand
+                if isinstance(operand1, int) or isinstance(operand1, float):
+
+                    operand1 = LLVMUtils.get_llvm_for_literal(operand1, resulting_data_type)
+
+                # Must be a register
+                else:
+
+                    register_to_convert = operand1
+                    data_type_to_convert = operand1_data_type
+                    converted_register = self.get_current_function().get_new_register()
+                    operand1 = converted_register
+
+                    self.get_current_function().add_instruction(
+                        DataTypeConvertInstruction(converted_register, register_to_convert, data_type_to_convert,
+                                                   resulting_data_type))
+
                 operand1_data_type = resulting_data_type
 
-            self.get_current_function().add_instruction(
-                DataTypeConvertInstruction(converted_register, register_to_convert, data_type_to_convert,
-                                           resulting_data_type))
+                # Convert the richest register to scientific notation as well if necessary
+                if operand2_data_type == DataTypeToken.FLOAT or operand2_data_type == DataTypeToken.DOUBLE:
+                    operand2 = LLVMUtils.get_llvm_for_literal(operand2, operand2_data_type)
 
         register_to_return = self.get_current_function().get_new_register()
         self.get_current_function().add_instruction(
             CompareInstruction(register_to_return, operation, operand1_data_type, operand1, operand2_data_type,
                                operand2))
-        return register_to_return, DataTypeToken.BOOL
+        return register_to_return
 
     def compute_expression(self, ast: AST):
         """
@@ -71,8 +107,8 @@ class LLVMBuilder(IToLLVM):
         """
 
         if isinstance(ast, ASTBinaryExpression):
-            operand1_reg, operand1_data_type = self.compute_expression(ast.left)
-            operand2_reg, operand2_data_type = self.compute_expression(ast.right)
+            operand1, operand1_data_type = self.compute_expression(ast.left)
+            operand2, operand2_data_type = self.compute_expression(ast.right)
 
             instruction = None
             operation = ast.get_token()
@@ -80,12 +116,12 @@ class LLVMBuilder(IToLLVM):
             if isinstance(operation, BinaryArithmeticExprToken):
                 register_to_return = self.get_current_function().get_new_register()
                 instruction = BinaryArithmeticInstruction(register_to_return,
-                                                          operation, operand1_data_type, operand1_reg,
-                                                          operand2_data_type, operand2_reg)
+                                                          operation, operand1_data_type, operand1,
+                                                          operand2_data_type, operand2)
             elif isinstance(operation, RelationalExprToken):
 
-                return self.compute_compare_expression(operation, operand1_reg, operand1_data_type, operand2_reg,
-                                                       operand2_data_type)
+                return self.compute_compare_expression(operation, operand1, operand1_data_type, operand2,
+                                                       operand2_data_type), DataTypeToken.BOOL
             else:
                 raise NotImplementedError("This type of instructions are not yet supported")
 

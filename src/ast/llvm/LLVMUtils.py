@@ -30,6 +30,23 @@ def get_llvm_type(data_type: DataTypeToken):
         raise NotImplementedError
 
 
+def get_llvm_for_literal(literal, as_data_type: DataTypeToken):
+    """
+    A literal needs to be put in the correct notation depending on where it is used.
+    E.g if you want to compare a double to an integer, both types need to be converted to double.
+    If the literal is the integer, this needs to put into scientific notation to be recognized as a double
+    """
+    assert isinstance(literal, int) or isinstance(literal, float)
+
+    if as_data_type.is_integral_type():
+        return str(literal)
+    elif as_data_type.is_floating_point_type():
+        # Put the number into scientific notation
+        return "{:e}".format(literal)
+    else:
+        raise NotImplementedError
+
+
 class ComparisonDataType(Enum):
     INT = 'icmp',
     FLOAT = 'fcmp'

@@ -96,7 +96,7 @@ class ASTLiteral(ASTLeaf, IHasToken, IHasDataType):
 
     def get_value(self):
         """
-        Same as get_content but used to return the actual value of corresponding type (such as int or float), instead of string
+        Same as get_content but used to return the actual value of corresponding type (such as int or double), instead of string
         """
         if self.get_data_type() == DataTypeToken.INT or self.get_data_type() == DataTypeToken.CHAR:
             # Char and ints are both numerical so return this
