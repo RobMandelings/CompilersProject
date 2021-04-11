@@ -187,7 +187,11 @@ class LLVMBuilder(IToLLVM):
         # The global variable that contains the string of the corresponding type of variable to call (printf(%i, your_int))
         # has the string %i\00 as type to use for the print. The global variable contains this string
         global_var_data_type = self.get_global_container().get_printf_type_string(variable.get_data_type())
-        self.get_current_function().add_instruction(PrintfInstruction(register_to_print, global_var_data_type))
+        resulting_register = self.get_current_function().get_new_register()
+        instruction = PrintfInstruction(resulting_register, register_to_print, global_var_data_type)
+        self.get_current_function().add_instruction(instruction)
+
+        return resulting_register, instruction.get_resulting_data_type()
 
     def declare_variable(self, ast: ASTVariableDeclaration):
         resulting_register = self.get_current_function().get_new_register()

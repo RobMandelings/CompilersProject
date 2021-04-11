@@ -370,24 +370,28 @@ class UnaryArithmeticInstruction(AssignInstruction):
         return super().to_llvm()
 
 
-class PrintfInstruction(Instruction):
+class PrintfInstruction(AssignInstruction):
 
-    def __init__(self, register_to_print: str, global_variable_data_type: str):
+    def __init__(self, result_register: str, register_to_print: str, global_variable_data_type: str):
         """
         Creates a PrintfInstructions string
+        result_register: the register where the result of the function goes in (the number of chars printed)
         type_to_print: the type to print (most likely a global constant you have defined)
         global_variable_data_type: the global variable which contains the string of the datatype to print (e.g. @.str.1 -> '%i\00')
         """
-        super().__init__()
+        super().__init__(result_register)
         self.register_to_print = register_to_print
         self.type_to_print = global_variable_data_type
 
     def get_instruction_type(self):
         return self.type_to_print
 
+    def get_resulting_data_type(self):
+        return DataTypeToken.INT
+
     def is_terminator(self):
         return False
 
     def to_llvm(self):
         # TODO remove call from @.i ot
-        return f"call i32 (i8*, ...) @printf(i8* getelementptr inbounds([3 x i8], [3 x i8]* {self.type_to_print}, i64 0, i64 0), i32 {self.register_to_print})"
+        return super().to_llvm() + f"call i32 (i8*, ...) @printf(i8* getelementptr inbounds([3 x i8], [3 x i8]* {self.type_to_print}, i64 0, i64 0), i32 {self.register_to_print})"
