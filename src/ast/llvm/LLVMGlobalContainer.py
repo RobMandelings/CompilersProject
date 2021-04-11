@@ -30,7 +30,7 @@ class LLVMGlobalContainer(IToLLVM):
 
         global_declaration_instruction = f'{global_variable} = private unnamed_addr constant [3 x i8] c"{c_type_selection}\\00", align 1'
         self.global_declaration_instructions.append(global_declaration_instruction)
-        self.__printf_type_strings[data_type_to_print] = global_variable
+        self.__printf_type_strings[data_type_to_print.name] = global_variable
 
     def get_printf_type_string(self, data_type_to_print: DataTypeToken):
         """
@@ -45,11 +45,11 @@ class LLVMGlobalContainer(IToLLVM):
 
             data_type_name = data_type_to_print.name
 
-            printf_type_string = self.__printf_type_strings.get(data_type_to_print.name)
+            printf_type_string = self.__printf_type_strings.get(data_type_name)
 
             if printf_type_string is None:
                 self.__add_printf_type_string(data_type_to_print)
-                printf_type_string = self.__printf_type_strings.get(data_type_to_print)
+                printf_type_string = self.__printf_type_strings.get(data_type_name)
 
             assert printf_type_string is not None
             return printf_type_string
