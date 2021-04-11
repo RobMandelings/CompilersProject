@@ -348,7 +348,7 @@ class CompareInstruction(BinaryAssignInstruction):
                 return 'ogt'
         elif self.operation == RelationalExprToken.LESS_THAN:
             if self.comparison_type == ComparisonDataType.INT:
-                return 'lt'
+                return 'slt'
             else:
                 return 'olt'
         else:
