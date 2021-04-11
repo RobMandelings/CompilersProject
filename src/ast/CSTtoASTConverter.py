@@ -278,7 +278,7 @@ def get_data_type_token(cst: TerminalNodeImpl):
         elif symbol_type == CLexer.INT_LITERAL:
             return DataTypeToken.INT
         elif symbol_type == CLexer.DOUBLE_LITERAL:
-            return DataTypeToken.FLOAT
+            return DataTypeToken.DOUBLE
 
     return None
 
