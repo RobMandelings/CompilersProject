@@ -8,7 +8,7 @@ class LLVMBasicBlock(LLVMInterfaces.IToLLVM):
         self.instructions = list()
         self.number = number
 
-    def add_instruction(self, instruction: LLVMInstruction.Instruction):
+    def add_instruction(self, instruction):
         """
         Safely adds a new instruction to the list of instructions
         """
@@ -29,10 +29,14 @@ class LLVMBasicBlock(LLVMInterfaces.IToLLVM):
         """
         return self.number
 
+    def update_numbering(self, counter):
+        for instruction in self.instructions:
+            instruction.update_numbering(counter)
+
     def to_llvm(self):
         llvm_code = ""
 
         for instruction in self.instructions:
-            llvm_code += f"  {instruction.to_llvm()}\n"
+            llvm_code += f"{instruction.to_llvm()}\n"
 
         return llvm_code

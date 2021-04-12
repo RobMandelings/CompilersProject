@@ -4,6 +4,25 @@ import src.ast.ASTTokens as ASTTokens
 import src.ast.llvm.LLVMValue as LLVMValue
 
 
+class LLVMCounter:
+
+    def __init__(self):
+        self.__counter = 0
+
+    def __str__(self):
+        return str(self.__counter)
+
+    def get_value(self):
+        return self.__counter
+
+    def increase(self):
+        """
+        Increases the counter by one and returns the counter
+        """
+        self.__counter += 1
+        return self
+
+
 def get_llvm_type(data_type: ASTTokens.DataTypeToken):
     """
     Converts the given data type into a string which represents the corresponding data type in llvm

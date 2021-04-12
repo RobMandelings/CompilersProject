@@ -18,14 +18,17 @@ class Instruction(LLVMInterfaces.IToLLVM, abc.ABC):
     def __init__(self):
         pass
 
-    def __str__(self):
-        return self.to_llvm()
-
     def is_terminator(self):
         raise NotImplementedError
 
     def to_llvm(self):
         raise NotImplementedError
+
+    def update_numbering(self, counter):
+        """
+        Updates the numbering. Do nothing by default
+        """
+        pass
 
 
 class AssignInstruction(Instruction):
@@ -38,15 +41,16 @@ class AssignInstruction(Instruction):
         assert resulting_reg is not None
         self.resulting_reg = resulting_reg
 
-    def __str__(self):
-        self.to_llvm()
-
     def is_terminator(self):
         return False
 
     def get_resulting_register(self):
         assert isinstance(self.resulting_reg, LLVMValue.LLVMRegister)
         return self.resulting_reg
+
+    def update_numbering(self, counter):
+        self.resulting_reg.value = f'%{counter}'
+        counter.increase()
 
     def to_llvm(self):
         return f"{self.resulting_reg.get_value()} = "
@@ -57,9 +61,6 @@ class AllocaInstruction(AssignInstruction):
     def __init__(self, resulting_reg: LLVMValue.LLVMRegister):
         super().__init__(resulting_reg)
         assert resulting_reg.get_data_type().is_pointer_type()
-
-    def __str__(self):
-        self.to_llvm()
 
     def to_llvm(self):
         return super().to_llvm() + f"alloca {LLVMUtils.get_llvm_type(self.get_resulting_register().get_data_type().get_normal_version())}, align 4"
@@ -76,9 +77,6 @@ class StoreInstruction(Instruction):
                                                                 "pointer type for a value to be stored in it!"
         self.resulting_reg = resulting_reg
         self.value_to_store = value_to_store
-
-    def __str__(self):
-        self.to_llvm()
 
     def to_llvm(self):
         datatype_str = LLVMUtils.get_llvm_type(self.value_to_store.get_data_type())
@@ -105,9 +103,6 @@ class LoadInstruction(AssignInstruction):
         self.load_from_reg = load_from_reg
         self.resulting_reg.set_data_type(load_from_reg.get_data_type().get_normal_version())
 
-    def __str__(self):
-        self.to_llvm()
-
     def to_llvm(self):
         llvm_data_type_to_load = LLVMUtils.get_llvm_type(self.resulting_reg.get_data_type())
         return super().to_llvm() + f"load {llvm_data_type_to_load}, {llvm_data_type_to_load}* {self.load_from_reg}"
@@ -125,9 +120,6 @@ class ConditionalBranchInstruction(Instruction):
         self.if_true = if_true
         self.if_false = if_false
 
-    def __str__(self):
-        self.to_llvm()
-
     def to_llvm(self):
         return f"br i1 {self.condition_reg.to_llvm()}, label %{self.if_true.get_number()}, label %{self.if_false.get_number()}"
 
@@ -143,9 +135,6 @@ class UnconditionalBranchInstruction(Instruction):
         """
         super().__init__()
         self.destination = destination
-
-    def __str__(self):
-        self.to_llvm()
 
     def to_llvm(self):
         return f"br label %{self.destination.get_number()}"
@@ -165,9 +154,6 @@ class UnaryAssignInstruction(AssignInstruction):
         super().__init__(resulting_reg)
         self.operand = operand
 
-    def __str__(self):
-        self.to_llvm()
-
     def get_operand(self):
         return self.operand
 
@@ -186,9 +172,6 @@ class BinaryAssignInstruction(AssignInstruction):
         self.operation = operation
         self.operand1 = operand1
         self.operand2 = operand2
-
-    def __str__(self):
-        self.to_llvm()
 
     def get_llvm_data_types(self):
         """
@@ -214,9 +197,6 @@ class BinaryArithmeticInstruction(BinaryAssignInstruction):
         self.resulting_data_type = ASTTokens.DataTypeToken.get_resulting_data_type(operand1.get_data_type(),
                                                                                    operand2.get_data_type())
         self.operation_type = self.get_operation_type()
-
-    def __str__(self):
-        self.to_llvm()
 
     def get_operation_type(self):
         if self.operand1.get_data_type() == ASTTokens.DataTypeToken.INT and self.operand2.get_data_type() == ASTTokens.DataTypeToken.INT:
@@ -316,9 +296,6 @@ class CompareInstruction(BinaryAssignInstruction):
         self.operation = operation
         self.comparison_type = self.get_comparison_type()
 
-    def __str__(self):
-        self.to_llvm()
-
     def get_resulting_data_type(self):
         return ASTTokens.DataTypeToken.BOOL
 
@@ -383,9 +360,6 @@ class UnaryArithmeticInstruction(AssignInstruction):
         super().__init__(resulting_reg)
         raise NotImplementedError
 
-    def __str__(self):
-        self.to_llvm()
-
     def to_llvm(self):
         raise NotImplementedError
 
@@ -406,9 +380,6 @@ class PrintfInstruction(AssignInstruction):
 
         self.register_to_print = register_to_print
         self.string_to_print_name = string_to_print_name
-
-    def __str__(self):
-        self.to_llvm()
 
     def is_terminator(self):
         return False
