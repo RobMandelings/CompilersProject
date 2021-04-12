@@ -26,6 +26,27 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
         # First we need to keep track of the label of the condition block, then we make two new blocks:
         # one for the code within the loop and one label for what happens after the loop
         condition_if_true = current_function.add_basic_block()
+
+        for child in while_loop_ast.get_execution_body().children:
+            if not isinstance(child, ASTControlFlowStatement):
+                child.accept(self)
+            else:
+                if child.control_flow_token == ControlFlowToken.CONTINUE:
+                    # For-loops only: make sure that the update step is executed before branching to the condition again
+                    if while_loop_ast.get_update_step() is not None:
+                        while_loop_ast.get_update_step().accept(self)
+                    current_function.get_current_basic_block().add_instruction(
+                        UnconditionalBranchInstruction(f'%{basic_block_of_condition.get_number()}'))
+
+                    # Add a basic block to continue writing instructions
+                    current_function.add_basic_block()
+                elif child.control_flow_token == ControlFlowToken.BREAK:
+                    pass
+                elif child.control_flow_token == ControlFlowToken.RETURN:
+                    pass
+                else:
+                    raise NotImplementedError
+
         while_loop_ast.get_execution_body().accept(self)
 
         current_function.get_current_basic_block().add_instruction(
