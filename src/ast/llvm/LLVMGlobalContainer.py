@@ -1,8 +1,8 @@
-from src.ast.ASTTokens import DataTypeToken
-from src.ast.llvm.LLVMUtils import IToLLVM
+import src.ast.ASTTokens as ASTTokens
+import src.ast.llvm.LLVMInterfaces as LLVMInterfaces
 
 
-class LLVMGlobalContainer(IToLLVM):
+class LLVMGlobalContainer(LLVMInterfaces.IToLLVM):
     """
     Contains all global instructions that do not belong in any function
     """
@@ -12,18 +12,18 @@ class LLVMGlobalContainer(IToLLVM):
         self.__printf_type_strings = dict()
         pass
 
-    def __add_printf_type_string(self, data_type_to_print: DataTypeToken):
+    def __add_printf_type_string(self, data_type_to_print: ASTTokens.DataTypeToken):
 
         global_variable = f'@.str.{len(self.global_declaration_instructions)}'
 
         # E.g. %i for printf('%i', int)
         # Null termination is necessary
         c_type_selection = None
-        if data_type_to_print == DataTypeToken.CHAR:
+        if data_type_to_print == ASTTokens.DataTypeToken.CHAR:
             c_type_selection = '%c'
-        elif data_type_to_print == DataTypeToken.INT:
+        elif data_type_to_print == ASTTokens.DataTypeToken.INT:
             c_type_selection = '%i'
-        elif data_type_to_print == DataTypeToken.FLOAT:
+        elif data_type_to_print == ASTTokens.DataTypeToken.FLOAT:
             c_type_selection = '%f'
         else:
             raise NotImplementedError
@@ -32,7 +32,7 @@ class LLVMGlobalContainer(IToLLVM):
         self.global_declaration_instructions.append(global_declaration_instruction)
         self.__printf_type_strings[data_type_to_print.name] = global_variable
 
-    def get_printf_type_string(self, data_type_to_print: DataTypeToken):
+    def get_printf_type_string(self, data_type_to_print: ASTTokens.DataTypeToken):
         """
         Returns the global constant that holds the type to print
         For example, they would be defined as follows: @.i = private unnamed_addr constant [3 x i8] c"%i\00", align 1

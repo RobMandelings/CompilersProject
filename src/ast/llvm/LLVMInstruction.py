@@ -1,9 +1,10 @@
-from src.ast.ASTTokens import BinaryArithmeticExprToken, RelationalExprToken
-from src.ast.llvm import LLVMUtils
-from src.ast.llvm.LLVMBasicBlock import LLVMBasicBlock
-from src.ast.llvm.LLVMUtils import ComparisonDataType
-from src.ast.llvm.LLVMUtils import get_llvm_type
-from src.ast.llvm.LLVMValue import *
+import abc
+
+import src.ast.ASTTokens as ASTTokens
+import src.ast.llvm.LLVMBasicBlock as LLVMBasicBlock
+import src.ast.llvm.LLVMInterfaces as LLVMInterfaces
+import src.ast.llvm.LLVMUtils as LLVMUtils
+import src.ast.llvm.LLVMValue as LLVMValue
 
 
 def isConstant(operand: str):
@@ -12,7 +13,7 @@ def isConstant(operand: str):
     return True
 
 
-class Instruction(IToLLVM, ABC):
+class Instruction(LLVMInterfaces.IToLLVM, abc.ABC):
 
     def __init__(self):
         pass
@@ -32,7 +33,7 @@ class AssignInstruction(Instruction):
     Instruction which has a resulting register
     """
 
-    def __init__(self, resulting_reg: LLVMRegister):
+    def __init__(self, resulting_reg: LLVMValue.LLVMRegister):
         super().__init__()
         assert resulting_reg is not None
         self.resulting_reg = resulting_reg
@@ -41,7 +42,7 @@ class AssignInstruction(Instruction):
         return False
 
     def get_resulting_register(self):
-        assert isinstance(self.resulting_reg, LLVMRegister)
+        assert isinstance(self.resulting_reg, LLVMValue.LLVMRegister)
         return self.resulting_reg
 
     def to_llvm(self):
@@ -50,13 +51,14 @@ class AssignInstruction(Instruction):
 
 class AllocaInstruction(AssignInstruction):
 
-    def __init__(self, resulting_reg: LLVMRegister, data_type_to_allocate: DataTypeToken):
+    def __init__(self, resulting_reg: LLVMValue.LLVMRegister,
+                 data_type_to_allocate: ASTTokens.DataTypeToken):
         super().__init__(resulting_reg)
-        resulting_reg.set_data_type(DataTypeToken.get_pointer_version(data_type_to_allocate))
+        resulting_reg.set_data_type(ASTTokens.DataTypeToken.get_pointer_version(data_type_to_allocate))
         self.data_type_to_allocate = data_type_to_allocate
 
     def to_llvm(self):
-        return super().to_llvm() + f"alloca {get_llvm_type(self.data_type_to_allocate)}, align 4"
+        return super().to_llvm() + f"alloca {LLVMUtils.get_llvm_type(self.data_type_to_allocate)}, align 4"
 
     def is_terminator(self):
         return False
@@ -64,7 +66,7 @@ class AllocaInstruction(AssignInstruction):
 
 class StoreInstruction(Instruction):
 
-    def __init__(self, resulting_reg: LLVMRegister, value_to_store: LLVMValue):
+    def __init__(self, resulting_reg: LLVMValue.LLVMRegister, value_to_store: LLVMValue):
         super().__init__()
         assert resulting_reg.get_data_type().is_pointer_type(), "The resulting register must be of " \
                                                                 "pointer type for a value to be stored in it!"
@@ -72,7 +74,7 @@ class StoreInstruction(Instruction):
         self.value_to_store = value_to_store
 
     def to_llvm(self):
-        datatype_str = get_llvm_type(self.value_to_store.get_data_type())
+        datatype_str = LLVMUtils.get_llvm_type(self.value_to_store.get_data_type())
         return f"store {datatype_str} {self.value_to_store.to_llvm()}, {datatype_str}* {self.resulting_reg}, align 4"
 
     def is_terminator(self):
@@ -84,7 +86,7 @@ class LoadInstruction(AssignInstruction):
     Loads the value of a pointer type into a register (for example, load an i32 from register %1 of type i32* in register %2)
     """
 
-    def __init__(self, resulting_reg: LLVMRegister, load_from_reg: LLVMRegister):
+    def __init__(self, resulting_reg: LLVMValue.LLVMRegister, load_from_reg: LLVMValue.LLVMRegister):
         """
         LLVM Load instruction
         data_type_to_allocate: the data type that will be allocated
@@ -97,7 +99,7 @@ class LoadInstruction(AssignInstruction):
         self.resulting_reg.set_data_type(load_from_reg.get_data_type().get_normal_version())
 
     def to_llvm(self):
-        llvm_data_type_to_load = get_llvm_type(self.resulting_reg.get_data_type())
+        llvm_data_type_to_load = LLVMUtils.get_llvm_type(self.resulting_reg.get_data_type())
         return super().to_llvm() + f"load {llvm_data_type_to_load}, {llvm_data_type_to_load}* {self.load_from_reg}"
 
 
@@ -106,8 +108,8 @@ class ConditionalBranchInstruction(Instruction):
     Conditional Branch instruction for LLVM
     """
 
-    def __init__(self, condition_reg: LLVMRegister, if_true: LLVMBasicBlock, if_false: LLVMBasicBlock):
-        assert condition_reg.get_data_type() == DataTypeToken.BOOL, "Condition register must be of i1 (bool) type"
+    def __init__(self, condition_reg: LLVMValue.LLVMRegister, if_true: LLVMBasicBlock, if_false: LLVMBasicBlock):
+        assert condition_reg.get_data_type() == ASTTokens.DataTypeToken.BOOL, "Condition register must be of i1 (bool) type"
         super().__init__()
         self.condition_reg = condition_reg
         self.if_true = if_true
@@ -138,7 +140,7 @@ class UnconditionalBranchInstruction(Instruction):
 
 class UnaryAssignInstruction(AssignInstruction):
 
-    def __init__(self, resulting_reg: LLVMRegister, operand: LLVMRegister):
+    def __init__(self, resulting_reg: LLVMValue.LLVMRegister, operand: LLVMValue.LLVMRegister):
         """
         Constructs a unary assignment instruction (one register as operand -> one register as result)
         operand: the operand register
@@ -156,7 +158,7 @@ class UnaryAssignInstruction(AssignInstruction):
 
 class BinaryAssignInstruction(AssignInstruction):
 
-    def __init__(self, resulting_reg: LLVMRegister, operation, operand1: LLVMValue,
+    def __init__(self, resulting_reg: LLVMValue.LLVMRegister, operation, operand1: LLVMValue,
                  operand2: LLVMValue):
         """
         Instruction that has a resulting register
@@ -173,7 +175,7 @@ class BinaryAssignInstruction(AssignInstruction):
         return LLVMUtils.get_llvm_type(self.operand1.get_data_type()), LLVMUtils.get_llvm_type(
             self.operand2.get_data_type())
 
-    @abstractmethod
+    @abc.abstractmethod
     def get_llvm_for_operation(self):
         raise NotImplementedError
 
@@ -183,16 +185,17 @@ class BinaryArithmeticInstruction(BinaryAssignInstruction):
     Instructions which apply arithmetics on registers and puts the result in another register
     """
 
-    def __init__(self, resulting_reg: LLVMRegister, operation: BinaryArithmeticExprToken, operand1: LLVMValue,
+    def __init__(self, resulting_reg: LLVMValue.LLVMRegister, operation: ASTTokens.BinaryArithmeticExprToken,
+                 operand1: LLVMValue,
                  operand2: LLVMValue):
         super().__init__(resulting_reg, operation, operand1, operand2)
-        self.resulting_data_type = DataTypeToken.get_resulting_data_type(operand1, operand2)
+        self.resulting_data_type = ASTTokens.DataTypeToken.get_resulting_data_type(operand1, operand2)
         self.operation_type = self.get_operation_type()
 
     def get_operation_type(self):
-        if self.operand1.get_data_type() == DataTypeToken.INT and self.operand2.get_data_type() == DataTypeToken.INT:
+        if self.operand1.get_data_type() == ASTTokens.DataTypeToken.INT and self.operand2.get_data_type() == ASTTokens.DataTypeToken.INT:
             return 'i32'
-        elif self.operand1.get_data_type() == DataTypeToken.FLOAT and self.operand2.get_data_type() == DataTypeToken.FLOAT:
+        elif self.operand1.get_data_type() == ASTTokens.DataTypeToken.FLOAT and self.operand2.get_data_type() == ASTTokens.DataTypeToken.FLOAT:
             return 'float'
         else:
             raise NotImplementedError
@@ -203,24 +206,24 @@ class BinaryArithmeticInstruction(BinaryAssignInstruction):
         """
         operation_string = None
         if self.operation_type == 'i32':
-            if self.operation == BinaryArithmeticExprToken.ADD:
+            if self.operation == ASTTokens.BinaryArithmeticExprToken.ADD:
                 operation_string = 'add nsw'
-            elif self.operation == BinaryArithmeticExprToken.SUB:
+            elif self.operation == ASTTokens.BinaryArithmeticExprToken.SUB:
                 operation_string = 'sub nsw'
-            elif self.operation == BinaryArithmeticExprToken.MUL:
+            elif self.operation == ASTTokens.BinaryArithmeticExprToken.MUL:
                 operation_string = 'mul nsw'
-            elif self.operation == BinaryArithmeticExprToken.DIV:
+            elif self.operation == ASTTokens.BinaryArithmeticExprToken.DIV:
                 operation_string = 'sdiv'
             else:
                 raise NotImplementedError
         elif self.operation_type == 'float':
-            if self.operation == BinaryArithmeticExprToken.ADD:
+            if self.operation == ASTTokens.BinaryArithmeticExprToken.ADD:
                 operation_string = 'fadd'
-            elif self.operation == BinaryArithmeticExprToken.SUB:
+            elif self.operation == ASTTokens.BinaryArithmeticExprToken.SUB:
                 operation_string = 'fsub'
-            elif self.operation == BinaryArithmeticExprToken.MUL:
+            elif self.operation == ASTTokens.BinaryArithmeticExprToken.MUL:
                 operation_string = 'fmul'
-            elif self.operation == BinaryArithmeticExprToken.DIV:
+            elif self.operation == ASTTokens.BinaryArithmeticExprToken.DIV:
                 operation_string = 'fdiv'
             else:
                 raise NotImplementedError
@@ -235,7 +238,7 @@ class BinaryArithmeticInstruction(BinaryAssignInstruction):
 
 class DataTypeConvertInstruction(UnaryAssignInstruction):
 
-    def __init__(self, resulting_reg: LLVMRegister, reg_to_convert: LLVMRegister):
+    def __init__(self, resulting_reg: LLVMValue.LLVMRegister, reg_to_convert: LLVMValue.LLVMRegister):
         """
         Creates an instruction to convert a given register with data type 'data_type' to a resulting data type 'resulting_data_type'
         resulting_reg: the register where the converted value will be put in
@@ -273,7 +276,8 @@ class CompareInstruction(BinaryAssignInstruction):
     # TODO comparing with constants such as 0 and stuff
     """
 
-    def __init__(self, resulting_reg: LLVMRegister, operation: RelationalExprToken, operand1: LLVMValue,
+    def __init__(self, resulting_reg: LLVMValue.LLVMRegister, operation: ASTTokens.RelationalExprToken,
+                 operand1: LLVMValue,
                  operand2: LLVMValue):
         super().__init__(resulting_reg, operation, operand1, operand2)
         assert operand1.get_data_type() == operand2.get_data_type(), \
@@ -284,51 +288,51 @@ class CompareInstruction(BinaryAssignInstruction):
         self.comparison_type = self.get_comparison_type()
 
     def get_resulting_data_type(self):
-        return DataTypeToken.BOOL
+        return ASTTokens.DataTypeToken.BOOL
 
     def get_comparison_type(self):
         """
-        Checks the entered datatypes to determine which ComparisonDataType will be used and what the llvm code will be as comparison type (for example, i32)
+        Checks the entered datatypes to determine which LLVMUtils.ComparisonDataType will be used and what the llvm code will be as comparison type (for example, i32)
         """
 
         # Its the same, whether you pick operand1 or operand2 (they have the same data type)
         data_type_to_compare = self.operand1.get_data_type()
 
-        if data_type_to_compare == DataTypeToken.DOUBLE or data_type_to_compare == DataTypeToken.FLOAT:
-            return ComparisonDataType.FLOAT
-        elif data_type_to_compare == DataTypeToken.INT:
-            return ComparisonDataType.INT
-        elif data_type_to_compare == DataTypeToken.CHAR:
+        if data_type_to_compare == ASTTokens.DataTypeToken.DOUBLE or data_type_to_compare == ASTTokens.DataTypeToken.FLOAT:
+            return LLVMUtils.ComparisonDataType.FLOAT
+        elif data_type_to_compare == ASTTokens.DataTypeToken.INT:
+            return LLVMUtils.ComparisonDataType.INT
+        elif data_type_to_compare == ASTTokens.DataTypeToken.CHAR:
             print("WARN: data type to compare is char, returning comparison data type INT. Not tested yet")
-            return ComparisonDataType.INT
+            return LLVMUtils.ComparisonDataType.INT
         else:
             raise NotImplementedError
 
     def get_llvm_comparison_type(self):
-        if self.comparison_type == ComparisonDataType.INT:
+        if self.comparison_type == LLVMUtils.ComparisonDataType.INT:
             return 'icmp'
         else:
             return 'fcmp'
 
     def get_llvm_for_operation(self):
-        if self.operation == RelationalExprToken.EQUALS:
-            if self.comparison_type == ComparisonDataType.INT:
+        if self.operation == ASTTokens.RelationalExprToken.EQUALS:
+            if self.comparison_type == LLVMUtils.ComparisonDataType.INT:
                 return 'eq'
             else:
                 return 'oeq'
-        elif self.operation == RelationalExprToken.NOT_EQUALS:
-            if self.comparison_type == ComparisonDataType.INT:
+        elif self.operation == ASTTokens.RelationalExprToken.NOT_EQUALS:
+            if self.comparison_type == LLVMUtils.ComparisonDataType.INT:
                 return 'ne'
             else:
                 return 'one'
-        elif self.operation == RelationalExprToken.GREATER_THAN:
-            if self.comparison_type == ComparisonDataType.INT:
+        elif self.operation == ASTTokens.RelationalExprToken.GREATER_THAN:
+            if self.comparison_type == LLVMUtils.ComparisonDataType.INT:
                 # TODO maybe later do with unsigned as well
                 return 'sgt'
             else:
                 return 'ogt'
-        elif self.operation == RelationalExprToken.LESS_THAN:
-            if self.comparison_type == ComparisonDataType.INT:
+        elif self.operation == ASTTokens.RelationalExprToken.LESS_THAN:
+            if self.comparison_type == LLVMUtils.ComparisonDataType.INT:
                 return 'slt'
             else:
                 return 'olt'
@@ -337,13 +341,13 @@ class CompareInstruction(BinaryAssignInstruction):
 
     def to_llvm(self):
         return super().to_llvm() + f'{self.get_llvm_comparison_type()} {self.get_llvm_for_operation()} ' \
-                                   f'{get_llvm_type(self.operand1.get_data_type())} {self.operand1}, {self.operand2}'
+                                   f'{LLVMUtils.get_llvm_type(self.operand1.get_data_type())} {self.operand1}, {self.operand2}'
 
 
 # TODO must be implemented
 class UnaryArithmeticInstruction(AssignInstruction):
 
-    def __init__(self, resulting_reg: LLVMRegister):
+    def __init__(self, resulting_reg: LLVMValue.LLVMRegister):
         super().__init__(resulting_reg)
         raise NotImplementedError
 
@@ -353,7 +357,8 @@ class UnaryArithmeticInstruction(AssignInstruction):
 
 class PrintfInstruction(AssignInstruction):
 
-    def __init__(self, resulting_reg: LLVMRegister, register_to_print: LLVMRegister, string_to_print_name: str):
+    def __init__(self, resulting_reg: LLVMValue.LLVMRegister, register_to_print: LLVMValue.LLVMRegister,
+                 string_to_print_name: str):
         """
         Creates a PrintfInstructions string
         result_register: the register where the result of the function goes in (the number of chars printed)
@@ -362,7 +367,7 @@ class PrintfInstruction(AssignInstruction):
         """
         super().__init__(resulting_reg)
 
-        self.resulting_reg.set_data_type(DataTypeToken.INT)
+        self.resulting_reg.set_data_type(ASTTokens.DataTypeToken.INT)
 
         self.register_to_print = register_to_print
         self.string_to_print_name = string_to_print_name

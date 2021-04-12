@@ -1,17 +1,18 @@
-from src.ast.llvm.LLVMInstruction import *
+import src.ast.llvm.LLVMInstruction as LLVMInstruction
+import src.ast.llvm.LLVMInterfaces as LLVMInterfaces
 
 
-class LLVMBasicBlock(IToLLVM):
+class LLVMBasicBlock(LLVMInterfaces.IToLLVM):
 
     def __init__(self, number: int):
         self.instructions = list()
         self.number = number
 
-    def add_instruction(self, instruction: Instruction):
+    def add_instruction(self, instruction: LLVMInstruction.Instruction):
         """
         Safely adds a new instruction to the list of instructions
         """
-        assert isinstance(instruction, Instruction)
+        assert isinstance(instruction, LLVMInstruction.Instruction)
         assert not self.has_terminal_instruction()
         self.instructions.append(instruction)
 

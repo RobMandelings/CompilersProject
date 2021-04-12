@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 
-from src.ast.ASTTokens import DataTypeToken
-from src.ast.ASTs import IHasDataType
-from src.ast.llvm.LLVMUtils import IToLLVM
+import src.ast.ASTTokens as ASTTokens
+import src.ast.ASTs as ASTs
+import src.ast.llvm.LLVMInterfaces as LLVMInterfaces
 
 
 class LLVMValueToken(Enum):
@@ -11,7 +11,7 @@ class LLVMValueToken(Enum):
     REGISTER = auto()
 
 
-class LLVMValue(IToLLVM, IHasDataType, ABC):
+class LLVMValue(LLVMInterfaces.IToLLVM, ASTs.IHasDataType, ABC):
 
     def __init__(self, value: str, data_type):
         self.data_type = data_type
@@ -20,7 +20,7 @@ class LLVMValue(IToLLVM, IHasDataType, ABC):
     def __str__(self):
         return self.to_llvm()
 
-    def set_data_type(self, data_type: DataTypeToken):
+    def set_data_type(self, data_type: ASTTokens.DataTypeToken):
         """
         PRE-CONDITION: Can only be set once (must be None before)
 
@@ -41,7 +41,7 @@ class LLVMValue(IToLLVM, IHasDataType, ABC):
         """
         PRE-CONDITION: the data type must be set at this point
         """
-        assert isinstance(self.data_type, DataTypeToken)
+        assert isinstance(self.data_type, ASTTokens.DataTypeToken)
         return self.data_type
 
     @abstractmethod
@@ -57,7 +57,7 @@ class LLVMValue(IToLLVM, IHasDataType, ABC):
 
 class LLVMLiteral(LLVMValue):
 
-    def __init__(self, value: str, data_type: DataTypeToken):
+    def __init__(self, value: str, data_type: ASTTokens.DataTypeToken):
         super().__init__(value, data_type)
 
     def get_llvm_value_token(self):

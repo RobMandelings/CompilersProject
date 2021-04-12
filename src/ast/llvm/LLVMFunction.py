@@ -1,8 +1,10 @@
 from src.ast.llvm.LLVMBasicBlock import LLVMBasicBlock
-from src.ast.llvm.LLVMInstruction import *
+import src.ast.llvm.LLVMInstruction as LLVMInstruction
+import src.ast.llvm.LLVMInterfaces as LLVMInterfaces
+import src.ast.llvm.LLVMValue as LLVMValue
 
 
-class LLVMFunction(IToLLVM):
+class LLVMFunction(LLVMInterfaces.IToLLVM):
 
     def __init__(self, name: str):
         # Counts the number of registers
@@ -30,11 +32,11 @@ class LLVMFunction(IToLLVM):
         self.counter += 1
         return new_basic_block
 
-    def add_instruction(self, instruction: Instruction):
+    def add_instruction(self, instruction: LLVMInstruction.Instruction):
         """
         Adds an instruction to the current basic block of this function, for later llvm code generation
         """
-        assert isinstance(instruction, Instruction)
+        assert isinstance(instruction, LLVMInstruction.Instruction)
         self.get_current_basic_block().add_instruction(instruction)
 
     def get_new_register(self, data_type=None):
@@ -45,7 +47,7 @@ class LLVMFunction(IToLLVM):
         After this call, the returned register will be seen as 'reserved', thus, the counter (for registers & labels) increases (by one)
         afterwards for retrieval of new available registers.
         """
-        register_to_return = LLVMRegister(f'%{self.counter}', data_type)
+        register_to_return = LLVMValue.LLVMRegister(f'%{self.counter}', data_type)
         self.counter += 1
         return register_to_return
 
