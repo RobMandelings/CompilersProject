@@ -112,7 +112,8 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             operation = ast.get_token()
 
             if isinstance(operation, ASTs.BinaryArithmeticExprToken):
-                register_to_return = self.get_current_function().get_new_register()
+                register_to_return = self.get_current_function().get_new_register(
+                    ASTTokens.DataTypeToken.get_resulting_data_type(operand1.get_data_type(), operand2.get_data_type()))
                 instruction = LLVMInstructions.BinaryArithmeticInstruction(register_to_return,
                                                                            operation, operand1,
                                                                            operand2)

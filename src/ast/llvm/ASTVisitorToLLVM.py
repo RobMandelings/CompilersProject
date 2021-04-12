@@ -51,6 +51,10 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
                 else:
                     raise NotImplementedError
 
+        # Only used in the for loop, the update step is different from the execution body itself
+        if while_loop_ast.get_update_step() is not None:
+            while_loop_ast.get_update_step().accept(self)
+
         current_function.get_current_basic_block().add_instruction(
             LLVMInstructions.UnconditionalBranchInstruction(basic_block_of_condition))
 

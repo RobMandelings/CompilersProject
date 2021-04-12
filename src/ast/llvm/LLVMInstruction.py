@@ -211,7 +211,8 @@ class BinaryArithmeticInstruction(BinaryAssignInstruction):
                  operand1: LLVMValue,
                  operand2: LLVMValue):
         super().__init__(resulting_reg, operation, operand1, operand2)
-        self.resulting_data_type = ASTTokens.DataTypeToken.get_resulting_data_type(operand1, operand2)
+        self.resulting_data_type = ASTTokens.DataTypeToken.get_resulting_data_type(operand1.get_data_type(),
+                                                                                   operand2.get_data_type())
         self.operation_type = self.get_operation_type()
 
     def __str__(self):
