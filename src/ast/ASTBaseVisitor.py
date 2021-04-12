@@ -95,6 +95,8 @@ class ASTBaseVisitor(IASTVisitor):
         assert isinstance(ast, ASTWhileLoop)
         ast.get_condition().accept(self)
         ast.get_execution_body().accept(self)
+        if ast.get_update_step() is not None:
+            ast.get_update_step().accept(self)
 
     def reset(self):
         """

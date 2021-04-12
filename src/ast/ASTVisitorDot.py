@@ -2,7 +2,8 @@ from graphviz import Digraph
 
 from src.ast.ASTBaseVisitor import ASTBaseVisitor
 from src.ast.ASTTokens import *
-from src.ast.ASTs import ASTPrintfInstruction, ASTUnaryExpression, ASTLiteral, ASTControlFlowStatement
+from src.ast.ASTs import ASTPrintfInstruction, ASTUnaryExpression, ASTLiteral, ASTControlFlowStatement, \
+    ASTAssignmentExpression
 
 
 class ASTVisitorDot(ASTBaseVisitor):

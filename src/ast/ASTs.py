@@ -173,72 +173,6 @@ class ASTInternal(AST):
             self.children.append(child)
 
 
-class ASTScope(ASTInternal):
-
-    def __init__(self):
-        super().__init__('body (scope)')
-
-    def accept(self, visitor: IASTVisitor):
-        visitor.visit_ast_scope(self)
-
-    def is_empty(self):
-        return len(self.children) == 0
-
-
-class ASTConditionalStatement(AST):
-
-    def __init__(self, content: str, condition, execution_body: ASTScope):
-        super().__init__(content)
-        self.condition = condition
-        self.execution_body = execution_body
-
-    def accept(self, visitor: IASTVisitor):
-        raise NotImplementedError
-
-    def get_condition(self):
-        return self.condition
-
-    def get_execution_body(self):
-        assert isinstance(self.execution_body, ASTScope)
-        return self.execution_body
-
-
-class ASTIfStatement(ASTConditionalStatement, IHasToken):
-
-    def __init__(self, token: IfStatementToken, condition, execution_body: ASTScope, else_statement):
-        super().__init__(token.token_name, condition, execution_body)
-        if token == IfStatementToken.ELSE:
-            assert else_statement is None
-        self.else_statement = else_statement
-        self.token = token
-
-    def get_token(self):
-        assert isinstance(self.token, IfStatementToken)
-        return self.token
-
-    def has_condition(self):
-        return self.get_condition() is not None
-
-    def has_else_statement(self):
-        return self.get_else_statement() is not None
-
-    def get_else_statement(self):
-        assert self.else_statement is None or isinstance(self.else_statement, ASTIfStatement)
-        return self.else_statement
-
-    def accept(self, visitor: IASTVisitor):
-        visitor.visit_ast_if_statement(self)
-
-
-class ASTWhileLoop(ASTConditionalStatement):
-
-    def __init__(self, condition, execution_body: ASTScope):
-        super().__init__('while', condition, execution_body)
-
-    def accept(self, visitor: IASTVisitor):
-        visitor.visit_ast_while_loop(self)
-
-
 class ASTExpression(AST):
 
     def accept(self, visitor: IASTVisitor):
@@ -396,6 +330,88 @@ class ASTBitwiseExpression(ASTBinaryExpression, IHasToken):
     def __init__(self, token: BitwiseExprToken, left: AST, right: AST):
         super().__init__(token.token_name, left, right)
         self.token = token
+
+
+class ASTScope(ASTInternal):
+
+    def __init__(self):
+        super().__init__('body (scope)')
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_scope(self)
+
+    def is_empty(self):
+        return len(self.children) == 0
+
+
+class ASTConditionalStatement(AST):
+
+    def __init__(self, content: str, condition, execution_body: ASTScope):
+        super().__init__(content)
+        self.condition = condition
+        self.execution_body = execution_body
+
+    def accept(self, visitor: IASTVisitor):
+        raise NotImplementedError
+
+    def get_condition(self):
+        return self.condition
+
+    def get_execution_body(self):
+        assert isinstance(self.execution_body, ASTScope)
+        return self.execution_body
+
+
+class ASTIfStatement(ASTConditionalStatement, IHasToken):
+
+    def __init__(self, token: IfStatementToken, condition, execution_body: ASTScope, else_statement):
+        super().__init__(token.token_name, condition, execution_body)
+        if token == IfStatementToken.ELSE:
+            assert else_statement is None
+        self.else_statement = else_statement
+        self.token = token
+
+    def get_token(self):
+        assert isinstance(self.token, IfStatementToken)
+        return self.token
+
+    def has_condition(self):
+        return self.get_condition() is not None
+
+    def has_else_statement(self):
+        return self.get_else_statement() is not None
+
+    def get_else_statement(self):
+        assert self.else_statement is None or isinstance(self.else_statement, ASTIfStatement)
+        return self.else_statement
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_if_statement(self)
+
+
+class ASTWhileLoop(ASTConditionalStatement):
+    """
+    the update step is necessary to support the control flow statements in a for loop as it works a bit different than in
+    a while loop. The update step in the while loop is an integral part of the execution body, with a for loop it is not.
+    The 'continue' statement for example will always do the update step in the for loop, which is why this is necessary.
+
+    So in short: the update_step is only used with for loops, set to None with a while loop
+    """
+
+    def __init__(self, condition, execution_body: ASTScope, update_step):
+        super().__init__('while', condition, execution_body)
+        self.update_step = update_step
+        self.update_step.parent = self
+
+    def get_update_step(self):
+        """
+        Returns what update step needs to happen when the end of the execution body
+        is reached before the condition is checked.
+        """
+        return self.update_step
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_while_loop(self)
 
 
 class ASTVariableDeclaration(AST):

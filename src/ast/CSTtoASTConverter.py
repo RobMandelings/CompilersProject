@@ -118,7 +118,7 @@ def create_ast_while_loop(cst: CParser.LoopContext):
     condition = create_ast_from_cst(cst.children[1])
     execution_body = create_ast_from_cst(cst.children[2])
 
-    loop = ASTWhileLoop(condition, execution_body)
+    loop = ASTWhileLoop(condition, execution_body, None)
     condition.parent = loop
     execution_body.parent = loop
 
@@ -133,9 +133,7 @@ def create_ast_for_loop(cst: CParser.LoopContext):
     end = create_ast_from_cst(cst.children[6])
     execution_body = create_ast_from_cst(cst.children[8])
 
-    execution_body.add_child(end)
-
-    while_loop = ASTWhileLoop(condition, execution_body)
+    while_loop = ASTWhileLoop(condition, execution_body, end)
     condition.set_parent(while_loop)
     execution_body.set_parent(while_loop)
 
