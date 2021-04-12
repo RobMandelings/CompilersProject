@@ -1,10 +1,10 @@
-import src.ast.ASTs as ASTs
 import src.ast.ASTTokens as ASTTokens
+import src.ast.ASTs as ASTs
 import src.ast.llvm.LLVMFunction as LLVMFunctions
 import src.ast.llvm.LLVMGlobalContainer as LLVMGlobalContainer
 import src.ast.llvm.LLVMInstruction as LLVMInstructions
-import src.ast.llvm.LLVMSymbolTable as LLVMSymbolTable
 import src.ast.llvm.LLVMInterfaces as LLVMInterfaces
+import src.ast.llvm.LLVMSymbolTable as LLVMSymbolTable
 import src.ast.llvm.LLVMUtils as LLVMUtils
 import src.ast.llvm.LLVMValue as LLVMValues
 
@@ -148,13 +148,12 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             # First look up the variable in the symbol table, then retrieve the data type of this variable
             # TODO remove symbol table and put into some kind of dictionary
             variable = self.symbol_table.lookup_variable(ast.get_content())
-            variable_data_type = variable.get_data_type()
 
             # We're assuming the variable register is always of pointer type,
             # so first load the variable value into a register and return it
 
             register_to_return = self.get_current_function().get_new_register(
-                variable.get_data_type().get_pointer_version())
+                ASTTokens.DataTypeToken.get_normal_version(variable.get_data_type()))
             self.get_current_function().add_instruction(
                 LLVMInstructions.LoadInstruction(register_to_return, variable.get_current_register()))
             return register_to_return
@@ -166,7 +165,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         variable = self.symbol_table.lookup_variable(variable_name)
         assert variable is not None
 
-        register_to_print = self.get_current_function().get_new_register(variable.get_data_type().get_pointer_version())
+        register_to_print = self.get_current_function().get_new_register(variable.get_data_type().get_normal_version())
 
         self.get_current_function().add_instruction(
             LLVMInstructions.LoadInstruction(register_to_print,
@@ -174,7 +173,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
         # The global variable that contains the string of the corresponding type of variable to call (printf(%i, your_int))
         # has the string %i\00 as type to use for the print. The global variable contains this string
-        global_var_data_type = self.get_global_container().get_printf_type_string(variable.get_data_type())
+        global_var_data_type = self.get_global_container().get_printf_type_string(register_to_print.get_data_type())
         resulting_register = self.get_current_function().get_new_register()
         instruction = LLVMInstructions.PrintfInstruction(resulting_register, register_to_print, global_var_data_type)
         self.get_current_function().add_instruction(instruction)
@@ -197,18 +196,17 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         Declares and initializes a variable using LLVM instructions. Computes expressions if necessary
         Adds the corresponding instructions to the current basic block
         """
-        value_to_store, data_type = self.compute_expression(ast.value)
+        value_to_store = self.compute_expression(ast.value)
 
-        new_register = self.get_current_function().get_new_register()
+        new_register = self.get_current_function().get_new_register(
+            ast.data_type_ast.get_data_type().get_pointer_version())
 
         # TODO remove from code: don't work with symbol table anymore
         declared_variable = LLVMSymbolTable.LLVMVariableSymbol(ast.var_name_ast.get_content(),
-                                                               ast.data_type_ast.get_token(),
                                                                new_register)
         self.symbol_table.insert_symbol(declared_variable)
 
-        data_type = declared_variable.get_data_type()
-        self.get_current_function().add_instruction(LLVMInstructions.AllocaInstruction(new_register, data_type))
+        self.get_current_function().add_instruction(LLVMInstructions.AllocaInstruction(new_register))
         self.get_current_function().add_instruction(LLVMInstructions.StoreInstruction(new_register, value_to_store))
 
     def assign_value_to_variable(self, ast: ASTs.ASTAssignmentExpression):

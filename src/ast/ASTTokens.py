@@ -85,44 +85,44 @@ class DataTypeToken(NamedEnum):
 
     # Improve the methods below, maybe don't use them anymore as it would be part of the class
 
-    @staticmethod
-    def get_pointer_version(data_type):
+    def get_pointer_version(self):
         """
         Retrieves the pointer version of the given datatype (pointer = true)
         E.g. int -> int*
         Used in: computeExpression, ASTVariable. Take a look there
         """
-        assert isinstance(data_type, DataTypeToken) and not data_type.is_pointer_type()
 
-        if data_type == DataTypeToken.BOOL:
+        assert not self.is_pointer_type()
+
+        if self == DataTypeToken.BOOL:
             return DataTypeToken.BOOL_POINTER
-        elif data_type == DataTypeToken.CHAR:
+        elif self == DataTypeToken.CHAR:
             return DataTypeToken.CHAR_POINTER
-        elif data_type == DataTypeToken.INT:
+        elif self == DataTypeToken.INT:
             return DataTypeToken.INT_POINTER
-        elif data_type == DataTypeToken.FLOAT:
+        elif self == DataTypeToken.FLOAT:
             return DataTypeToken.FLOAT_POINTER
-        elif data_type == DataTypeToken.DOUBLE:
+        elif self == DataTypeToken.DOUBLE:
             return DataTypeToken.DOUBLE_POINTER
         else:
             raise NotImplementedError
 
-    @staticmethod
-    def get_normal_version(data_type):
+    def get_normal_version(self):
         """
         Retrieves the normal version of the given datatype (pointer == false)
         E.g. int* -> int
         Used in: computeExpression. Take a look there
         """
-        assert isinstance(data_type, DataTypeToken) and data_type.is_pointer_type()
 
-        if data_type == DataTypeToken.BOOL_POINTER:
+        assert self.is_pointer_type()
+
+        if self == DataTypeToken.BOOL_POINTER:
             return DataTypeToken.BOOL
-        elif data_type == DataTypeToken.CHAR_POINTER:
+        elif self == DataTypeToken.CHAR_POINTER:
             return DataTypeToken.CHAR
-        elif data_type == DataTypeToken.INT_POINTER:
+        elif self == DataTypeToken.INT_POINTER:
             return DataTypeToken.INT
-        elif data_type == DataTypeToken.FLOAT_POINTER:
+        elif self == DataTypeToken.FLOAT_POINTER:
             return DataTypeToken.FLOAT
         else:
             raise NotImplementedError

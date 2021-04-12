@@ -1,16 +1,16 @@
 from src.ast.semantic_analysis.SymbolTable import *
+import src.ast.llvm.LLVMValue as LLVMValues
 
 
 class LLVMVariableSymbol(Symbol):
 
-    def __init__(self, symbol_name: str, data_type: DataTypeToken, current_register):
+    def __init__(self, symbol_name: str, current_register: LLVMValues.LLVMRegister):
         super().__init__(symbol_name)
-        self.data_type = data_type
+        assert current_register.data_type is not None
         self.current_register = current_register
 
     def get_data_type(self):
-        assert isinstance(self.data_type, DataTypeToken)
-        return self.data_type
+        return self.get_current_register().get_data_type()
 
     def get_current_register(self):
         return self.current_register

@@ -71,7 +71,7 @@ class LLVMRegister(LLVMValue):
         By default, sets the data type to none (usually the data type of the newly created register is not know immediately)
         """
         assert value.startswith('%')
-        super().__init__(data_type, value)
+        super().__init__(value, data_type)
 
     def get_llvm_value_token(self):
         return LLVMValueToken.REGISTER
