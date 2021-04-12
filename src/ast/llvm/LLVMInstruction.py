@@ -362,10 +362,7 @@ class PrintfInstruction(AssignInstruction):
         """
         super().__init__(resulting_reg)
 
-        if self.resulting_reg.data_type is None:
-            self.resulting_reg.set_data_type(DataTypeToken.INT)
-        else:
-            assert self.resulting_reg.get_data_type() == DataTypeToken.INT, "Resulting register should be of type INT"
+        self.resulting_reg.set_data_type(DataTypeToken.INT)
 
         self.register_to_print = register_to_print
         self.string_to_print_name = string_to_print_name

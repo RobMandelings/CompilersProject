@@ -233,7 +233,7 @@ class ASTUnaryPointerExpression(ASTUnaryExpression, IHasToken):
         visitor.visit_ast_unary_expression(self)
 
 
-class ASTBinaryExpression(ASTExpression, IHasDataType):
+class ASTBinaryExpression(ASTExpression, IHasDataType, IHasToken):
 
     def __init__(self, content: str, left: AST, right: AST):
         assert isinstance(left, AST) and isinstance(right, AST)
@@ -251,14 +251,17 @@ class ASTBinaryExpression(ASTExpression, IHasDataType):
         else:
             return right_data_type
 
+    def get_token(self):
+        raise NotImplementedError("Generic method")
+
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_binary_expression(self)
 
     def get_left(self):
-        assert isinstance(self.left, ASTLeaf)
         return self.left
 
     def get_right(self):
+        assert isinstance(self.right, ASTExpression) or isinstance(self.right, ASTLiteral)
         return self.right
 
 

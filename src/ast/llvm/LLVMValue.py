@@ -27,7 +27,13 @@ class LLVMValue(IToLLVM, IHasDataType, ABC):
         Used if the data type of the value is not know when creating the new value so you can set it at a later time
         e.g. when the resulting data type is computed somewhere else than were you create the value.
         """
-        assert self.data_type is None
+        if self.data_type is not None:
+            if self.data_type is data_type:
+                print(
+                    f"WARN: Register data type has already been set to {self.data_type.name}. "
+                    "You might want to remove the duplicate 'set_data_type'")
+            else:
+                raise ValueError('Register cannot be set to another data_type once initialised')
         self.data_type = data_type
         return self
 
@@ -50,6 +56,9 @@ class LLVMValue(IToLLVM, IHasDataType, ABC):
 
 
 class LLVMLiteral(LLVMValue):
+
+    def __init__(self, value: str, data_type: DataTypeToken):
+        super().__init__(value, data_type)
 
     def get_llvm_value_token(self):
         return LLVMValueToken.LITERAL

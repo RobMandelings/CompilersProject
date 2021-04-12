@@ -100,8 +100,8 @@ class LLVMBuilder(IToLLVM):
         """
 
         if isinstance(ast, ASTBinaryExpression):
-            operand1, operand1_data_type = self.compute_expression(ast.left)
-            operand2, operand2_data_type = self.compute_expression(ast.right)
+            operand1 = self.compute_expression(ast.left)
+            operand2 = self.compute_expression(ast.right)
 
             instruction = None
             operation = ast.get_token()
@@ -109,19 +109,18 @@ class LLVMBuilder(IToLLVM):
             if isinstance(operation, BinaryArithmeticExprToken):
                 register_to_return = self.get_current_function().get_new_register()
                 instruction = BinaryArithmeticInstruction(register_to_return,
-                                                          operation, operand1_data_type, operand1,
-                                                          operand2_data_type, operand2)
+                                                          operation, operand1,
+                                                          operand2)
             elif isinstance(operation, RelationalExprToken):
 
-                return self.compute_compare_expression(operation, operand1, operand1_data_type, operand2,
-                                                       operand2_data_type), DataTypeToken.BOOL
+                return self.compute_compare_expression(operation, operand1, operand2)
             else:
                 raise NotImplementedError("This type of instructions are not yet supported")
 
             if instruction is not None:
                 assert isinstance(instruction, AssignInstruction)
                 self.get_current_function().add_instruction(instruction)
-                return register_to_return, instruction.get_resulting_data_type()
+                return register_to_return
 
         elif isinstance(ast, ASTUnaryExpression):
             # TODO compute unary expressions
@@ -138,7 +137,7 @@ class LLVMBuilder(IToLLVM):
 
         elif isinstance(ast, ASTLiteral):
             # If it's a literal, just return the value and data type of this value instead of creating a register for it
-            return ast.get_value(), ast.get_data_type()
+            return LLVMLiteral(ast.get_value(), ast.get_data_type())
         elif isinstance(ast, ASTVariable):
 
             # First look up the variable in the symbol table, then retrieve the data type of this variable
@@ -146,35 +145,26 @@ class LLVMBuilder(IToLLVM):
             variable = self.symbol_table.lookup_variable(ast.get_content())
             variable_data_type = variable.get_data_type()
 
-            # We're assuming the variable register is always of pointer type, so first load the variable value into a register and return it
+            # We're assuming the variable register is always of pointer type,
+            # so first load the variable value into a register and return it
 
-            register_to_return = self.get_current_function().get_new_register()
+            register_to_return = self.get_current_function().get_new_register(
+                variable.get_data_type().get_pointer_version())
             self.get_current_function().add_instruction(
-                LoadInstruction(register_to_return, variable.get_data_type(), variable.get_current_register()))
-            return register_to_return, variable.get_data_type()
+                LoadInstruction(register_to_return, variable.get_current_register()))
+            return register_to_return
         else:
             raise NotImplementedError
-
-    def _convert_float_register_to(self, register, to_type: DataTypeToken):
-        register_to_return = f"%{self.register_count}"
-
-        if to_type != DataTypeToken.FLOAT:
-            self.instructions.append(
-                f"{self.register_count} = fptosi float {register} to {get_llvm_type(to_type)}")
-            self.register_count += 1
-            return register_to_return
-
-        return register
 
     # TODO also be able to print literals
     def print_variable(self, variable_name):
         variable = self.symbol_table.lookup_variable(variable_name)
         assert variable is not None
 
-        register_to_print = self.get_current_function().get_new_register()
+        register_to_print = self.get_current_function().get_new_register(variable.get_data_type().get_pointer_version())
 
         self.get_current_function().add_instruction(
-            LoadInstruction(register_to_print, variable.get_data_type(),
+            LoadInstruction(register_to_print,
                             variable.get_current_register()))
 
         # The global variable that contains the string of the corresponding type of variable to call (printf(%i, your_int))
@@ -184,7 +174,7 @@ class LLVMBuilder(IToLLVM):
         instruction = PrintfInstruction(resulting_register, register_to_print, global_var_data_type)
         self.get_current_function().add_instruction(instruction)
 
-        return resulting_register, instruction.get_resulting_data_type()
+        return resulting_register
 
     def declare_variable(self, ast: ASTVariableDeclaration):
         resulting_register = self.get_current_function().get_new_register()
@@ -231,13 +221,13 @@ class LLVMBuilder(IToLLVM):
         # The data type of the variable to-be-assigned
         current_variable_data_type = variable_symbol.get_data_type()
 
-        computed_expression_value, computed_data_type = self.compute_expression(right)
+        computed_expression_value = self.compute_expression(right)
 
-        if computed_data_type.is_pointer_type():
+        if computed_expression_value.get_data_type().is_pointer_type():
             # TODO: This register is used to load from pointer type into an actual value of that data type (sure?)
             value_to_store = self.get_current_function().get_new_register()
             self.get_current_function().add_instruction(
-                LoadInstruction(value_to_store, current_variable_data_type, computed_expression_value))
+                LoadInstruction(value_to_store, computed_expression_value))
         else:
             value_to_store = computed_expression_value
 
