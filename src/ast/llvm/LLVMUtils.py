@@ -2,6 +2,7 @@ from abc import ABC
 from enum import Enum
 
 from src.ast.ASTTokens import DataTypeToken
+from src.ast.llvm.LLVMValue import LLVMLiteral
 
 
 class IToLLVM(ABC):
@@ -30,19 +31,21 @@ def get_llvm_type(data_type: DataTypeToken):
         raise NotImplementedError
 
 
-def get_llvm_for_literal(literal, as_data_type: DataTypeToken):
+def get_llvm_for_literal(literal: LLVMLiteral, as_data_type: DataTypeToken):
     """
     A literal needs to be put in the correct notation depending on where it is used.
     E.g if you want to compare a double to an integer, both types need to be converted to double.
     If the literal is the integer, this needs to put into scientific notation to be recognized as a double
     """
-    assert isinstance(literal, int) or isinstance(literal, float)
+
+    assert literal.get_data_type() == as_data_type or DataTypeToken.is_richer_than(as_data_type,
+                                                                                   literal.get_data_type())
 
     if as_data_type.is_integral_type():
-        return str(literal)
+        return str(literal.get_value())
     elif as_data_type.is_floating_point_type():
         # Put the number into scientific notation
-        return "{:e}".format(literal)
+        return "{:e}".format(literal.get_value())
     else:
         raise NotImplementedError
 

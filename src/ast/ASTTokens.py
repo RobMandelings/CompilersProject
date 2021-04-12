@@ -102,6 +102,8 @@ class DataTypeToken(NamedEnum):
             return DataTypeToken.INT_POINTER
         elif data_type == DataTypeToken.FLOAT:
             return DataTypeToken.FLOAT_POINTER
+        elif data_type == DataTypeToken.DOUBLE:
+            return DataTypeToken.DOUBLE_POINTER
         else:
             raise NotImplementedError
 
@@ -136,15 +138,22 @@ class DataTypeToken(NamedEnum):
         return datatype1.value > datatype2.value
 
     @staticmethod
-    def get_richest_data_type(datatype1, data_type2):
+    def get_richest_data_type(data_type1, data_type2):
         """
-        Gets the richest of the two datatypes given. If equally rich, return one of the two
+        Checks which data type is the richest and returns an index based on the result
+
+        returns:
+        0 if datatype1 is the richest data type
+        1 if datatype2 is the richest data type
+        -1 if they are equally rich
         """
 
-        if DataTypeToken.is_richer_than(datatype1, data_type2):
-            return datatype1
+        if DataTypeToken.is_richer_than(data_type1, data_type2):
+            return 0
+        elif DataTypeToken.is_richer_than(data_type2, data_type1):
+            return 1
         else:
-            return data_type2
+            return -1
 
     @staticmethod
     def get_resulting_data_type(data_type1, data_type2):

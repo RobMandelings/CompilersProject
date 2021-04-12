@@ -27,71 +27,64 @@ class LLVMBuilder(IToLLVM):
         assert isinstance(self.global_container, LLVMGlobalContainer)
         return self.global_container
 
-    def compute_compare_expression(self, operation: RelationalExprToken, operand1: str,
-                                   operand1_data_type: DataTypeToken, operand2: str,
-                                   operand2_data_type: DataTypeToken):
+    def compute_compare_expression(self, operation: RelationalExprToken, operand1: LLVMValue, operand2: LLVMValue):
 
         # TODO remove duplicate code
-        if operand1_data_type != operand2_data_type:
-            if DataTypeToken.is_richer_than(operand1_data_type, operand2_data_type):
+        if operand1.get_data_type() != operand2.get_data_type():
 
-                resulting_data_type = operand1_data_type
+            richest_data_type_index = DataTypeToken.get_richest_data_type(operand1.get_data_type(),
+                                                                          operand2.get_data_type())
 
-                # Must be a literal so just change the notation of the operand
-                if isinstance(operand2, int) or isinstance(operand2, float):
-
-                    operand2 = LLVMUtils.get_llvm_for_literal(operand2, resulting_data_type)
-
-                # Must be a register
-                else:
-
-                    register_to_convert = operand2
-                    data_type_to_convert = operand2_data_type
-                    converted_register = self.get_current_function().get_new_register()
-                    operand2 = converted_register
-
-                    self.get_current_function().add_instruction(
-                        DataTypeConvertInstruction(converted_register, register_to_convert, data_type_to_convert,
-                                                   resulting_data_type))
-
-                operand2_data_type = resulting_data_type
-
-                # Convert the richest register to scientific notation as well if necessary
-                if operand1_data_type == DataTypeToken.FLOAT or operand1_data_type == DataTypeToken.DOUBLE:
-                    operand1 = LLVMUtils.get_llvm_for_literal(operand1, operand1_data_type)
-
+            # If it is -1 they are equally rich
+            if richest_data_type_index == 0:
+                richest_value = operand1
+                poorest_value = operand2
 
             else:
 
-                resulting_data_type = operand2_data_type
+                richest_value = operand2
+                poorest_value = operand1
 
-                # Must be a literal so just change the notation of the operand
-                if isinstance(operand1, int) or isinstance(operand1, float):
+            resulting_data_type = richest_value.get_data_type()
 
-                    operand1 = LLVMUtils.get_llvm_for_literal(operand1, resulting_data_type)
+            # Must be a literal so just change the notation of the operand
+            if isinstance(poorest_value, LLVMLiteral):
 
-                # Must be a register
+                converted_poorest_value = LLVMLiteral(
+                    LLVMUtils.get_llvm_for_literal(poorest_value.get_value(), resulting_data_type),
+                    poorest_value.get_data_type())
+
+            # Must be a register
+            elif isinstance(poorest_value, LLVMRegister):
+
+                converted_poorest_value = self.get_current_function().get_new_register().set_data_type(
+                    operand1.get_data_type())
+
+                self.get_current_function().add_instruction(
+                    DataTypeConvertInstruction(converted_poorest_value, poorest_value))
+
+            # Convert the richest register to scientific notation as well if necessary
+
+            else:
+                raise ValueError('Register must either be a literal or a register')
+
+            if poorest_value == operand1:
+                operand1 = converted_poorest_value
+            else:
+                operand2 = converted_poorest_value
+
+            if (isinstance(richest_value, LLVMLiteral) and
+                    richest_value.get_data_type() == (DataTypeToken.FLOAT | DataTypeToken.DOUBLE)):
+
+                if richest_value == operand1:
+                    operand1 = LLVMUtils.get_llvm_for_literal(richest_value, operand1.get_data_type())
                 else:
+                    operand2 = LLVMUtils.get_llvm_for_literal(richest_value, operand2.get_data_type())
 
-                    register_to_convert = operand1
-                    data_type_to_convert = operand1_data_type
-                    converted_register = self.get_current_function().get_new_register()
-                    operand1 = converted_register
-
-                    self.get_current_function().add_instruction(
-                        DataTypeConvertInstruction(converted_register, register_to_convert, data_type_to_convert,
-                                                   resulting_data_type))
-
-                operand1_data_type = resulting_data_type
-
-                # Convert the richest register to scientific notation as well if necessary
-                if operand2_data_type == DataTypeToken.FLOAT or operand2_data_type == DataTypeToken.DOUBLE:
-                    operand2 = LLVMUtils.get_llvm_for_literal(operand2, operand2_data_type)
-
-        register_to_return = self.get_current_function().get_new_register()
+        register_to_return = self.get_current_function().get_new_register(DataTypeToken.BOOL)
         self.get_current_function().add_instruction(
-            CompareInstruction(register_to_return, operation, operand1_data_type, operand1, operand2_data_type,
-                               operand2))
+            CompareInstruction(register_to_return, operation, operand1, operand2))
+
         return register_to_return
 
     def compute_expression(self, ast: AST):
@@ -200,7 +193,7 @@ class LLVMBuilder(IToLLVM):
         self.symbol_table.insert_symbol(
             declared_variable)
 
-        instruction = AllocaInstruction(f'{resulting_register}', declared_variable.get_data_type())
+        instruction = AllocaInstruction(resulting_register, declared_variable.get_data_type())
         self.get_current_function().add_instruction(instruction)
 
     def declare_and_init_variable(self, ast: ASTVariableDeclarationAndInit):
@@ -210,16 +203,16 @@ class LLVMBuilder(IToLLVM):
         """
         value_to_store, data_type = self.compute_expression(ast.value)
 
-        register = self.get_current_function().get_new_register()
+        new_register = self.get_current_function().get_new_register()
 
         # TODO remove from code: don't work with symbol table anymore
         declared_variable = LLVMVariableSymbol(ast.var_name_ast.get_content(), ast.data_type_ast.get_token(),
-                                               register)
+                                               new_register)
         self.symbol_table.insert_symbol(declared_variable)
 
         data_type = declared_variable.get_data_type()
-        self.get_current_function().add_instruction(AllocaInstruction(f'{register}', data_type))
-        self.get_current_function().add_instruction(StoreInstruction(f'{register}', value_to_store, data_type))
+        self.get_current_function().add_instruction(AllocaInstruction(new_register, data_type))
+        self.get_current_function().add_instruction(StoreInstruction(new_register, value_to_store))
 
     def assign_value_to_variable(self, ast: ASTAssignmentExpression):
         """
@@ -249,7 +242,7 @@ class LLVMBuilder(IToLLVM):
             value_to_store = computed_expression_value
 
         self.get_current_function().add_instruction(
-            StoreInstruction(current_variable_reg, value_to_store, current_variable_data_type))
+            StoreInstruction(current_variable_reg, value_to_store))
 
     def _generate_begin_of_file(self):
         begin_of_file = ""
