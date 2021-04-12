@@ -296,3 +296,20 @@ class RelationalExprToken(NamedEnum):
             return RelationalExprToken.NOT_EQUALS
         else:
             return None
+
+
+class ControlFlowToken(NamedEnum):
+    BREAK = 'break'
+    CONTINUE = 'continue'
+    RETURN = 'return'
+
+    @staticmethod
+    def from_str(name: str):
+        if name == 'break':
+            return ControlFlowToken.BREAK
+        elif name == 'continue':
+            return ControlFlowToken.CONTINUE
+        elif name == 'return':
+            return ControlFlowToken.RETURN
+        else:
+            return None

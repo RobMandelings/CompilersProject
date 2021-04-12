@@ -67,6 +67,10 @@ class IASTVisitor:
         pass
 
     @abstractmethod
+    def visit_ast_control_flow_statement(self, ast):
+        pass
+
+    @abstractmethod
     def visit_ast_if_statement(self, ast):
         pass
 

@@ -2,7 +2,7 @@ from graphviz import Digraph
 
 from src.ast.ASTBaseVisitor import ASTBaseVisitor
 from src.ast.ASTTokens import *
-from src.ast.ASTs import ASTPrintfInstruction, ASTUnaryExpression, ASTLiteral
+from src.ast.ASTs import ASTPrintfInstruction, ASTUnaryExpression, ASTLiteral, ASTControlFlowStatement
 
 
 class ASTVisitorDot(ASTBaseVisitor):
@@ -56,6 +56,10 @@ class ASTVisitorDot(ASTBaseVisitor):
 
     def visit_ast_scope(self, ast):
         super().visit_ast_scope(ast)
+        self.add_to_dot_node(ast)
+
+    def visit_ast_control_flow_statement(self, ast: ASTControlFlowStatement):
+        super().visit_ast_control_flow_statement(ast)
         self.add_to_dot_node(ast)
 
     def visit_ast_if_statement(self, ast):

@@ -80,6 +80,9 @@ class ASTBaseVisitor(IASTVisitor):
         for child in ast.children:
             child.accept(self)
 
+    def visit_ast_control_flow_statement(self, ast: ASTControlFlowStatement):
+        assert isinstance(ast, ASTControlFlowStatement)
+
     def visit_ast_if_statement(self, ast: ASTIfStatement):
         assert isinstance(ast, ASTIfStatement)
         if ast.get_condition() is not None:

@@ -189,6 +189,17 @@ def create_ast_if_statement(cst):
     return if_statement
 
 
+def create_ast_control_flow_statement(cst: TerminalNodeImpl):
+    if cst.getSymbol().type == CLexer.BREAK:
+        return ASTControlFlowStatement(ControlFlowToken.BREAK)
+    elif cst.getSymbol().type == CLexer.CONTINUE:
+        return ASTControlFlowStatement(ControlFlowToken.CONTINUE)
+    elif cst.getSymbol().type == CLexer.RETURN:
+        return ASTControlFlowStatement(ControlFlowToken.RETURN)
+    else:
+        raise ValueError("Wrong terminal node given")
+
+
 def create_ast_from_cst(cst):
     if isinstance(cst, CParser.PrintfStatementContext):
         return ASTPrintfInstruction(create_ast_from_cst(cst.children[2]))
@@ -212,6 +223,8 @@ def create_ast_from_cst(cst):
             return create_ast_from_cst(cst.children[0])
         elif isinstance(cst.children[0], CParser.ScopedStatementContext):
             return create_ast_from_cst(cst.children[0])
+    elif isinstance(cst, CParser.ControlFlowStatementContext):
+        return create_ast_control_flow_statement(cst.children[0])
     elif isinstance(cst, CParser.EnclosedExpressionContext):
         return create_ast_from_cst(cst.children[1])
     elif isinstance(cst, TerminalNodeImpl):

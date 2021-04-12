@@ -479,6 +479,16 @@ class ASTVariableDeclarationAndInit(ASTVariableDeclaration, ASTExpression):
         visitor.visit_ast_variable_declaration_and_init(self)
 
 
+class ASTControlFlowStatement(AST):
+
+    def __init__(self, control_flow_token: ControlFlowToken):
+        super().__init__(control_flow_token.name.lower())
+        self.control_flow_token = control_flow_token
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_control_flow_statement(self)
+
+
 class ASTPrintfInstruction(AST):
 
     def __init__(self, value_to_print):
