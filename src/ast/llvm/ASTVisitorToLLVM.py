@@ -16,20 +16,20 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
         assert isinstance(while_loop_ast, ASTWhileLoop)
 
         current_function = self.builder.get_current_function()
-        # The basic block the function was at before the while began (branch will be added to the correct beginning-of-while-loop label)
+        # The basic block the function was at before the while began
+        # (branch will be added to the correct beginning-of-while-loop label)
         before_while_basic_block = current_function.get_current_basic_block()
-        condition = current_function.add_basic_block()
-        before_while_basic_block.add_instruction(UnconditionalBranchInstruction(f'%{condition.get_number()}'))
+        basic_block_of_condition, resulting_reg_of_condition = self.build_conditional_statement(while_loop_ast)
+        before_while_basic_block.add_instruction(
+            UnconditionalBranchInstruction(f'%{basic_block_of_condition.get_number()}'))
 
-        resulting_reg_of_condition, data_type_of_condition = self.builder.compute_expression(
-            while_loop_ast.get_condition())
-
-        # First we need to keep track of the label of the condition block, then we make two new blocks: one for the code within the loop and one label for what happens after the loop
-        basic_block_of_condition = current_function.get_current_basic_block()
+        # First we need to keep track of the label of the condition block, then we make two new blocks:
+        # one for the code within the loop and one label for what happens after the loop
         condition_if_true = current_function.add_basic_block()
         while_loop_ast.get_execution_body().accept(self)
+
         current_function.get_current_basic_block().add_instruction(
-            UnconditionalBranchInstruction(f'%{condition.get_number()}'))
+            UnconditionalBranchInstruction(f'%{basic_block_of_condition.get_number()}'))
 
         condition_if_false = current_function.add_basic_block()
 
@@ -84,7 +84,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
         # This must be an if (cond) {} or else if (cond) {} statement
         if if_statement_ast.has_condition():
 
-            conditional_statement_entry, resulting_reg = self.build_conditional_statement(if_statement_ast)
+            basic_block_of_condition, resulting_reg = self.build_conditional_statement(if_statement_ast)
             exec_body_entry = self.build_if_statement_execution(if_statement_ast, if_statement_ending_basic_blocks)
 
             # 2) If the if statement has an else statement (else if {} ... or else {} ...) construct it as well
@@ -94,12 +94,12 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
             else:
                 else_statement_entry = self.builder.get_current_function().add_basic_block()
 
-            conditional_statement_entry.add_instruction(
+            basic_block_of_condition.add_instruction(
                 ConditionalBranchInstruction(resulting_reg, f"%{exec_body_entry.get_number()}",
                                              f"%{else_statement_entry.get_number()}"))
 
             # Return the conditional statement entry as it is the start of an if-statement with condition
-            return conditional_statement_entry
+            return basic_block_of_condition
 
         # This must be an else {} statement
         else:
@@ -135,7 +135,8 @@ class ASTVisitorToLLVM(ASTBaseVisitor):
         self.build_while_loop(ast)
 
     def visit_ast_binary_expression(self, ast: ASTBinaryExpression):
-        raise NotImplementedError
+        print(
+            "WARN: binary expression directly visited in ASTVisitorToLLVM. Does nothing as it has no meaning by itself.")
 
     def visit_ast_assignment_expression(self, ast: ASTAssignmentExpression):
         self.builder.assign_value_to_variable(ast)
