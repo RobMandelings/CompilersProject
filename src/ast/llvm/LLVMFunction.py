@@ -2,7 +2,7 @@ import src.ast.llvm.LLVMInstruction as LLVMInstruction
 import src.ast.llvm.LLVMInterfaces as LLVMInterfaces
 import src.ast.llvm.LLVMUtils as LLVMUtils
 import src.ast.llvm.LLVMValue as LLVMValue
-from src.ast.llvm.LLVMBasicBlock import LLVMBasicBlock
+import src.ast.llvm.LLVMBasicBlock as LLVMBasicBlock
 
 
 class LLVMFunction(LLVMInterfaces.IToLLVM):
@@ -11,32 +11,53 @@ class LLVMFunction(LLVMInterfaces.IToLLVM):
         self.name = name
         self.local_variables_registers = dict()
         self.basic_blocks = list()
-        self.basic_blocks.append(LLVMBasicBlock())
+        self.first_basic_block = LLVMBasicBlock.LLVMBasicBlock()
+        self.basic_blocks.append(self.first_basic_block)
 
-    def get_basic_block(self, number):
-        for basic_block in self.basic_blocks:
-            if basic_block.get_number() == number:
-                return basic_block
-        raise ValueError(f'No basic block with number {number} exists')
+    def get_first_basic_block(self):
+        return self.first_basic_block
+
+    def get_basic_block_index(self, basic_block):
+        """
+        Returns the index of the basic block given from the list of basic blocks in this function if applicable.
+        Otherwise return None
+        """
+
+        for i in range(len(self.basic_blocks)):
+            if id(self.basic_blocks[i]) == id(basic_block):
+                assert isinstance(basic_block, LLVMBasicBlock.LLVMBasicBlock)
+                return i
+
+        return None
 
     def get_current_basic_block(self):
         assert self.basic_blocks[-1] is not None
         return self.basic_blocks[-1]
 
-    def add_basic_block(self):
-        """
-        Adds a new basic block to the list of basic blocks and returns this basic block
-        """
-        new_basic_block = LLVMBasicBlock()
-        self.basic_blocks.append(new_basic_block)
-        return new_basic_block
-
     def add_instruction(self, instruction: LLVMInstruction.Instruction):
-        """
-        Adds an instruction to the current basic block of this function, for later llvm code generation
-        """
-        assert isinstance(instruction, LLVMInstruction.Instruction)
         self.get_current_basic_block().add_instruction(instruction)
+
+    def insert_basic_block(self, basic_block: LLVMBasicBlock = None, after=None):
+        """
+        Adds the given basic block to this function and makes it the current basic block to continue with
+        after: by default None, specifies the basic block after which to place this basic block. If None, the basic
+        block will be appended to the end.
+        Returns the inserted basic block
+        """
+
+        assert self.get_basic_block_index(basic_block) is None, "Basic block would be inserted twice"
+
+        if basic_block is None:
+            basic_block = LLVMBasicBlock.LLVMBasicBlock()
+
+        if after is not None:
+            after_basic_block_index = self.get_basic_block_index(after)
+            assert after_basic_block_index is not None
+            self.basic_blocks.insert(after_basic_block_index, basic_block)
+        else:
+            self.basic_blocks.append(basic_block)
+
+        return basic_block
 
     def get_new_register(self, data_type=None):
         """

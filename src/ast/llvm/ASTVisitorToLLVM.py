@@ -1,9 +1,9 @@
 import src.ast.ASTBaseVisitor as ASTBaseVisitor
-import src.ast.llvm.LLVMBuilder as LLVMBuilder
-import src.ast.ASTs as ASTs
-import src.ast.llvm.LLVMInstruction as LLVMInstructions
 import src.ast.ASTTokens as ASTTokens
-import src.ast.llvm.LLVMBasicBlock as BasicBlock
+import src.ast.ASTs as ASTs
+import src.ast.llvm.LLVMBasicBlock as LLVMBasicBlock
+import src.ast.llvm.LLVMBuilder as LLVMBuilder
+import src.ast.llvm.LLVMInstruction as LLVMInstructions
 
 
 class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
@@ -15,21 +15,37 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
 
     def __init__(self):
         self.builder = LLVMBuilder.LLVMBuilder()
+        self.current_basic_block = None
+
+    def get_builder(self):
+        return self.builder
+
+    def get_current_function(self):
+        return self.builder.get_current_function()
+
+    def get_current_basic_block(self):
+        """
+        Returns the current basic block we're working on, in the current function
+        """
+        return self.get_current_function().get_current_basic_block()
 
     def build_while_loop(self, while_loop_ast: ASTs.ASTWhileLoop):
         assert isinstance(while_loop_ast, ASTs.ASTWhileLoop)
 
-        current_function = self.builder.get_current_function()
         # The basic block the function was at before the while began
         # (branch will be added to the correct beginning-of-while-loop label)
-        before_while_basic_block = current_function.get_current_basic_block()
+        before_while_basic_block = self.get_current_basic_block()
         basic_block_of_condition, resulting_reg_of_condition = self.build_conditional_statement(while_loop_ast)
         before_while_basic_block.add_instruction(
             LLVMInstructions.UnconditionalBranchInstruction(basic_block_of_condition))
 
         # First we need to keep track of the label of the condition block, then we make two new blocks:
         # one for the code within the loop and one label for what happens after the loop
-        condition_if_true = current_function.add_basic_block()
+        while_loop_body_basic_block = LLVMBasicBlock.LLVMBasicBlock()
+        after_while_loop_basic_block = LLVMBasicBlock.LLVMBasicBlock()
+
+        # Add the basic block to the function so that it becomes the current basic block
+        self.get_current_function().insert_basic_block(while_loop_body_basic_block)
 
         for child in while_loop_ast.get_execution_body().children:
             if not isinstance(child, ASTs.ASTControlFlowStatement):
@@ -39,13 +55,15 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
                     # For-loops only: make sure that the update step is executed before branching to the condition again
                     if while_loop_ast.get_update_step() is not None:
                         while_loop_ast.get_update_step().accept(self)
-                    current_function.get_current_basic_block().add_instruction(
+                    self.get_current_basic_block().add_instruction(
                         LLVMInstructions.UnconditionalBranchInstruction(basic_block_of_condition))
 
                     # Add a basic block to continue writing instructions
-                    current_function.add_basic_block()
+                    self.get_current_function().insert_basic_block(LLVMBasicBlock.LLVMBasicBlock())
                 elif child.control_flow_token == ASTTokens.ControlFlowToken.BREAK:
-                    pass
+                    self.get_current_basic_block().add_instruction(
+                        LLVMInstructions.UnconditionalBranchInstruction(after_while_loop_basic_block))
+                    self.get_current_function().insert_basic_block(LLVMBasicBlock.LLVMBasicBlock())
                 elif child.control_flow_token == ASTTokens.ControlFlowToken.RETURN:
                     pass
                 else:
@@ -55,16 +73,16 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         if while_loop_ast.get_update_step() is not None:
             while_loop_ast.get_update_step().accept(self)
 
-        current_function.get_current_basic_block().add_instruction(
+        self.get_current_basic_block().add_instruction(
             LLVMInstructions.UnconditionalBranchInstruction(basic_block_of_condition))
-
-        condition_if_false = current_function.add_basic_block()
 
         # Branch to the body of the loop or branch to the location after the loop, based on the outcome of the while loop condition
         basic_block_of_condition.add_instruction(
             LLVMInstructions.ConditionalBranchInstruction(resulting_reg_of_condition,
-                                                          condition_if_true,
-                                                          condition_if_false))
+                                                          while_loop_body_basic_block,
+                                                          after_while_loop_basic_block))
+
+        self.get_current_function().insert_basic_block(after_while_loop_basic_block)
 
     def build_if_statement_execution(self, if_statement_ast: ASTs.ASTIfStatement, if_statement_ending_basic_blocks):
         """
@@ -73,7 +91,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         false if not. For example, for the 'else' statement you wouldn't want to do this as it would result in branching to itself
         """
         # Execution body of the if statement
-        exec_body_entry = self.builder.get_current_function().add_basic_block()
+        exec_body_entry = self.builder.get_current_function().insert_basic_block()
 
         # 1) construct the body of the function in llvm, adding instructions (starting from exec body)
         # and basic blocks to the current function
@@ -90,7 +108,8 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         Used for branching to other basic blocks depending on the result (this branch instruction is up to you)
         """
 
-        new_basic_block = self.builder.get_current_function().add_basic_block()
+        new_basic_block = LLVMBasicBlock.LLVMBasicBlock()
+        self.get_current_function().insert_basic_block(new_basic_block)
 
         # Calculates the expression as a condition, which either returns (TODO: True or False)
         resulting_reg = self.builder.compute_expression(conditional_ast.get_condition())
@@ -110,17 +129,17 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         if if_statement_ast.has_condition():
 
             basic_block_of_condition, resulting_reg = self.build_conditional_statement(if_statement_ast)
-            exec_body_entry = self.build_if_statement_execution(if_statement_ast, if_statement_ending_basic_blocks)
+            exec_body = self.build_if_statement_execution(if_statement_ast, if_statement_ending_basic_blocks)
 
             # 2) If the if statement has an else statement (else if {} ... or else {} ...) construct it as well
             if if_statement_ast.has_else_statement():
                 else_statement_entry = self.build_if_statement(if_statement_ast.get_else_statement(),
                                                                if_statement_ending_basic_blocks)
             else:
-                else_statement_entry = self.builder.get_current_function().add_basic_block()
+                else_statement_entry = self.builder.get_current_function().insert_basic_block()
 
             basic_block_of_condition.add_instruction(
-                LLVMInstructions.ConditionalBranchInstruction(resulting_reg, exec_body_entry,
+                LLVMInstructions.ConditionalBranchInstruction(resulting_reg, exec_body,
                                                               else_statement_entry))
 
             # Return the conditional statement entry as it is the start of an if-statement with condition
@@ -128,12 +147,12 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
 
         # This must be an else {} statement
         else:
-            exec_body_entry = self.build_if_statement_execution(if_statement_ast, if_statement_ending_basic_blocks)
+            exec_body = self.build_if_statement_execution(if_statement_ast, if_statement_ending_basic_blocks)
 
-            self.builder.get_current_function().add_basic_block()
+            self.builder.get_current_function().insert_basic_block()
 
             # Just return the execution body as there are no checks to be made
-            return exec_body_entry
+            return exec_body
 
     def visit_ast_leaf(self, ast: ASTs.ASTLeaf):
         super().visit_ast_leaf(ast)
@@ -151,7 +170,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         before_if_basic_block.add_instruction(
             LLVMInstructions.UnconditionalBranchInstruction(if_statement_entry))
         for basic_block in if_statement_ending_basic_blocks:
-            assert isinstance(basic_block, BasicBlock.LLVMBasicBlock)
+            assert isinstance(basic_block, LLVMBasicBlock.LLVMBasicBlock)
             if not basic_block.has_terminal_instruction():
                 basic_block.add_instruction(
                     LLVMInstructions.UnconditionalBranchInstruction(basic_block_outside_if_statement))

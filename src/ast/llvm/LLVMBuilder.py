@@ -5,6 +5,7 @@ import src.ast.llvm.LLVMGlobalContainer as LLVMGlobalContainer
 import src.ast.llvm.LLVMInstruction as LLVMInstructions
 import src.ast.llvm.LLVMInterfaces as LLVMInterfaces
 import src.ast.llvm.LLVMSymbolTable as LLVMSymbolTable
+import src.ast.llvm.LLVMBasicBlock as LLVMBasicBlock
 import src.ast.llvm.LLVMUtils as LLVMUtils
 import src.ast.llvm.LLVMValue as LLVMValues
 
@@ -30,6 +31,13 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
     def get_global_container(self):
         assert isinstance(self.global_container, LLVMGlobalContainer.LLVMGlobalContainer)
         return self.global_container
+
+    def create_register(self, data_type=None):
+        """
+        Creates a register with specific data type and returns this register
+        """
+        register = LLVMValues.LLVMRegister(data_type)
+        return register
 
     def compute_compare_expression(self, operation: ASTTokens.RelationalExprToken, operand1: LLVMValues.LLVMValue,
                                    operand2: LLVMValues.LLVMValue):
