@@ -49,11 +49,11 @@ class AssignInstruction(Instruction):
         return self.resulting_reg
 
     def update_numbering(self, counter):
-        self.resulting_reg.value = f'%{counter}'
+        self.resulting_reg.value = counter.get_value()
         counter.increase()
 
     def to_llvm(self):
-        return f"{self.resulting_reg.get_value()} = "
+        return f"{self.resulting_reg.to_llvm()} = "
 
 
 class AllocaInstruction(AssignInstruction):

@@ -8,13 +8,10 @@ from src.ast.llvm.LLVMBasicBlock import LLVMBasicBlock
 class LLVMFunction(LLVMInterfaces.IToLLVM):
 
     def __init__(self, name: str):
-        # Counts the number of registers and basic blocks. This is just a temporary counter to give unique references
-        # as the real definitive registers & labels are unknown at building time
-        self.internal_counter = LLVMUtils.LLVMCounter()
         self.name = name
         self.local_variables_registers = dict()
         self.basic_blocks = list()
-        self.basic_blocks.append(LLVMBasicBlock(-1))
+        self.basic_blocks.append(LLVMBasicBlock())
 
     def get_basic_block(self, number):
         for basic_block in self.basic_blocks:
@@ -30,9 +27,8 @@ class LLVMFunction(LLVMInterfaces.IToLLVM):
         """
         Adds a new basic block to the list of basic blocks and returns this basic block
         """
-        new_basic_block = LLVMBasicBlock(self.internal_counter.get_value())
+        new_basic_block = LLVMBasicBlock()
         self.basic_blocks.append(new_basic_block)
-        self.internal_counter.increase()
         return new_basic_block
 
     def add_instruction(self, instruction: LLVMInstruction.Instruction):
@@ -50,8 +46,7 @@ class LLVMFunction(LLVMInterfaces.IToLLVM):
         After this call, the returned register will be seen as 'reserved', thus, the counter (for registers & labels) increases (by one)
         afterwards for retrieval of new available registers.
         """
-        register_to_return = LLVMValue.LLVMRegister(f'%{self.internal_counter}', data_type)
-        self.internal_counter.increase()
+        register_to_return = LLVMValue.LLVMRegister(data_type)
         return register_to_return
 
     def update_numbering(self, counter):
@@ -59,7 +54,7 @@ class LLVMFunction(LLVMInterfaces.IToLLVM):
         for basic_block in self.basic_blocks:
 
             if not first:
-                basic_block.number = counter.get_value()
+                basic_block._number = counter.get_value()
                 counter.increase()
             else:
                 first = False

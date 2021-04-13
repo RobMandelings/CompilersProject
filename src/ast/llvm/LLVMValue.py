@@ -13,7 +13,7 @@ class LLVMValueToken(Enum):
 
 class LLVMValue(LLVMInterfaces.IToLLVM, ASTs.IHasDataType, ABC):
 
-    def __init__(self, value: str, data_type):
+    def __init__(self, value, data_type):
         self.data_type = data_type
         self.value = value
 
@@ -44,6 +44,9 @@ class LLVMValue(LLVMInterfaces.IToLLVM, ASTs.IHasDataType, ABC):
         assert isinstance(self.data_type, ASTTokens.DataTypeToken)
         return self.data_type
 
+    def update_numbering(self, counter):
+        pass
+
     @abstractmethod
     def get_llvm_value_token(self):
         pass
@@ -66,12 +69,18 @@ class LLVMLiteral(LLVMValue):
 
 class LLVMRegister(LLVMValue):
 
-    def __init__(self, value: str, data_type=None):
+    def __init__(self, data_type=None):
         """
         By default, sets the data type to none (usually the data type of the newly created register is not know immediately)
         """
-        assert value.startswith('%')
-        super().__init__(value, data_type)
+        super().__init__(None, data_type)
+
+    def get_value(self):
+        assert isinstance(self.value, int)
+        return self.value
+
+    def to_llvm(self):
+        return f'%{self.get_value()}'
 
     def get_llvm_value_token(self):
         return LLVMValueToken.REGISTER

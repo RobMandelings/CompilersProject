@@ -1,12 +1,13 @@
 import src.ast.llvm.LLVMInstruction as LLVMInstruction
 import src.ast.llvm.LLVMInterfaces as LLVMInterfaces
+import src.ast.llvm.LLVMUtils as LLVMUtils
 
 
 class LLVMBasicBlock(LLVMInterfaces.IToLLVM):
 
-    def __init__(self, number: int):
+    def __init__(self):
         self.instructions = list()
-        self.number = number
+        self._number = None
 
     def add_instruction(self, instruction):
         """
@@ -25,11 +26,12 @@ class LLVMBasicBlock(LLVMInterfaces.IToLLVM):
 
     def get_number(self):
         """
-        Returns the number of this basic block
+        Returns the _number of this basic block
         """
-        return self.number
+        assert self._number is not None, "the number of this basic block has not been initialized yet"
+        return self._number
 
-    def update_numbering(self, counter):
+    def update_numbering(self, counter: LLVMUtils.LLVMCounter):
         for instruction in self.instructions:
             instruction.update_numbering(counter)
 
