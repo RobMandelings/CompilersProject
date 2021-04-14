@@ -205,7 +205,7 @@ def create_ast_from_cst(cst):
         return create_ast_var_declaration_and_init(cst)
     elif isinstance(cst, CParser.VarDeclarationContext):
         return create_ast_var_declaration(cst)
-    elif isinstance(cst, CParser.TypeDeclaration1Context) or isinstance(cst, CParser.TypeDeclaration2Context):
+    elif isinstance(cst, CParser.TypeDeclarationContext):
         return create_type_asts(cst)
     elif isinstance(cst, CParser.ScopeContext) or isinstance(cst, CParser.ProgramContext):
         return create_ast_scope(cst)
@@ -235,7 +235,7 @@ def create_ast_from_cst(cst):
         elif is_unary_expression(cst) or is_binary_expression(cst):
             return create_ast_expression(cst)
 
-    raise NotImplementedError
+    raise NotImplementedError("CST Node not supported yet")
 
 
 def append_child_asts_to_ast(ast: ASTInternal, cst):

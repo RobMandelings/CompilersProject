@@ -1,8 +1,10 @@
 grammar C;
 program:
     // We start with a global scope which may contain statements
-    statement+
+    function+
 ;
+
+function: (VOID | dataType) ID '(' ((varDeclaration ',')* varDeclaration)? ')' scope ;
 
 statement:
     singleLineStatement ';' |
@@ -10,10 +12,11 @@ statement:
     ;
 
 singleLineStatement:
-    expression |
+    functionCall |
     varDeclaration |
     controlFlowStatement |
-    printfStatement
+    printfStatement |
+    expression
     ;
 
 scopedStatement:
@@ -44,21 +47,22 @@ scope:
     '{' '}' |
     '{' statement+ '}';
 
-// TODO Should be checked semantically that break and continue is only allowed in loops or switch statements
-controlFlowStatement: BREAK | CONTINUE | RETURN ;
-printfStatement: 'printf' '(' (ID|CHAR_LITERAL|INT_LITERAL|DOUBLE_LITERAL) ')' ;
-varDeclaration: typeDeclaration1 ID ;
+functionCall: ID '(' ((value ',')* value)? ')' ;
 
-typeDeclaration1:
+// TODO Should be checked semantically that break and continue is only allowed in loops or switch statements
+controlFlowStatement: BREAK | CONTINUE | returnStatement ;
+returnStatement: RETURN value ;
+
+printfStatement: 'printf' '(' value ')' ;
+varDeclaration: typeDeclaration ID ;
+
+typeDeclaration:
     // TODO instead of 'const int' also support 'int const'?
-    constDeclaration typeDeclaration2
-    | typeDeclaration2
+    CONST dataType
+    | dataType
     ;
 
-typeDeclaration2: INT | CHAR | FLOAT ;
-constDeclaration: CONST ;
-
-varDeclarationAndInit: typeDeclaration1 varAssignment ;
+varDeclarationAndInit: typeDeclaration varAssignment ;
 varAssignment: ID '=' expression ;
 
 expression:
@@ -93,8 +97,10 @@ pointerExpression:
     | finalExpression
     ;
 enclosedExpression: '(' expression ')';
-finalExpression: enclosedExpression | ID | CHAR_LITERAL | INT_LITERAL | DOUBLE_LITERAL ;
+finalExpression: enclosedExpression | value ;
 
+dataType: CHAR | INT | FLOAT ;
+value: ID | CHAR_LITERAL | INT_LITERAL | DOUBLE_LITERAL;
 // Reserved words
 BREAK: 'break';
 CONTINUE: 'continue';
@@ -106,9 +112,12 @@ WHILE: 'while';
 FOR: 'for';
 
 CONST: 'const';
+
 CHAR: 'char';
 INT: 'int';
 FLOAT: 'float';
+
+VOID: 'void' ;
 
 // These nodes will be skipped when creating the AST as they have no purpose after conversion
 TO_SKIP: '{' | '}' | '(' | ')' | ';' ;

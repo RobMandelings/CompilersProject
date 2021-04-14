@@ -77,3 +77,7 @@ class IASTVisitor:
     @abstractmethod
     def visit_ast_while_loop(self, ast):
         pass
+
+    @abstractmethod
+    def visit_ast_function(self, ast):
+        pass

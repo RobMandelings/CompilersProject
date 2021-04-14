@@ -56,13 +56,7 @@ class CSTVisitorToDot(CVisitor):
     def visitVarDeclaration(self, ctx: CParser.VarDeclarationContext):
         self.visit_node(ctx)
 
-    def visitTypeDeclaration1(self, ctx: CParser.TypeDeclaration1Context):
-        self.visit_node(ctx)
-
-    def visitTypeDeclaration2(self, ctx: CParser.TypeDeclaration2Context):
-        self.visit_node(ctx)
-
-    def visitConstDeclaration(self, ctx: CParser.ConstDeclarationContext):
+    def visitTypeDeclaration(self, ctx: CParser.TypeDeclarationContext):
         self.visit_node(ctx)
 
     def visitVarDeclarationAndInit(self, ctx: CParser.VarDeclarationAndInitContext):
@@ -93,6 +87,21 @@ class CSTVisitorToDot(CVisitor):
         self.visit_node(ctx)
 
     def visitFinalExpression(self, ctx: CParser.FinalExpressionContext):
+        self.visit_node(ctx)
+
+    def visitFunction(self, ctx: CParser.FunctionContext):
+        self.visit_node(ctx)
+
+    def visitFunctionCall(self, ctx: CParser.FunctionCallContext):
+        self.visit_node(ctx)
+
+    def visitReturnStatement(self, ctx: CParser.ReturnStatementContext):
+        self.visit_node(ctx)
+
+    def visitDataType(self, ctx: CParser.DataTypeContext):
+        self.visit_node(ctx)
+
+    def visitValue(self, ctx: CParser.ValueContext):
         self.visit_node(ctx)
 
     def visitTerminal(self, node):

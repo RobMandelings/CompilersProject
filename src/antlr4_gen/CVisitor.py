@@ -14,6 +14,11 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CParser#function.
+    def visitFunction(self, ctx:CParser.FunctionContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CParser#statement.
     def visitStatement(self, ctx:CParser.StatementContext):
         return self.visitChildren(ctx)
@@ -49,8 +54,18 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CParser#functionCall.
+    def visitFunctionCall(self, ctx:CParser.FunctionCallContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CParser#controlFlowStatement.
     def visitControlFlowStatement(self, ctx:CParser.ControlFlowStatementContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#returnStatement.
+    def visitReturnStatement(self, ctx:CParser.ReturnStatementContext):
         return self.visitChildren(ctx)
 
 
@@ -64,18 +79,8 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#typeDeclaration1.
-    def visitTypeDeclaration1(self, ctx:CParser.TypeDeclaration1Context):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CParser#typeDeclaration2.
-    def visitTypeDeclaration2(self, ctx:CParser.TypeDeclaration2Context):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CParser#constDeclaration.
-    def visitConstDeclaration(self, ctx:CParser.ConstDeclarationContext):
+    # Visit a parse tree produced by CParser#typeDeclaration.
+    def visitTypeDeclaration(self, ctx:CParser.TypeDeclarationContext):
         return self.visitChildren(ctx)
 
 
@@ -126,6 +131,16 @@ class CVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CParser#finalExpression.
     def visitFinalExpression(self, ctx:CParser.FinalExpressionContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#dataType.
+    def visitDataType(self, ctx:CParser.DataTypeContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#value.
+    def visitValue(self, ctx:CParser.ValueContext):
         return self.visitChildren(ctx)
 
 

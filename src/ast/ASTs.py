@@ -486,6 +486,28 @@ class ASTVariableDeclaration(AST):
         return data_type_ast, type_attribute_asts
 
 
+class ASTFunction(AST):
+
+    def __init__(self, function_name: str, params: list, return_type: ASTDataType, execution_body: ASTScope):
+        super().__init__(function_name)
+        self.params = params
+        self.return_type = return_type
+        self.execution_body = execution_body
+
+    def get_params(self):
+        return self.params
+
+    def get_return_type(self):
+        return self.return_type
+
+    def get_execution_body(self):
+        assert isinstance(self.execution_body, ASTScope)
+        return self.execution_body
+
+    def accept(self, visitor):
+        visitor.visit_ast_function(visitor)
+
+
 class ASTVariableDeclarationAndInit(ASTVariableDeclaration, ASTExpression):
 
     def __init__(self, data_type_and_attributes: list, name: ASTLeaf, value: AST):
