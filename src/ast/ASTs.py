@@ -404,7 +404,8 @@ class ASTWhileLoop(ASTConditionalStatement):
     def __init__(self, condition, execution_body: ASTScope, update_step):
         super().__init__('while', condition, execution_body)
         self.update_step = update_step
-        self.update_step.parent = self
+        if self.update_step is not None:
+            self.update_step.parent = self
 
     def get_update_step(self):
         """
