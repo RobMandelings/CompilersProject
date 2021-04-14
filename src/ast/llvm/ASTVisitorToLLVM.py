@@ -45,7 +45,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         after_while_loop_basic_block = LLVMBasicBlock.LLVMBasicBlock()
 
         # Add the basic block to the function so that it becomes the current basic block
-        self.get_current_function().insert_basic_block(while_loop_body_basic_block)
+        self.get_current_function().add_basic_block(while_loop_body_basic_block)
 
         for child in while_loop_ast.get_execution_body().children:
             if not isinstance(child, ASTs.ASTControlFlowStatement):
@@ -59,11 +59,11 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
                         LLVMInstructions.UnconditionalBranchInstruction(basic_block_of_condition))
 
                     # Add a basic block to continue writing instructions
-                    self.get_current_function().insert_basic_block(LLVMBasicBlock.LLVMBasicBlock())
+                    self.get_current_function().add_basic_block(LLVMBasicBlock.LLVMBasicBlock())
                 elif child.control_flow_token == ASTTokens.ControlFlowToken.BREAK:
                     self.get_current_basic_block().add_instruction(
                         LLVMInstructions.UnconditionalBranchInstruction(after_while_loop_basic_block))
-                    self.get_current_function().insert_basic_block(LLVMBasicBlock.LLVMBasicBlock())
+                    self.get_current_function().add_basic_block(LLVMBasicBlock.LLVMBasicBlock())
                 elif child.control_flow_token == ASTTokens.ControlFlowToken.RETURN:
                     pass
                 else:
@@ -82,7 +82,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
                                                           while_loop_body_basic_block,
                                                           after_while_loop_basic_block))
 
-        self.get_current_function().insert_basic_block(after_while_loop_basic_block)
+        self.get_current_function().add_basic_block(after_while_loop_basic_block)
 
     def build_if_statement_execution(self, if_statement_ast: ASTs.ASTIfStatement, if_statement_ending_basic_blocks):
         """
@@ -91,7 +91,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         false if not. For example, for the 'else' statement you wouldn't want to do this as it would result in branching to itself
         """
         # Execution body of the if statement
-        exec_body_entry = self.builder.get_current_function().insert_basic_block()
+        exec_body_entry = self.builder.get_current_function().add_basic_block()
 
         # 1) construct the body of the function in llvm, adding instructions (starting from exec body)
         # and basic blocks to the current function
@@ -109,7 +109,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         """
 
         new_basic_block = LLVMBasicBlock.LLVMBasicBlock()
-        self.get_current_function().insert_basic_block(new_basic_block)
+        self.get_current_function().add_basic_block(new_basic_block)
 
         # Calculates the expression as a condition, which either returns (TODO: True or False)
         resulting_reg = self.builder.compute_expression(conditional_ast.get_condition())
@@ -136,7 +136,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
                 else_statement_entry = self.build_if_statement(if_statement_ast.get_else_statement(),
                                                                if_statement_ending_basic_blocks)
             else:
-                else_statement_entry = self.builder.get_current_function().insert_basic_block()
+                else_statement_entry = self.builder.get_current_function().add_basic_block()
 
             basic_block_of_condition.add_instruction(
                 LLVMInstructions.ConditionalBranchInstruction(resulting_reg, exec_body,
@@ -149,7 +149,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         else:
             exec_body = self.build_if_statement_execution(if_statement_ast, if_statement_ending_basic_blocks)
 
-            self.builder.get_current_function().insert_basic_block()
+            self.builder.get_current_function().add_basic_block()
 
             # Just return the execution body as there are no checks to be made
             return exec_body
