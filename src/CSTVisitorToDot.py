@@ -62,7 +62,16 @@ class CSTVisitorToDot(CVisitor):
     def visitVarDeclarationAndInit(self, ctx: CParser.VarDeclarationAndInitContext):
         self.visit_node(ctx)
 
-    def visitVarAssignment(self, ctx: CParser.VarAssignmentContext):
+    def visitAssignment(self, ctx: CParser.AssignmentContext):
+        self.visit_node(ctx)
+
+    def visitArrayDeclaration(self, ctx: CParser.ArrayDeclarationContext):
+        self.visit_node(ctx)
+
+    def visitArrayDeclarationAndInit(self, ctx: CParser.ArrayDeclarationAndInitContext):
+        self.visit_node(ctx)
+
+    def visitAccessArrayElement(self, ctx: CParser.AccessArrayElementContext):
         self.visit_node(ctx)
 
     def visitExpression(self, ctx: CParser.ExpressionContext):
@@ -89,7 +98,7 @@ class CSTVisitorToDot(CVisitor):
     def visitFinalExpression(self, ctx: CParser.FinalExpressionContext):
         self.visit_node(ctx)
 
-    def visitFunction(self, ctx: CParser.FunctionContext):
+    def visitFunctionDeclaration(self, ctx: CParser.FunctionDeclarationContext):
         self.visit_node(ctx)
 
     def visitFunctionCall(self, ctx: CParser.FunctionCallContext):

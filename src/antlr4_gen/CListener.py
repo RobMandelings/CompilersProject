@@ -134,6 +134,15 @@ class CListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CParser#arrayDeclaration.
+    def enterArrayDeclaration(self, ctx:CParser.ArrayDeclarationContext):
+        pass
+
+    # Exit a parse tree produced by CParser#arrayDeclaration.
+    def exitArrayDeclaration(self, ctx:CParser.ArrayDeclarationContext):
+        pass
+
+
     # Enter a parse tree produced by CParser#typeDeclaration.
     def enterTypeDeclaration(self, ctx:CParser.TypeDeclarationContext):
         pass
@@ -152,12 +161,30 @@ class CListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CParser#varAssignment.
-    def enterVarAssignment(self, ctx:CParser.VarAssignmentContext):
+    # Enter a parse tree produced by CParser#assignment.
+    def enterAssignment(self, ctx:CParser.AssignmentContext):
         pass
 
-    # Exit a parse tree produced by CParser#varAssignment.
-    def exitVarAssignment(self, ctx:CParser.VarAssignmentContext):
+    # Exit a parse tree produced by CParser#assignment.
+    def exitAssignment(self, ctx:CParser.AssignmentContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#arrayDeclarationAndInit.
+    def enterArrayDeclarationAndInit(self, ctx:CParser.ArrayDeclarationAndInitContext):
+        pass
+
+    # Exit a parse tree produced by CParser#arrayDeclarationAndInit.
+    def exitArrayDeclarationAndInit(self, ctx:CParser.ArrayDeclarationAndInitContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#accessArrayElement.
+    def enterAccessArrayElement(self, ctx:CParser.AccessArrayElementContext):
+        pass
+
+    # Exit a parse tree produced by CParser#accessArrayElement.
+    def exitAccessArrayElement(self, ctx:CParser.AccessArrayElementContext):
         pass
 
 

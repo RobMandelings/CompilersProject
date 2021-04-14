@@ -79,6 +79,11 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CParser#arrayDeclaration.
+    def visitArrayDeclaration(self, ctx:CParser.ArrayDeclarationContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CParser#typeDeclaration.
     def visitTypeDeclaration(self, ctx:CParser.TypeDeclarationContext):
         return self.visitChildren(ctx)
@@ -89,8 +94,18 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#varAssignment.
-    def visitVarAssignment(self, ctx:CParser.VarAssignmentContext):
+    # Visit a parse tree produced by CParser#assignment.
+    def visitAssignment(self, ctx:CParser.AssignmentContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#arrayDeclarationAndInit.
+    def visitArrayDeclarationAndInit(self, ctx:CParser.ArrayDeclarationAndInitContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#accessArrayElement.
+    def visitAccessArrayElement(self, ctx:CParser.AccessArrayElementContext):
         return self.visitChildren(ctx)
 
 

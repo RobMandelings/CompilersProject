@@ -54,7 +54,8 @@ controlFlowStatement: BREAK | CONTINUE | returnStatement ;
 returnStatement: RETURN value ;
 
 printfStatement: 'printf' '(' value ')' ;
-varDeclaration: typeDeclaration ID ;
+varDeclaration: (typeDeclaration ID) | arrayDeclaration ;
+arrayDeclaration: typeDeclaration ID '[' INT_LITERAL ']' ;
 
 typeDeclaration:
     // TODO instead of 'const int' also support 'int const'?
@@ -62,12 +63,14 @@ typeDeclaration:
     | dataType
     ;
 
-varDeclarationAndInit: typeDeclaration varAssignment ;
-varAssignment: ID '=' expression ;
+varDeclarationAndInit: (typeDeclaration ID '=' expression) | arrayDeclarationAndInit ;
+assignment: (ID | accessArrayElement) '=' expression ;
+arrayDeclarationAndInit: arrayDeclaration '=' '{' ((value ',')* value)? '}' ;
+accessArrayElement: ID '[' INT_LITERAL ']' ;
 
 expression:
     varDeclarationAndInit |
-    varAssignment |
+    assignment |
     compareExpression
     ;
 compareExpression:

@@ -8,17 +8,23 @@ from src.ast.ASTs import *
 # TODO Improve to use a visitor pattern of the cst instead
 
 def create_ast_var_declaration_and_init(cst: CParser.VarDeclarationAndInitContext):
-    assert isinstance(cst.children[0], CParser.TypeDeclarationContext)
-    assert isinstance(cst.children[1], CParser.VarAssignmentContext)
+    if len(cst.children) == 1 and isinstance(cst.children[0], CParser.ArrayDeclarationAndInitContext):
+        raise NotImplementedError(f'Array declaration and init context not supported yet')
 
-    data_type_and_attributes = create_ast_from_cst(cst.children[0])
-    assignment = create_ast_from_cst(cst.children[1])
-    assert isinstance(assignment, ASTAssignmentExpression)
-    name = assignment.get_left()
-    value = assignment.get_right()
+    else:
+        assert isinstance(cst.children[0], CParser.TypeDeclarationContext)
 
-    var_declaration_and_init = ASTVariableDeclarationAndInit(data_type_and_attributes, name, value)
-    return var_declaration_and_init
+        lhs_assignment = create_ast_from_cst(cst.children[1])
+        rhs_assignment = create_ast_from_cst(cst.children[3])
+
+        data_type_and_attributes = create_ast_from_cst(cst.children[0])
+        assignment = ASTAssignmentExpression(lhs_assignment, rhs_assignment)
+        assert isinstance(assignment, ASTAssignmentExpression)
+        name = assignment.get_left()
+        value = assignment.get_right()
+
+        var_declaration_and_init = ASTVariableDeclarationAndInit(data_type_and_attributes, name, value)
+        return var_declaration_and_init
 
 
 def create_ast_var_declaration(cst: CParser.VarDeclarationContext):
@@ -198,7 +204,7 @@ def create_ast_control_flow_statement(cst: TerminalNodeImpl):
         raise ValueError("Wrong terminal node given")
 
 
-def create_ast_function(cst: CParser.FunctionContext):
+def create_ast_function(cst: CParser.FunctionDeclarationContext):
     # Function declaration always starts with a data type (first child)
     return_type = cst.children[0]
     assert isinstance(return_type, CParser.DataTypeContext)
@@ -222,7 +228,7 @@ def create_ast_function(cst: CParser.FunctionContext):
 
 
 def create_ast_from_cst(cst):
-    if isinstance(cst, CParser.FunctionContext):
+    if isinstance(cst, CParser.FunctionDeclarationContext):
         return create_ast_function(cst)
     elif isinstance(cst, CParser.PrintfStatementContext):
         return ASTPrintfInstruction(create_ast_from_cst(cst.children[2]))
