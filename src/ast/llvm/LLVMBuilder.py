@@ -192,12 +192,11 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
     def declare_variable(self, ast: ASTs.ASTVariableDeclaration):
         resulting_register = self.get_current_function().get_new_register()
         declared_variable = LLVMSymbolTable.LLVMVariableSymbol(ast.var_name_ast.get_content(),
-                                                               ast.data_type_ast.get_token(),
                                                                resulting_register)
         self.symbol_table.insert_symbol(
             declared_variable)
 
-        instruction = LLVMInstructions.AllocaInstruction(resulting_register, declared_variable.get_data_type())
+        instruction = LLVMInstructions.AllocaInstruction(resulting_register)
         self.get_current_function().add_instruction(instruction)
 
     def declare_and_init_variable(self, ast: ASTs.ASTVariableDeclarationAndInit):

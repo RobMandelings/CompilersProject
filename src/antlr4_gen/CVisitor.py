@@ -14,8 +14,8 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#function.
-    def visitFunction(self, ctx:CParser.FunctionContext):
+    # Visit a parse tree produced by CParser#functionDeclaration.
+    def visitFunctionDeclaration(self, ctx:CParser.FunctionDeclarationContext):
         return self.visitChildren(ctx)
 
 

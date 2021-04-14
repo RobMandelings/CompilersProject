@@ -198,8 +198,33 @@ def create_ast_control_flow_statement(cst: TerminalNodeImpl):
         raise ValueError("Wrong terminal node given")
 
 
+def create_ast_function(cst: CParser.FunctionContext):
+    # Function declaration always starts with a data type (first child)
+    return_type = cst.children[0]
+    assert isinstance(return_type, CParser.DataTypeContext)
+    return_type = create_ast_from_terminal_node(return_type.children[0])
+
+    assert isinstance(cst.children[1], TerminalNodeImpl) and cst.children[1].getSymbol().type == CLexer.ID
+    name = cst.children[1].getSymbol().text
+
+    # Parameters are the children in between
+    param_range = range(2, len(cst.children) - 1)
+    params = list()
+    for i in param_range:
+        param = create_ast_from_cst(cst.children[i])
+        if param is not None:
+            params.append(param)
+
+    # The scope is always the last part of the function declaration
+    execution_body = create_ast_scope(cst.children[len(cst.children) - 1])
+
+    return ASTFunction(name, params, return_type, execution_body)
+
+
 def create_ast_from_cst(cst):
-    if isinstance(cst, CParser.PrintfStatementContext):
+    if isinstance(cst, CParser.FunctionContext):
+        return create_ast_function(cst)
+    elif isinstance(cst, CParser.PrintfStatementContext):
         return ASTPrintfInstruction(create_ast_from_cst(cst.children[2]))
     elif isinstance(cst, CParser.VarDeclarationAndInitContext):
         return create_ast_var_declaration_and_init(cst)
@@ -274,22 +299,25 @@ def is_rvalue(cst: TerminalNodeImpl):
 
 def is_type_declaration(cst: TerminalNodeImpl):
     assert isinstance(cst, TerminalNodeImpl)
-    return DataTypeToken.from_str(cst.getSymbol().text) is not None
+    return (cst.getSymbol().type == CLexer.VOID or
+            cst.getSymbol().type == CLexer.CHAR or
+            cst.getSymbol().type == CLexer.INT or
+            cst.getSymbol().type == CLexer.FLOAT)
 
 
 def get_data_type_token(cst: TerminalNodeImpl):
     assert isinstance(cst, TerminalNodeImpl)
-    symbol_text = cst.getSymbol().text
     symbol_type = cst.getSymbol().type
-    if is_type_declaration(cst):
-        return DataTypeToken.from_str(symbol_text)
-    else:
-        if symbol_type == CLexer.CHAR:
-            return DataTypeToken.CHAR
-        elif symbol_type == CLexer.INT_LITERAL:
-            return DataTypeToken.INT
-        elif symbol_type == CLexer.DOUBLE_LITERAL:
-            return DataTypeToken.DOUBLE
+    if symbol_type == CLexer.CHAR or symbol_type == CLexer.CHAR_LITERAL:
+        return DataTypeToken.CHAR
+    elif symbol_type == CLexer.INT or symbol_type == CLexer.INT_LITERAL:
+        return DataTypeToken.INT
+    elif symbol_type == CLexer.FLOAT:
+        return DataTypeToken.FLOAT
+    elif symbol_type == CLexer.DOUBLE_LITERAL:
+        return DataTypeToken.DOUBLE
+    elif symbol_type == CLexer.VOID:
+        return DataTypeToken.VOID
 
     return None
 

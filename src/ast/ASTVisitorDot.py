@@ -73,4 +73,4 @@ class ASTVisitorDot(ASTBaseVisitor):
 
     def visit_ast_function(self, ast: ASTFunction):
         super().visit_ast_function(ast)
-        self.add_to_dot_node(ast)
+        self.add_to_dot_node(ast, f'function: {ast.get_content()}')

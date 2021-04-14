@@ -492,8 +492,12 @@ class ASTFunction(AST):
     def __init__(self, function_name: str, params: list, return_type: ASTDataType, execution_body: ASTScope):
         super().__init__(function_name)
         self.params = params
+        for param in self.params:
+            param.parent = self
         self.return_type = return_type
+        self.return_type.parent = self
         self.execution_body = execution_body
+        self.execution_body.parent = self
 
     def get_params(self):
         return self.params
@@ -506,7 +510,7 @@ class ASTFunction(AST):
         return self.execution_body
 
     def accept(self, visitor):
-        visitor.visit_ast_function(visitor)
+        visitor.visit_ast_function(self)
 
 
 class ASTVariableDeclarationAndInit(ASTVariableDeclaration, ASTExpression):

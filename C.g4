@@ -1,10 +1,10 @@
 grammar C;
 program:
     // We start with a global scope which may contain statements
-    function+
+    functionDeclaration+
 ;
 
-function: (VOID | dataType) ID '(' ((varDeclaration ',')* varDeclaration)? ')' scope ;
+functionDeclaration: dataType ID '(' ((varDeclaration ',')* varDeclaration)? ')' scope ;
 
 statement:
     singleLineStatement ';' |
@@ -99,7 +99,7 @@ pointerExpression:
 enclosedExpression: '(' expression ')';
 finalExpression: enclosedExpression | value ;
 
-dataType: CHAR | INT | FLOAT ;
+dataType: VOID | CHAR | INT | FLOAT ;
 value: ID | CHAR_LITERAL | INT_LITERAL | DOUBLE_LITERAL;
 // Reserved words
 BREAK: 'break';
