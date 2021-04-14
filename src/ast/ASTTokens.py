@@ -21,6 +21,7 @@ class DataTypeToken(NamedEnum):
     Ordered from lowest precedence to highest precedence
     """
     # Indicates the richness of the datatype, from low to high
+    VOID = ('void', False)
     BOOL = ('bool', False)
     CHAR = ('char', False)
     INT = ('int', False)
