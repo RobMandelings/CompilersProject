@@ -8,7 +8,7 @@ from src.ast.ASTs import *
 # TODO Improve to use a visitor pattern of the cst instead
 
 def create_ast_var_declaration_and_init(cst: CParser.VarDeclarationAndInitContext):
-    assert isinstance(cst.children[0], CParser.TypeDeclaration1Context)
+    assert isinstance(cst.children[0], CParser.TypeDeclarationContext)
     assert isinstance(cst.children[1], CParser.VarAssignmentContext)
 
     data_type_and_attributes = create_ast_from_cst(cst.children[0])
@@ -22,7 +22,7 @@ def create_ast_var_declaration_and_init(cst: CParser.VarDeclarationAndInitContex
 
 
 def create_ast_var_declaration(cst: CParser.VarDeclarationContext):
-    assert isinstance(cst.children[0], CParser.TypeDeclaration1Context)
+    assert isinstance(cst.children[0], CParser.TypeDeclarationContext)
 
     data_type_and_attributes = create_ast_from_cst(cst.children[0])
     name = create_ast_from_cst(cst.children[1])
@@ -32,7 +32,7 @@ def create_ast_var_declaration(cst: CParser.VarDeclarationContext):
 
 
 def create_type_asts(cst):
-    assert isinstance(cst, CParser.TypeDeclaration1Context) or isinstance(cst, CParser.TypeDeclaration2Context)
+    assert isinstance(cst, CParser.TypeDeclarationContext)
     ast_children = list()
     for child in cst.children:
         ast_children.append(create_ast_from_cst(child))
@@ -235,7 +235,7 @@ def create_ast_from_cst(cst):
         elif is_unary_expression(cst) or is_binary_expression(cst):
             return create_ast_expression(cst)
 
-    raise NotImplementedError("CST Node not supported yet")
+    raise NotImplementedError(f"CST Node '{str(type(cst).__name__)}' not supported yet")
 
 
 def append_child_asts_to_ast(ast: ASTInternal, cst):
