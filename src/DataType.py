@@ -100,7 +100,7 @@ class DataType(abc.ABC):
     @staticmethod
     def is_richer_than(data_type1, data_type2):
         assert isinstance(data_type1, DataType) and isinstance(data_type2, DataType)
-        if data_type1.get_pointer_level() == data_type2.get_pointer_level():
+        if data_type1.get_pointer_level() == data_type2.get_pointer_level() == 0:
             return DataTypeToken.is_richer_than(data_type1.get_token(), data_type2.get_token())
         else:
             raise ValueError(
