@@ -102,7 +102,7 @@ pointerExpression:
 enclosedExpression: '(' expression ')';
 finalExpression: enclosedExpression | value ;
 
-dataType: ((CHAR | INT | FLOAT) ('*')*) | (VOID ('*')+)  ;
+dataType: (CHAR | INT | FLOAT | VOID) ('*')*  ;
 value: ID | CHAR_LITERAL | INT_LITERAL | DOUBLE_LITERAL;
 // Reserved words
 BREAK: 'break';
