@@ -7,9 +7,30 @@ from src.ast.ASTs import *
 
 # TODO Improve to use a visitor pattern of the cst instead
 
-def create_ast_var_declaration_and_init(cst: CParser.VarDeclarationAndInitContext):
+def create_ast_array_init(cst, list_of_values_range: range):
+    list_of_values = list()
+    for i in list_of_values_range:
+        value = create_ast_from_cst(cst.children[i])
+        if value is not None:
+            list_of_values.append(value)
+            assert isinstance(value, ASTLiteral)
+
+    return ASTArrayInit(list_of_values)
+
+
+def create_ast_var_declaration_and_init(cst):
     if len(cst.children) == 1 and isinstance(cst.children[0], CParser.ArrayDeclarationAndInitContext):
-        raise NotImplementedError(f'Array declaration and init context not supported yet')
+
+        cst = cst.children[0]
+        list_of_values_range = range(3, len(cst.children) - 1)
+        list_of_values = list()
+        array_declaration = cst.children[0]
+        data_types_and_attributes = create_type_asts(array_declaration.children[0])
+        name = create_ast_from_cst(array_declaration.children[1])
+        size = create_ast_from_cst(array_declaration.children[3])
+        array_init = create_ast_array_init(cst, range(3, len(cst.children) - 1))
+        array_declaration_and_init = ASTArrayDeclarationAndInit(data_types_and_attributes, name, size, array_init)
+        return array_declaration_and_init
 
     else:
         assert isinstance(cst.children[0], CParser.TypeDeclarationContext)
@@ -27,14 +48,17 @@ def create_ast_var_declaration_and_init(cst: CParser.VarDeclarationAndInitContex
         return var_declaration_and_init
 
 
-def create_ast_var_declaration(cst: CParser.VarDeclarationContext):
+def create_ast_var_declaration(cst):
     assert isinstance(cst.children[0], CParser.TypeDeclarationContext)
 
     data_type_and_attributes = create_ast_from_cst(cst.children[0])
     name = create_ast_from_cst(cst.children[1])
 
-    var_declaration = ASTVariableDeclaration(data_type_and_attributes, name)
-    return var_declaration
+    if isinstance(cst, CParser.ArrayDeclarationContext):
+        size = create_ast_from_cst(cst.children[3])
+        return ASTArrayDeclaration(data_type_and_attributes, name, size)
+    else:
+        return ASTVariableDeclaration(data_type_and_attributes, name)
 
 
 def create_type_asts(cst):
@@ -232,9 +256,13 @@ def create_ast_from_cst(cst):
         return create_ast_function(cst)
     elif isinstance(cst, CParser.PrintfStatementContext):
         return ASTPrintfInstruction(create_ast_from_cst(cst.children[2]))
+    elif isinstance(cst, CParser.AccessArrayElementContext):
+        # We know the children of the arrayAccessElement are terminal nodes (being the identifier and the size required)
+        return ASTArrayAccessElement(create_ast_from_terminal_node(cst.children[0]),
+                                     create_ast_from_terminal_node(cst.children[2]))
     elif isinstance(cst, CParser.VarDeclarationAndInitContext):
         return create_ast_var_declaration_and_init(cst)
-    elif isinstance(cst, CParser.VarDeclarationContext):
+    elif isinstance(cst, CParser.VarDeclarationContext) or isinstance(cst, CParser.ArrayDeclarationContext):
         return create_ast_var_declaration(cst)
     elif isinstance(cst, CParser.TypeDeclarationContext):
         return create_type_asts(cst)

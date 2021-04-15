@@ -51,11 +51,23 @@ class IASTVisitor:
         pass
 
     @abstractmethod
+    def visit_ast_array_init(self, ast):
+        pass
+
+    @abstractmethod
     def visit_ast_variable_declaration(self, ast):
         pass
 
     @abstractmethod
+    def visit_ast_array_declaration(self, ast):
+        pass
+
+    @abstractmethod
     def visit_ast_variable_declaration_and_init(self, ast):
+        pass
+
+    @abstractmethod
+    def visit_ast_array_declaration_and_init(self, ast):
         pass
 
     @abstractmethod

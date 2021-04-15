@@ -138,6 +138,25 @@ class ASTDataType(ASTLeaf, IHasToken, IHasDataType):
         visitor.visit_ast_data_type(self)
 
 
+class ASTArray(ASTLeaf, IHasDataType):
+
+    def __init__(self, data_type, size):
+        """
+        data_type: the underlying data type of this array
+        """
+        super().__init__()
+        self.size = size
+        self.data_type = data_type
+
+    def get_size(self):
+        assert isinstance(self.size, int)
+        return self.size
+
+    def get_data_type(self):
+        assert isinstance(self.data_type, DataTypeToken)
+        return self.data_type
+
+
 class ASTTypeAttribute(ASTLeaf, IHasToken):
 
     def __init__(self, token: TypeAttributeToken):
@@ -263,6 +282,23 @@ class ASTBinaryExpression(ASTExpression, IHasDataType, IHasToken):
     def get_right(self):
         assert isinstance(self.right, ASTExpression) or isinstance(self.right, ASTLiteral)
         return self.right
+
+
+class ASTArrayAccessElement(ASTLeaf):
+
+    def __init__(self, variable_accessed: ASTVariable, index_accessed: ASTLiteral):
+        super().__init__(f'{variable_accessed}[{index_accessed}]')
+        self.variable_accessed = variable_accessed
+        self.index_accessed = index_accessed
+
+    def get_variable_accessed(self):
+        assert isinstance(self.variable_accessed, ASTVariable)
+        return self.variable_accessed
+
+    def get_index_accessed(self):
+        assert isinstance(self.index_accessed, ASTLiteral) and \
+               self.index_accessed.get_data_type() == DataTypeToken.INT
+        return self.index_accessed
 
 
 class ASTAssignmentExpression(ASTBinaryExpression):
@@ -420,7 +456,7 @@ class ASTWhileLoop(ASTConditionalStatement):
 
 class ASTVariableDeclaration(AST):
 
-    def __init__(self, data_type_and_attributes: list, name: ASTLeaf):
+    def __init__(self, data_type_and_attributes: list, name: ASTVariable):
         super().__init__('variable declaration')
         data_type, data_type_and_attributes = self.__divide_type_attributes(data_type_and_attributes)
 
@@ -487,6 +523,22 @@ class ASTVariableDeclaration(AST):
         return data_type_ast, type_attribute_asts
 
 
+class ASTArrayDeclaration(ASTVariableDeclaration):
+
+    def __init__(self, data_type_and_attributes: list, name: ASTVariable, size: ASTLiteral):
+        super().__init__(data_type_and_attributes, name)
+        assert size.get_data_type() == DataTypeToken.INT
+        self.size = size
+        self.content = f'variable declaration: array (size_ast: {self.size})'
+
+    def get_size(self):
+        assert isinstance(self.size, ASTLiteral) and self.size.get_data_type() == DataTypeToken.INT
+        return self.size
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_array_declaration(self)
+
+
 class ASTFunction(AST):
 
     def __init__(self, function_name: str, params: list, return_type: ASTDataType, execution_body: ASTScope):
@@ -513,9 +565,35 @@ class ASTFunction(AST):
         visitor.visit_ast_function(self)
 
 
+class ASTArrayInit(AST):
+
+    def __init__(self, values: list):
+        array_init_string = '{'
+        for i in range(len(values)):
+            value = values[i]
+            value.parent = self
+            if i != len(values) - 1:
+                array_init_string += value.get_content() + ','
+            else:
+                array_init_string += value.get_content()
+
+        array_init_string += '}'
+        super().__init__(array_init_string)
+        self.values = values
+
+    def get_values(self):
+        return self.values
+
+    def is_root(self):
+        return False
+
+    def accept(self, visitor: IASTVisitor):
+        return visitor.visit_ast_array_init(self)
+
+
 class ASTVariableDeclarationAndInit(ASTVariableDeclaration, ASTExpression):
 
-    def __init__(self, data_type_and_attributes: list, name: ASTLeaf, value: AST):
+    def __init__(self, data_type_and_attributes: list, name: ASTVariable, value: AST):
         super().__init__(data_type_and_attributes, name)
         self.content += ' and init'
         self.value = value
@@ -523,6 +601,22 @@ class ASTVariableDeclarationAndInit(ASTVariableDeclaration, ASTExpression):
 
     def accept(self, visitor):
         visitor.visit_ast_variable_declaration_and_init(self)
+
+
+class ASTArrayDeclarationAndInit(ASTVariableDeclarationAndInit):
+
+    def __init__(self, data_type_and_attributes: list, name: ASTVariable, size_ast: ASTLiteral, value: ASTArrayInit):
+        super().__init__(data_type_and_attributes, name, value)
+        assert size_ast.get_data_type() == DataTypeToken.INT
+        self.content = f'var declaration and init: array ({size_ast.get_content()})'
+        self.size_ast = size_ast
+
+    def get_size(self):
+        assert isinstance(self.size_ast, ASTLiteral) and self.size_ast.get_data_type() == DataTypeToken.INT
+        return self.size_ast
+
+    def accept(self, visitor):
+        visitor.visit_ast_array_declaration_and_init(self)
 
 
 class ASTControlFlowStatement(AST):
