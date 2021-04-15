@@ -34,6 +34,23 @@ class VariableSymbol(Symbol):
         return self.initialized
 
 
+class FunctionSymbol(Symbol):
+
+    def __init__(self, symbol_name: str, params: list, return_type: DataTypeToken):
+        """
+        List of datatypes in order
+        """
+        super().__init__(symbol_name)
+        self.params = params
+        self.return_type = return_type
+
+    def get_params(self):
+        return self.params
+
+    def get_return_type(self):
+        return self.return_type
+
+
 class SymbolTable:
 
     def __init__(self):
