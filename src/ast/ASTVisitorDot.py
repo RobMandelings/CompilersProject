@@ -4,6 +4,7 @@ from src.ast.ASTBaseVisitor import ASTBaseVisitor
 from src.ast.ASTTokens import *
 from src.ast.ASTs import ASTPrintfInstruction, ASTUnaryExpression, ASTLiteral, ASTControlFlowStatement, \
     ASTFunction, ASTArrayDeclaration, ASTArrayInit
+import src.DataType as DataType
 
 
 class ASTVisitorDot(ASTBaseVisitor):
@@ -26,7 +27,7 @@ class ASTVisitorDot(ASTBaseVisitor):
 
     def visit_ast_literal(self, ast: ASTLiteral):
         content = None
-        if ast.get_token() == DataTypeToken.CHAR:
+        if ast.get_data_type_token() == DataType.DataTypeToken.CHAR:
             content = "'" + str(chr(int(ast.get_content()))) + "'"
 
         self.add_to_dot_node(ast, content)

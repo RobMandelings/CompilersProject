@@ -1,4 +1,4 @@
-from src.ast.ASTTokens import DataTypeToken
+import src.DataType as DataType
 
 
 class Symbol:
@@ -9,7 +9,7 @@ class Symbol:
 
 class VariableSymbol(Symbol):
 
-    def __init__(self, symbol_name: str, data_type: DataTypeToken, const, initialized):
+    def __init__(self, symbol_name: str, data_type: DataType.DataType, const, initialized):
         super().__init__(symbol_name)
         self.data_type = data_type
         self.const = const
@@ -17,7 +17,7 @@ class VariableSymbol(Symbol):
         self.reaching_definition_ast = None
 
     def get_data_type(self):
-        assert isinstance(self.data_type, DataTypeToken)
+        assert isinstance(self.data_type, DataType.DataType)
         return self.data_type
 
     def is_const(self):
@@ -36,7 +36,7 @@ class VariableSymbol(Symbol):
 
 class FunctionSymbol(Symbol):
 
-    def __init__(self, symbol_name: str, params: list, return_type: DataTypeToken):
+    def __init__(self, symbol_name: str, params: list, return_type: DataType.DataType):
         """
         List of datatypes in order
         """

@@ -12,7 +12,7 @@ else:
 def serializedATN():
     with StringIO() as buf:
         buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3(")
-        buf.write("\u013a\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7")
+        buf.write("\u0147\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7")
         buf.write("\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t\13\4\f\t\f\4\r\t\r\4\16")
         buf.write("\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22\4\23\t\23")
         buf.write("\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\4\31")
@@ -41,19 +41,21 @@ def serializedATN():
         buf.write("\3\31\3\31\3\31\3\31\3\31\7\31\u011b\n\31\f\31\16\31\u011e")
         buf.write("\13\31\3\32\3\32\3\32\3\32\3\32\5\32\u0125\n\32\3\33\3")
         buf.write("\33\3\33\3\33\3\33\5\33\u012c\n\33\3\34\3\34\3\34\3\34")
-        buf.write("\3\35\3\35\5\35\u0134\n\35\3\36\3\36\3\37\3\37\3\37\2")
-        buf.write("\5,.\60 \2\4\6\b\n\f\16\20\22\24\26\30\32\34\36 \"$&(")
-        buf.write("*,.\60\62\64\668:<\2\4\3\2\35 \3\2\"%\2\u0143\2?\3\2\2")
-        buf.write("\2\4C\3\2\2\2\6X\3\2\2\2\b_\3\2\2\2\nd\3\2\2\2\ft\3\2")
-        buf.write("\2\2\16\177\3\2\2\2\20\u008e\3\2\2\2\22\u009a\3\2\2\2")
-        buf.write("\24\u009c\3\2\2\2\26\u00ae\3\2\2\2\30\u00b0\3\2\2\2\32")
-        buf.write("\u00b3\3\2\2\2\34\u00bc\3\2\2\2\36\u00be\3\2\2\2 \u00c7")
-        buf.write("\3\2\2\2\"\u00cf\3\2\2\2$\u00d3\3\2\2\2&\u00d8\3\2\2\2")
-        buf.write("(\u00e8\3\2\2\2*\u00f0\3\2\2\2,\u00f2\3\2\2\2.\u0103\3")
-        buf.write("\2\2\2\60\u0111\3\2\2\2\62\u0124\3\2\2\2\64\u012b\3\2")
-        buf.write("\2\2\66\u012d\3\2\2\28\u0133\3\2\2\2:\u0135\3\2\2\2<\u0137")
-        buf.write("\3\2\2\2>@\5\4\3\2?>\3\2\2\2@A\3\2\2\2A?\3\2\2\2AB\3\2")
-        buf.write("\2\2B\3\3\2\2\2CD\5:\36\2DE\7\"\2\2EO\7\3\2\2FG\5\34\17")
+        buf.write("\3\35\3\35\5\35\u0134\n\35\3\36\3\36\7\36\u0138\n\36\f")
+        buf.write("\36\16\36\u013b\13\36\3\36\3\36\6\36\u013f\n\36\r\36\16")
+        buf.write("\36\u0140\5\36\u0143\n\36\3\37\3\37\3\37\2\5,.\60 \2\4")
+        buf.write("\6\b\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62\64")
+        buf.write("\668:<\2\4\3\2\35\37\3\2\"%\2\u0153\2?\3\2\2\2\4C\3\2")
+        buf.write("\2\2\6X\3\2\2\2\b_\3\2\2\2\nd\3\2\2\2\ft\3\2\2\2\16\177")
+        buf.write("\3\2\2\2\20\u008e\3\2\2\2\22\u009a\3\2\2\2\24\u009c\3")
+        buf.write("\2\2\2\26\u00ae\3\2\2\2\30\u00b0\3\2\2\2\32\u00b3\3\2")
+        buf.write("\2\2\34\u00bc\3\2\2\2\36\u00be\3\2\2\2 \u00c7\3\2\2\2")
+        buf.write("\"\u00cf\3\2\2\2$\u00d3\3\2\2\2&\u00d8\3\2\2\2(\u00e8")
+        buf.write("\3\2\2\2*\u00f0\3\2\2\2,\u00f2\3\2\2\2.\u0103\3\2\2\2")
+        buf.write("\60\u0111\3\2\2\2\62\u0124\3\2\2\2\64\u012b\3\2\2\2\66")
+        buf.write("\u012d\3\2\2\28\u0133\3\2\2\2:\u0142\3\2\2\2<\u0144\3")
+        buf.write("\2\2\2>@\5\4\3\2?>\3\2\2\2@A\3\2\2\2A?\3\2\2\2AB\3\2\2")
+        buf.write("\2B\3\3\2\2\2CD\5:\36\2DE\7\"\2\2EO\7\3\2\2FG\5\34\17")
         buf.write("\2GH\7\4\2\2HJ\3\2\2\2IF\3\2\2\2JM\3\2\2\2KI\3\2\2\2K")
         buf.write("L\3\2\2\2LN\3\2\2\2MK\3\2\2\2NP\5\34\17\2OK\3\2\2\2OP")
         buf.write("\3\2\2\2PQ\3\2\2\2QR\7\5\2\2RS\5\22\n\2S\5\3\2\2\2TU\5")
@@ -143,11 +145,17 @@ def serializedATN():
         buf.write("\3\2\2\2\u012c\65\3\2\2\2\u012d\u012e\7\3\2\2\u012e\u012f")
         buf.write("\5*\26\2\u012f\u0130\7\5\2\2\u0130\67\3\2\2\2\u0131\u0134")
         buf.write("\5\66\34\2\u0132\u0134\5<\37\2\u0133\u0131\3\2\2\2\u0133")
-        buf.write("\u0132\3\2\2\2\u01349\3\2\2\2\u0135\u0136\t\2\2\2\u0136")
-        buf.write(";\3\2\2\2\u0137\u0138\t\3\2\2\u0138=\3\2\2\2 AKOX_dt\177")
+        buf.write("\u0132\3\2\2\2\u01349\3\2\2\2\u0135\u0139\t\2\2\2\u0136")
+        buf.write("\u0138\7\22\2\2\u0137\u0136\3\2\2\2\u0138\u013b\3\2\2")
+        buf.write("\2\u0139\u0137\3\2\2\2\u0139\u013a\3\2\2\2\u013a\u0143")
+        buf.write("\3\2\2\2\u013b\u0139\3\2\2\2\u013c\u013e\7 \2\2\u013d")
+        buf.write("\u013f\7\22\2\2\u013e\u013d\3\2\2\2\u013f\u0140\3\2\2")
+        buf.write("\2\u0140\u013e\3\2\2\2\u0140\u0141\3\2\2\2\u0141\u0143")
+        buf.write("\3\2\2\2\u0142\u0135\3\2\2\2\u0142\u013c\3\2\2\2\u0143")
+        buf.write(";\3\2\2\2\u0144\u0145\t\3\2\2\u0145=\3\2\2\2#AKOX_dt\177")
         buf.write("\u008e\u0096\u009a\u00a3\u00a7\u00ae\u00bc\u00c7\u00cf")
         buf.write("\u00d3\u00e0\u00e4\u00f0\u00fe\u0100\u010c\u010e\u011a")
-        buf.write("\u011c\u0124\u012b\u0133")
+        buf.write("\u011c\u0124\u012b\u0133\u0139\u0140\u0142")
         return buf.getvalue()
 
 
@@ -2407,9 +2415,6 @@ class CParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def VOID(self):
-            return self.getToken(CParser.VOID, 0)
-
         def CHAR(self):
             return self.getToken(CParser.CHAR, 0)
 
@@ -2418,6 +2423,9 @@ class CParser ( Parser ):
 
         def FLOAT(self):
             return self.getToken(CParser.FLOAT, 0)
+
+        def VOID(self):
+            return self.getToken(CParser.VOID, 0)
 
         def getRuleIndex(self):
             return CParser.RULE_dataType
@@ -2445,14 +2453,49 @@ class CParser ( Parser ):
         self.enterRule(localctx, 56, self.RULE_dataType)
         self._la = 0 # Token type
         try:
-            self.enterOuterAlt(localctx, 1)
-            self.state = 307
-            _la = self._input.LA(1)
-            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << CParser.CHAR) | (1 << CParser.INT) | (1 << CParser.FLOAT) | (1 << CParser.VOID))) != 0)):
-                self._errHandler.recoverInline(self)
+            self.state = 320
+            self._errHandler.sync(self)
+            token = self._input.LA(1)
+            if token in [CParser.CHAR, CParser.INT, CParser.FLOAT]:
+                self.enterOuterAlt(localctx, 1)
+                self.state = 307
+                _la = self._input.LA(1)
+                if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << CParser.CHAR) | (1 << CParser.INT) | (1 << CParser.FLOAT))) != 0)):
+                    self._errHandler.recoverInline(self)
+                else:
+                    self._errHandler.reportMatch(self)
+                    self.consume()
+                self.state = 311
+                self._errHandler.sync(self)
+                _la = self._input.LA(1)
+                while _la==CParser.T__15:
+                    self.state = 308
+                    self.match(CParser.T__15)
+                    self.state = 313
+                    self._errHandler.sync(self)
+                    _la = self._input.LA(1)
+
+                pass
+            elif token in [CParser.VOID]:
+                self.enterOuterAlt(localctx, 2)
+                self.state = 314
+                self.match(CParser.VOID)
+                self.state = 316 
+                self._errHandler.sync(self)
+                _la = self._input.LA(1)
+                while True:
+                    self.state = 315
+                    self.match(CParser.T__15)
+                    self.state = 318 
+                    self._errHandler.sync(self)
+                    _la = self._input.LA(1)
+                    if not (_la==CParser.T__15):
+                        break
+
+                pass
             else:
-                self._errHandler.reportMatch(self)
-                self.consume()
+                raise NoViableAltException(self)
+
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -2508,7 +2551,7 @@ class CParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 309
+            self.state = 322
             _la = self._input.LA(1)
             if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << CParser.ID) | (1 << CParser.CHAR_LITERAL) | (1 << CParser.INT_LITERAL) | (1 << CParser.DOUBLE_LITERAL))) != 0)):
                 self._errHandler.recoverInline(self)

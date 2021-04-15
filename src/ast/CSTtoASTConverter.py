@@ -1,5 +1,6 @@
 from antlr4.tree.Tree import TerminalNodeImpl
 
+from src.DataType import *
 from src.antlr4_gen.CLexer import CLexer
 from src.antlr4_gen.CParser import *
 from src.ast.ASTs import *
@@ -22,8 +23,6 @@ def create_ast_var_declaration_and_init(cst):
     if len(cst.children) == 1 and isinstance(cst.children[0], CParser.ArrayDeclarationAndInitContext):
 
         cst = cst.children[0]
-        list_of_values_range = range(3, len(cst.children) - 1)
-        list_of_values = list()
         array_declaration = cst.children[0]
         data_types_and_attributes = create_type_asts(array_declaration.children[0])
         name = create_ast_from_cst(array_declaration.children[1])
@@ -74,13 +73,11 @@ def create_ast_from_terminal_node(cst: TerminalNodeImpl):
     if is_identifier(cst):
         return ASTVariable(cst.getSymbol().text)
     else:
-        data_type_token = get_data_type_token(cst)
+
         type_attribute_token = get_type_attribute_token(cst)
 
-        if is_rvalue(cst):
-            return ASTLiteral(data_type_token, cst.getSymbol().text)
-        elif is_type_declaration(cst):
-            return ASTDataType(data_type_token)
+        if is_literal(cst):
+            return ASTLiteral(get_data_type(cst), cst.getSymbol().text)
         elif type_attribute_token is not None:
             return ASTTypeAttribute(type_attribute_token)
 
@@ -232,7 +229,7 @@ def create_ast_function(cst: CParser.FunctionDeclarationContext):
     # Function declaration always starts with a data type (first child)
     return_type = cst.children[0]
     assert isinstance(return_type, CParser.DataTypeContext)
-    return_type = create_ast_from_terminal_node(return_type.children[0])
+    return_type = ASTDataType(get_data_type(return_type))
 
     assert isinstance(cst.children[1], TerminalNodeImpl) and cst.children[1].getSymbol().type == CLexer.ID
     name = cst.children[1].getSymbol().text
@@ -266,6 +263,8 @@ def create_ast_from_cst(cst):
         return create_ast_var_declaration(cst)
     elif isinstance(cst, CParser.TypeDeclarationContext):
         return create_type_asts(cst)
+    elif isinstance(cst, CParser.DataTypeContext):
+        return ASTDataType(get_data_type(cst))
     elif isinstance(cst, CParser.ScopeContext) or isinstance(cst, CParser.ProgramContext):
         return create_ast_scope(cst)
     elif isinstance(cst, CParser.LoopContext):
@@ -319,7 +318,7 @@ def is_identifier(cst: TerminalNodeImpl):
     return cst.getSymbol().type == CLexer.ID
 
 
-def is_rvalue(cst: TerminalNodeImpl):
+def is_literal(cst: TerminalNodeImpl):
     """
     In other words, checks if the given node contains a literal
     """
@@ -331,29 +330,40 @@ def is_rvalue(cst: TerminalNodeImpl):
     return False
 
 
-def is_type_declaration(cst: TerminalNodeImpl):
-    assert isinstance(cst, TerminalNodeImpl)
-    return (cst.getSymbol().type == CLexer.VOID or
-            cst.getSymbol().type == CLexer.CHAR or
-            cst.getSymbol().type == CLexer.INT or
-            cst.getSymbol().type == CLexer.FLOAT)
+def get_data_type(cst):
+    if isinstance(cst, CParser.DataTypeContext):
+        assert isinstance(cst.children[0], TerminalNodeImpl)
 
+        cst_data_type = cst.children[0]
+        symbol_type = cst_data_type.getSymbol().type
 
-def get_data_type_token(cst: TerminalNodeImpl):
-    assert isinstance(cst, TerminalNodeImpl)
-    symbol_type = cst.getSymbol().type
-    if symbol_type == CLexer.CHAR or symbol_type == CLexer.CHAR_LITERAL:
-        return DataTypeToken.CHAR
-    elif symbol_type == CLexer.INT or symbol_type == CLexer.INT_LITERAL:
-        return DataTypeToken.INT
-    elif symbol_type == CLexer.FLOAT:
-        return DataTypeToken.FLOAT
-    elif symbol_type == CLexer.DOUBLE_LITERAL:
-        return DataTypeToken.DOUBLE
-    elif symbol_type == CLexer.VOID:
-        return DataTypeToken.VOID
+        # Always defined as 'type ('*')*', e.g. int *** -> children 1 -
+        # the end are pointer indicators so *** means pointer level of 3
+        pointer_level = len(cst.children) - 1
 
-    return None
+        if symbol_type == CLexer.CHAR:
+            return BoolDataType(pointer_level)
+        elif symbol_type == CLexer.INT:
+            return IntDataType(pointer_level)
+        elif symbol_type == CLexer.FLOAT:
+            return FloatDataType(pointer_level)
+        elif symbol_type == CLexer.VOID:
+            return VoidDataType(pointer_level)
+        else:
+            raise NotImplementedError(f'Symbol type {symbol_type} not recognized for terminal node {cst_data_type}')
+
+    elif isinstance(cst, TerminalNodeImpl):
+
+        symbol_type = cst.getSymbol().type
+
+        if symbol_type == CLexer.CHAR_LITERAL:
+            return CharDataType(0)
+        elif symbol_type == CLexer.INT_LITERAL:
+            return IntDataType(0)
+        elif symbol_type == CLexer.DOUBLE_LITERAL:
+            return DoubleDataType(0)
+        else:
+            raise NotImplementedError(f'Node {cst} not recognized for data type')
 
 
 def get_type_attribute_token(cst: TerminalNodeImpl):

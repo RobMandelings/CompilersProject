@@ -38,14 +38,14 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
                 self.resulting_data_type = other_data_type
 
     def visit_ast_literal(self, ast: ASTLiteral):
-        if ast.get_token() == DataTypeToken.CHAR:
+        if ast.get_data_type_token() == DataTypeToken.CHAR:
             self.update_current_data_type(DataTypeToken.CHAR)
-        elif ast.get_token() == DataTypeToken.INT:
+        elif ast.get_data_type_token() == DataTypeToken.INT:
             self.update_current_data_type(DataTypeToken.INT)
-        elif ast.get_token() == DataTypeToken.FLOAT:
+        elif ast.get_data_type_token() == DataTypeToken.FLOAT:
             self.update_current_data_type(DataTypeToken.FLOAT)
         else:
-            raise NotImplementedError(f"Token type '{ast.get_token()}' not recognized as literal")
+            raise NotImplementedError(f"Token type '{ast.get_data_type_token()}' not recognized as literal")
 
     def visit_ast_identifier(self, ast: ASTVariable):
         variable = self.last_symbol_table.lookup_variable(ast.get_content())

@@ -1,5 +1,6 @@
 from abc import abstractmethod
 
+from src.DataType import DataType, DataTypeToken
 from src.ast.ASTTokens import *
 from src.ast.IAstVisitor import IASTVisitor
 
@@ -69,23 +70,24 @@ class ASTVariable(ASTLeaf):
         visitor.visit_ast_identifier(self)
 
 
-class ASTLiteral(ASTLeaf, IHasToken, IHasDataType):
+class ASTLiteral(ASTLeaf, IHasDataType):
     """
     Representation of an R-Value in an Abstract Syntax Tree
     Basically just literals, they don't refer to any location in memory (r-values)
     """
 
-    def __init__(self, token: DataTypeToken, content: str):
-        assert isinstance(token, DataTypeToken)
+    def __init__(self, data_type: DataType, content: str):
+        assert isinstance(data_type, DataType) and not data_type.is_pointer()
         super().__init__(content)
-        self.token = token
+        self.data_type = data_type
 
     def get_data_type(self):
-        return self.token
+        assert isinstance(self.data_type, DataType)
+        return self.data_type
 
-    def get_token(self):
-        assert isinstance(self.token, DataTypeToken)
-        return self.token
+    def get_data_type_token(self):
+        assert self.get_data_type().get_pointer_level() == 0
+        return self.get_data_type().get_token()
 
     def get_content(self):
         """
@@ -98,10 +100,10 @@ class ASTLiteral(ASTLeaf, IHasToken, IHasDataType):
         """
         Same as get_content but used to return the actual value of corresponding type (such as int or double), instead of string
         """
-        if self.get_data_type().is_integral_type():
+        if self.get_data_type_token().is_integral_type():
             # Char and ints are both numerical so return this
             return int(self.get_content())
-        elif self.get_data_type().is_floating_point_type():
+        elif self.get_data_type_token().is_floating_point_type():
             return float(self.get_content())
         else:
             raise NotImplementedError
@@ -111,10 +113,10 @@ class ASTLiteral(ASTLeaf, IHasToken, IHasDataType):
         visitor.visit_ast_literal(self)
 
     def get_content_depending_on_data_type(self):
-        if self.token == DataTypeToken.CHAR or self.token == DataTypeToken.INT:
+        if self.get_data_type_token() == DataTypeToken.CHAR or self.get_data_type_token() == DataTypeToken.INT:
             # Both char and integers are integral types, so return an integer
             return int(self.get_content())
-        elif self.token == DataTypeToken.FLOAT:
+        elif self.get_data_type_token() == DataTypeToken.FLOAT:
             return float(self.get_content())
         else:
             raise NotImplementedError
@@ -122,15 +124,15 @@ class ASTLiteral(ASTLeaf, IHasToken, IHasDataType):
 
 class ASTDataType(ASTLeaf, IHasToken, IHasDataType):
 
-    def __init__(self, token: DataTypeToken):
-        super().__init__(token.token_name)
-        self.token = token
+    def __init__(self, data_type: DataType):
+        super().__init__(data_type.get_name())
+        self.token = data_type
 
     def get_data_type(self):
         return self.token
 
     def get_token(self):
-        assert isinstance(self.token, DataTypeToken)
+        assert isinstance(self.token, DataType)
         return self.token
 
     def accept(self, visitor: IASTVisitor):
@@ -140,7 +142,7 @@ class ASTDataType(ASTLeaf, IHasToken, IHasDataType):
 
 class ASTArray(ASTLeaf, IHasDataType):
 
-    def __init__(self, data_type, size):
+    def __init__(self, data_type: DataType, size):
         """
         data_type: the underlying data type of this array
         """
@@ -153,7 +155,7 @@ class ASTArray(ASTLeaf, IHasDataType):
         return self.size
 
     def get_data_type(self):
-        assert isinstance(self.data_type, DataTypeToken)
+        assert isinstance(self.data_type, DataType)
         return self.data_type
 
 
@@ -265,7 +267,8 @@ class ASTBinaryExpression(ASTExpression, IHasDataType, IHasToken):
     def get_data_type(self):
         left_data_type = self.get_left().get_data_type()
         right_data_type = self.get_right().get_data_type()
-        if DataTypeToken.is_richer_than(left_data_type, right_data_type):
+        assert isinstance(left_data_type, DataType) and isinstance(right_data_type, DataType)
+        if DataType.is_richer_than(left_data_type, right_data_type):
             return left_data_type
         else:
             return right_data_type
@@ -510,10 +513,10 @@ class ASTVariableDeclaration(AST):
         type_attribute_asts = list()
         for attribute in new_type_attributes_list:
             assert isinstance(attribute, AST)
-            if DataTypeToken.from_str(attribute.get_content()) is not None:
+            if isinstance(attribute, ASTDataType):
                 assert data_type_ast is None, "There are multiple datatypes defined. " \
                                               "This should not be possible as it should have halted with a syntax error"
-                data_type_ast = ASTDataType(DataTypeToken.from_str(attribute.get_content()))
+                data_type_ast = attribute
             elif attribute.get_content() == 'const':
                 type_attribute_asts.append(ASTTypeAttribute(TypeAttributeToken.CONST))
             else:

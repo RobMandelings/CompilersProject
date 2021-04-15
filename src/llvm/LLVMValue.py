@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 
-import src.ast.ASTTokens as ASTTokens
+import src.DataType as DataType
 import src.ast.ASTs as ASTs
 import src.llvm.LLVMInterfaces as LLVMInterfaces
 
@@ -20,7 +20,7 @@ class LLVMValue(LLVMInterfaces.IToLLVM, ASTs.IHasDataType, ABC):
     def __str__(self):
         return self.to_llvm()
 
-    def set_data_type(self, data_type: ASTTokens.DataTypeToken):
+    def set_data_type(self, data_type: DataType.DataType):
         """
         PRE-CONDITION: Can only be set once (must be None before)
 
@@ -30,7 +30,7 @@ class LLVMValue(LLVMInterfaces.IToLLVM, ASTs.IHasDataType, ABC):
         if self.data_type is not None:
             if self.data_type is data_type:
                 print(
-                    f"WARN: Register data type has already been set to {self.data_type.name}. "
+                    f"WARN: Register data type has already been set to {self.data_type.get_name()}. "
                     "You might want to remove the duplicate 'set_data_type'")
             else:
                 raise ValueError('Register cannot be set to another data_type once initialised')
@@ -41,8 +41,11 @@ class LLVMValue(LLVMInterfaces.IToLLVM, ASTs.IHasDataType, ABC):
         """
         PRE-CONDITION: the data type must be set at this point
         """
-        assert isinstance(self.data_type, ASTTokens.DataTypeToken)
+        assert isinstance(self.data_type, DataType.DataType)
         return self.data_type
+
+    def get_data_type_token(self):
+        return self.get_data_type().get_token()
 
     def update_numbering(self, counter):
         pass
@@ -60,7 +63,8 @@ class LLVMValue(LLVMInterfaces.IToLLVM, ASTs.IHasDataType, ABC):
 
 class LLVMLiteral(LLVMValue):
 
-    def __init__(self, value: str, data_type: ASTTokens.DataTypeToken):
+    def __init__(self, value: str, data_type: DataType.DataType):
+        assert data_type.get_pointer_level() == 0
         super().__init__(value, data_type)
 
     def get_llvm_value_token(self):
