@@ -1,4 +1,4 @@
-from src.ast.semantic_analysis.SymbolTable import *
+from src.semantic_analysis.SymbolTable import *
 import src.llvm.LLVMValue as LLVMValues
 
 

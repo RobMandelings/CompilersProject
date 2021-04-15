@@ -2,7 +2,7 @@ import copy
 
 from src.ast.ASTBaseVisitor import ASTBaseVisitor
 from src.ast.ASTs import *
-from src.ast.semantic_analysis.SymbolTable import *
+from src.semantic_analysis.SymbolTable import *
 
 
 class SemanticError(Exception):
@@ -180,7 +180,7 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
 
                 return ASTLiteral(ast.value_applied_to.token,
                                   str(
-                                     factor * ast.value_applied_to.get_content_depending_on_data_type())).set_parent(
+                                      factor * ast.value_applied_to.get_content_depending_on_data_type())).set_parent(
                     ast.parent)
 
         return ast
