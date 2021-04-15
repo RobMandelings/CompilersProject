@@ -1,8 +1,8 @@
-import src.ast.llvm.LLVMInstruction as LLVMInstruction
-import src.ast.llvm.LLVMInterfaces as LLVMInterfaces
-import src.ast.llvm.LLVMUtils as LLVMUtils
-import src.ast.llvm.LLVMValue as LLVMValue
-import src.ast.llvm.LLVMBasicBlock as LLVMBasicBlock
+import src.llvm.LLVMInstruction as LLVMInstruction
+import src.llvm.LLVMInterfaces as LLVMInterfaces
+import src.llvm.LLVMUtils as LLVMUtils
+import src.llvm.LLVMValue as LLVMValue
+import src.llvm.LLVMBasicBlock as LLVMBasicBlock
 import collections
 
 

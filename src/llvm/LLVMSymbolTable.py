@@ -1,5 +1,5 @@
 from src.ast.semantic_analysis.SymbolTable import *
-import src.ast.llvm.LLVMValue as LLVMValues
+import src.llvm.LLVMValue as LLVMValues
 
 
 class LLVMVariableSymbol(Symbol):

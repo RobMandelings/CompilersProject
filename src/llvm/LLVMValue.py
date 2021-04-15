@@ -3,7 +3,7 @@ from enum import Enum, auto
 
 import src.ast.ASTTokens as ASTTokens
 import src.ast.ASTs as ASTs
-import src.ast.llvm.LLVMInterfaces as LLVMInterfaces
+import src.llvm.LLVMInterfaces as LLVMInterfaces
 
 
 class LLVMValueToken(Enum):

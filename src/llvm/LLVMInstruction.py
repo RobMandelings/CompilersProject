@@ -1,10 +1,10 @@
 import abc
 
 import src.ast.ASTTokens as ASTTokens
-import src.ast.llvm.LLVMBasicBlock as LLVMBasicBlock
-import src.ast.llvm.LLVMInterfaces as LLVMInterfaces
-import src.ast.llvm.LLVMUtils as LLVMUtils
-import src.ast.llvm.LLVMValue as LLVMValue
+import src.llvm.LLVMBasicBlock as LLVMBasicBlock
+import src.llvm.LLVMInterfaces as LLVMInterfaces
+import src.llvm.LLVMUtils as LLVMUtils
+import src.llvm.LLVMValue as LLVMValue
 
 
 def isConstant(operand: str):

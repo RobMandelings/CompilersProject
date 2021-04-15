@@ -1,6 +1,6 @@
-import src.ast.llvm.LLVMInstruction as LLVMInstruction
-import src.ast.llvm.LLVMInterfaces as LLVMInterfaces
-import src.ast.llvm.LLVMUtils as LLVMUtils
+import src.llvm.LLVMInstruction as LLVMInstruction
+import src.llvm.LLVMInterfaces as LLVMInterfaces
+import src.llvm.LLVMUtils as LLVMUtils
 
 
 class LLVMBasicBlock(LLVMInterfaces.IToLLVM):

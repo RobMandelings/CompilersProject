@@ -1,12 +1,12 @@
 import src.ast.ASTTokens as ASTTokens
 import src.ast.ASTs as ASTs
-import src.ast.llvm.LLVMFunction as LLVMFunctions
-import src.ast.llvm.LLVMGlobalContainer as LLVMGlobalContainer
-import src.ast.llvm.LLVMInstruction as LLVMInstructions
-import src.ast.llvm.LLVMInterfaces as LLVMInterfaces
-import src.ast.llvm.LLVMSymbolTable as LLVMSymbolTable
-import src.ast.llvm.LLVMUtils as LLVMUtils
-import src.ast.llvm.LLVMValue as LLVMValues
+import src.llvm.LLVMFunction as LLVMFunctions
+import src.llvm.LLVMGlobalContainer as LLVMGlobalContainer
+import src.llvm.LLVMInstruction as LLVMInstructions
+import src.llvm.LLVMInterfaces as LLVMInterfaces
+import src.llvm.LLVMSymbolTable as LLVMSymbolTable
+import src.llvm.LLVMUtils as LLVMUtils
+import src.llvm.LLVMValue as LLVMValues
 
 
 class LLVMBuilder(LLVMInterfaces.IToLLVM):

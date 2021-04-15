@@ -1,7 +1,7 @@
 from enum import Enum
 
 import src.ast.ASTTokens as ASTTokens
-import src.ast.llvm.LLVMValue as LLVMValue
+import src.llvm.LLVMValue as LLVMValue
 
 
 class LLVMCounter:

@@ -1,5 +1,5 @@
 import src.ast.ASTTokens as ASTTokens
-import src.ast.llvm.LLVMInterfaces as LLVMInterfaces
+import src.llvm.LLVMInterfaces as LLVMInterfaces
 
 
 class LLVMGlobalContainer(LLVMInterfaces.IToLLVM):

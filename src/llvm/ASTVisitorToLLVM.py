@@ -1,9 +1,9 @@
 import src.ast.ASTBaseVisitor as ASTBaseVisitor
 import src.ast.ASTTokens as ASTTokens
 import src.ast.ASTs as ASTs
-import src.ast.llvm.LLVMBasicBlock as LLVMBasicBlock
-import src.ast.llvm.LLVMBuilder as LLVMBuilder
-import src.ast.llvm.LLVMInstruction as LLVMInstructions
+import src.llvm.LLVMBasicBlock as LLVMBasicBlock
+import src.llvm.LLVMBuilder as LLVMBuilder
+import src.llvm.LLVMInstruction as LLVMInstructions
 
 
 class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
