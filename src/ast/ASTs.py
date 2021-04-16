@@ -471,6 +471,9 @@ class ASTVariableDeclaration(AST):
         self.var_name_ast = name
         self.var_name_ast.parent = self
 
+    def get_var_name(self):
+        return self.var_name_ast.get_content()
+
     def is_const(self):
         for attribute in self.type_attributes:
             if isinstance(attribute, ASTTypeAttribute) and attribute.token == TypeAttributeToken.CONST:
@@ -542,17 +545,33 @@ class ASTArrayDeclaration(ASTVariableDeclaration):
         visitor.visit_ast_array_declaration(self)
 
 
-class ASTFunction(AST):
+class ASTFunctionDeclaration(AST):
 
     def __init__(self, function_name: str, params: list, return_type: ASTDataType, execution_body: ASTScope):
-        super().__init__(function_name)
+        super().__init__(f'function declaration:\n')
+        self.function_name = function_name
         self.params = params
         for param in self.params:
+            assert isinstance(param, ASTVariableDeclaration)
             param.parent = self
         self.return_type = return_type
         self.return_type.parent = self
         self.execution_body = execution_body
         self.execution_body.parent = self
+        self.content += self.get_full_name(with_return_type=True)
+
+    def get_full_name(self, with_return_type: bool):
+        full_name = ''
+        if with_return_type:
+            full_name = f'{self.return_type.get_data_type().get_name()} '
+
+        full_name += f'{self.function_name}('
+        for param in self.params:
+            assert isinstance(param, ASTVariableDeclaration)
+            full_name += f'{param.get_data_type().get_name()} {param.get_var_name()}'
+        full_name += ')'
+
+        return full_name
 
     def get_params(self):
         return self.params

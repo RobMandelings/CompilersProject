@@ -38,7 +38,8 @@ class FunctionSymbol(Symbol):
 
     def __init__(self, symbol_name: str, params: list, return_type: DataType.DataType):
         """
-        List of datatypes in order
+        params: list of data types which correspond to the paramters of this function
+        return type: DataType to indicate what the return type is
         """
         super().__init__(symbol_name)
         self.params = params

@@ -1,10 +1,9 @@
 from graphviz import Digraph
 
-from src.ast.ASTBaseVisitor import ASTBaseVisitor
-from src.ast.ASTTokens import *
-from src.ast.ASTs import ASTPrintfInstruction, ASTUnaryExpression, ASTLiteral, ASTControlFlowStatement, \
-    ASTFunction, ASTArrayDeclaration, ASTArrayInit
 import src.DataType as DataType
+from src.ast.ASTBaseVisitor import ASTBaseVisitor
+from src.ast.ASTs import ASTPrintfInstruction, ASTUnaryExpression, ASTLiteral, ASTControlFlowStatement, \
+    ASTFunctionDeclaration, ASTArrayDeclaration, ASTArrayInit
 
 
 class ASTVisitorDot(ASTBaseVisitor):
@@ -80,6 +79,6 @@ class ASTVisitorDot(ASTBaseVisitor):
         super().visit_ast_while_loop(ast)
         self.add_to_dot_node(ast)
 
-    def visit_ast_function(self, ast: ASTFunction):
+    def visit_ast_function(self, ast: ASTFunctionDeclaration):
         super().visit_ast_function(ast)
-        self.add_to_dot_node(ast, f'function: {ast.get_content()}')
+        self.add_to_dot_node(ast)

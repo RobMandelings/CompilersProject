@@ -245,7 +245,7 @@ def create_ast_function(cst: CParser.FunctionDeclarationContext):
     # The scope is always the last part of the function declaration
     execution_body = create_ast_scope(cst.children[len(cst.children) - 1])
 
-    return ASTFunction(name, params, return_type, execution_body)
+    return ASTFunctionDeclaration(name, params, return_type, execution_body)
 
 
 def create_ast_from_cst(cst):
