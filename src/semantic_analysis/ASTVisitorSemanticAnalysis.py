@@ -386,3 +386,37 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         self.on_scope_entered()
         super().visit_ast_scope(ast)
         self.on_scope_exit()
+
+    def get_function_name_for_symbol_table(self, ast: ASTFunctionDeclaration):
+        """
+        Creates an appropriate function name to put as key in the symbol table, taking into account which functions
+        can be overloaded and which not
+        """
+        name = f'{ast.get_name()}('
+
+        for i in range(0, len(ast.get_params())):
+            param = ast.get_params()[i]
+            name += param.get_data_type().get_name()
+            if i != len(ast.get_params()) - 1:
+                name += ','
+
+        name += ')'
+        return name
+
+    def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
+        """
+        Basically takes over the scope thing a little bit because of the parameters
+        """
+        if self.get_last_symbol_table().lookup(self.get_function_name_for_symbol_table(ast)) is not None:
+            raise SemanticError(f'function {self.get_function_name_for_symbol_table(ast)} already declared!\n')
+
+        self.get_last_symbol_table().insert_symbol(
+            FunctionSymbol(self.get_function_name_for_symbol_table(ast), ast.get_params(),
+                           ast.get_return_type().get_data_type()))
+
+        self.on_scope_entered()
+        for param in ast.get_params():
+            param.accept(self)
+        # Skip the on_scope entered thing because it is already done
+        super().visit_ast_scope(ast.get_execution_body())
+        self.on_scope_exit()

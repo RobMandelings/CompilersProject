@@ -560,6 +560,12 @@ class ASTFunctionDeclaration(AST):
         self.execution_body.parent = self
         self.content += self.get_full_name(with_return_type=True)
 
+    def get_name(self):
+        """
+        Just returns the identifier of the function. E.g: 'main'
+        """
+        return self.function_name
+
     def get_full_name(self, with_return_type: bool):
         full_name = ''
         if with_return_type:
@@ -577,6 +583,7 @@ class ASTFunctionDeclaration(AST):
         return self.params
 
     def get_return_type(self):
+        assert isinstance(self.return_type, ASTDataType)
         return self.return_type
 
     def get_execution_body(self):
