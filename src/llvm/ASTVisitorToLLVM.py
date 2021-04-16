@@ -4,9 +4,12 @@ import src.ast.ASTs as ASTs
 import src.llvm.LLVMBasicBlock as LLVMBasicBlock
 import src.llvm.LLVMBuilder as LLVMBuilder
 import src.llvm.LLVMInstruction as LLVMInstructions
-from src.ast.ASTs import ASTFunctionDeclaration
+from src.ast.ASTs import ASTFunctionDeclaration, ASTReturnStatement, ASTScope
 from src.llvm.LLVMFunction import LLVMFunction
-from src.llvm.LLVMValue import LLVMRegister
+
+import src.llvm.LLVMValue as LLVMValue
+import src.DataType as DataType
+import src.llvm.LLVMSymbolTable as LLVMSymbolTable
 
 
 class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
@@ -197,17 +200,52 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
     def visit_ast_printf_instruction(self, ast: ASTs.ASTPrintfInstruction):
         self.builder.print_variable(ast.get_content())
 
+    def on_scope_entered(self):
+        self.builder.symbol_table_stack.append(LLVMSymbolTable.LLVMSymbolTable())
+
+    def on_scope_exit(self):
+        self.builder.symbol_table_stack.pop()
+
+    def visit_ast_scope(self, ast: ASTScope):
+        self.on_scope_entered()
+        super().visit_ast_scope(ast)
+        self.on_scope_exit()
+
     def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
         param_registers = list()
 
         for param in ast.get_params():
             assert isinstance(param, ASTs.ASTVariableDeclaration)
-            param_registers.append(LLVMRegister(param.get_data_type()))
+            param_registers.append(LLVMValue.LLVMRegister(param.get_data_type()))
 
         return_type = ast.get_return_type().get_data_type()
 
         self.builder.add_function(LLVMFunction(ast.get_name(), return_type, param_registers))
         ast.get_execution_body().accept(self)
+        current_function = self.builder.get_current_function()
+        if current_function.get_current_basic_block().is_empty():
+            current_function.basic_blocks.pop(next(reversed(current_function.basic_blocks)))
+        elif current_function.get_current_basic_block().has_terminal_instruction():
+            raise NotImplementedError("this case hasn't been handled yet. what should happen?")
+
+    def visit_ast_return_statement(self, ast: ASTReturnStatement):
+
+        if isinstance(ast.get_return_value(), ASTs.ASTExpression):
+            return_value = self.builder.compute_expression(ast)
+        elif isinstance(ast.get_return_value(), ASTs.ASTVariable):
+            variable_register = self.builder.get_variable_register(ast.get_return_value().get_name())
+            return_value = LLVMValue.LLVMRegister(DataType.DataType(variable_register.get_data_type().get_token(),
+                                                                    variable_register.get_data_type().get_pointer_level() - 1))
+            self.builder.get_current_function().add_instruction(
+                LLVMInstructions.LoadInstruction(return_value, variable_register))
+        elif isinstance(ast.get_return_value(), ASTs.ASTLiteral):
+            return_value = LLVMValue.LLVMLiteral(ast.get_return_value().get_value(),
+                                                 ast.get_return_value().get_data_type())
+        else:
+            raise NotImplementedError
+
+        self.builder.get_current_function().add_instruction(LLVMInstructions.ReturnInstruction(return_value))
+        self.builder.get_current_function().add_basic_block()
 
     def to_file(self, output_filename: str):
         self.builder.to_file(output_filename)

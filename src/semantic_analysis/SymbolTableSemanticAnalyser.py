@@ -1,4 +1,5 @@
 import src.DataType as DataType
+import src.SymbolTable as SymbolTable
 
 
 class Symbol:
@@ -52,29 +53,10 @@ class FunctionSymbol(Symbol):
         return self.return_type
 
 
-class SymbolTable:
+class SymbolTableSemanticAnalyser(SymbolTable.SymbolTable):
 
     def __init__(self):
-        self.parent = None
-        self.symbols = dict()
-
-    def lookup_local(self, symbol: str):
-        if symbol in self.symbols:
-            lookup = self.symbols[symbol]
-            assert isinstance(lookup, Symbol)
-            return lookup
-        return None
-
-    def lookup(self, symbol: str):
-        lookup = self.lookup_local(symbol)
-        if lookup is not None:
-            return lookup
-        else:
-            if self.parent is not None:
-                assert isinstance(self.parent, SymbolTable)
-                return self.parent.lookup(symbol)
-            else:
-                return None
+        super().__init__()
 
     def lookup_variable(self, symbol: str):
         """
@@ -92,10 +74,10 @@ class SymbolTable:
         """
         Sets the parent of this symbol table to another symbol table.
         """
-        assert isinstance(parent, SymbolTable) and not id(self) == id(parent)
+        assert isinstance(parent, SymbolTableSemanticAnalyser) and not id(self) == id(parent)
         self.parent = parent
 
-    def insert_symbol(self, symbol: Symbol):
-        assert self.lookup_local(symbol.symbol_name) is None
-        self.symbols[symbol.symbol_name] = symbol
-        assert self.lookup_local(symbol.symbol_name) is not None
+    def insert_symbol(self, symbol_name: Symbol):
+        assert self.lookup_local(symbol_name.symbol_name) is None
+        self.symbols[symbol_name.symbol_name] = symbol_name
+        assert self.lookup_local(symbol_name.symbol_name) is not None

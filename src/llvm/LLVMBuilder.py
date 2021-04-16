@@ -13,13 +13,31 @@ import src.llvm.LLVMValue as LLVMValues
 class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
     def __init__(self):
+        """
+        variable_holder: holds variables and their corresponding registers
+        """
         self.global_container = LLVMGlobalContainer.LLVMGlobalContainer()
         self.functions = list()
-        self.symbol_table = LLVMSymbolTable.LLVMSymbolTable()
-        pass
+        # Not really a symbol table but just to keep track of the registers assigned to the variables for later outputting
+        self.symbol_table_stack = list()
+        self.symbol_table_stack.append(LLVMSymbolTable.LLVMSymbolTable())
 
     def get_printf_function_declaration(self):
         return 'declare dso_local i32 @printf(i8*, ...)'
+
+    def get_last_symbol_table(self):
+        last_symbol_table = self.symbol_table_stack[-1]
+        assert isinstance(last_symbol_table, LLVMSymbolTable.LLVMSymbolTable)
+        return last_symbol_table
+
+    def get_variable_register(self, variable_name: str):
+        return self.get_last_symbol_table().get_variable_register(variable_name)
+
+    def update_numbering(self, counter):
+        """
+        Does nothing as it only applies to LLVMFunctions and below
+        """
+        pass
 
     def add_function(self, function: LLVMFunctions.LLVMFunction):
         self.functions.append(function)
@@ -114,11 +132,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         Computes an expression of the given AST, generating the corresponding instructions in the process
         ast: the AST to compute the expression for
 
-        returns: <value, data_type>:
-        - value: holds the value of the computed expression. Can either be
-            - The register that was last used to compute this expression
-            - Or a literal if possible
-        - data_type: the resulting data type of the operation (ASTTokens.DataTypeToken.INT, FLOAT,...)
+        returns: LLVMValue:
         """
 
         if isinstance(ast, ASTs.ASTBinaryExpression):
@@ -165,32 +179,32 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
             # First look up the variable in the symbol table, then retrieve the data type of this variable
             # TODO remove symbol table and put into some kind of dictionary
-            variable = self.symbol_table.lookup_variable(ast.get_content())
+            variable_register = self.get_variable_register(ast.get_content())
 
             # We're assuming the variable register is always of pointer type,
             # so first load the variable value into a register and return it
 
             # TODO not tested with pointers
             register_to_return = self.get_current_function().get_new_register(
-                DataType.DataType(variable.get_data_type().get_token(), 0))
+                DataType.DataType(variable_register.get_data_type().get_token(), 0))
             self.get_current_function().add_instruction(
-                LLVMInstructions.LoadInstruction(register_to_return, variable.get_current_register()))
+                LLVMInstructions.LoadInstruction(register_to_return, variable_register))
             return register_to_return
         else:
             raise NotImplementedError
 
     # TODO also be able to print literals
     def print_variable(self, variable_name):
-        variable = self.symbol_table.lookup_variable(variable_name)
-        assert variable is not None
+        variable_register = self.get_variable_register(variable_name)
+        assert variable_register is not None
 
-        assert variable.get_data_type().get_pointer_level() == 1, "We currently support no pointers"
+        assert variable_register.get_data_type().get_pointer_level() == 1, "We currently support no pointers"
         register_to_print = self.get_current_function().get_new_register(
-            DataType.DataType(variable.get_data_type().get_token(), 0))
+            DataType.DataType(variable_register.get_data_type().get_token(), 0))
 
         self.get_current_function().add_instruction(
             LLVMInstructions.LoadInstruction(register_to_print,
-                                             variable.get_current_register()))
+                                             variable_register))
 
         # The global variable that contains the string of the corresponding type of variable to call (printf(%i, your_int))
         # has the string %i\00 as type to use for the print. The global variable contains this string
@@ -206,10 +220,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
     def declare_variable(self, ast: ASTs.ASTVariableDeclaration):
         resulting_register = self.get_current_function().get_new_register(
             DataType.DataType(ast.get_data_type().get_token(), ast.get_data_type().get_pointer_level() + 1))
-        declared_variable = LLVMSymbolTable.LLVMVariableSymbol(ast.var_name_ast.get_content(),
-                                                               resulting_register)
-        self.symbol_table.insert_symbol(
-            declared_variable)
+        self.get_last_symbol_table().insert_variable(ast.get_content(), resulting_register)
 
         instruction = LLVMInstructions.AllocaInstruction(resulting_register)
         self.get_current_function().add_instruction(instruction)
@@ -225,9 +236,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             DataType.DataType(ast.get_data_type().get_token(), ast.get_data_type().get_pointer_level() + 1))
 
         # TODO remove from code: don't work with symbol table anymore
-        declared_variable = LLVMSymbolTable.LLVMVariableSymbol(ast.var_name_ast.get_content(),
-                                                               new_register)
-        self.symbol_table.insert_symbol(declared_variable)
+        self.get_last_symbol_table().insert_variable(ast.var_name_ast.get_content(), new_register)
 
         self.get_current_function().add_instruction(LLVMInstructions.AllocaInstruction(new_register))
         self.get_current_function().add_instruction(LLVMInstructions.StoreInstruction(new_register, value_to_store))
@@ -240,14 +249,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         # TODO Type conversions are not supported yet
         right = ast.get_right()
 
-        # TODO remove from code: don't work with symbol table anymore
-        variable_symbol = self.symbol_table.lookup_variable(ast.get_variable().get_content())
-
-        # The current register of the variable to-be-assigned
-        current_variable_reg = variable_symbol.get_current_register()
-
-        # The data type of the variable to-be-assigned
-        current_variable_data_type = variable_symbol.get_data_type()
+        variable_register = self.get_variable_register(ast.get_variable().get_content())
 
         computed_expression_value = self.compute_expression(right)
 
@@ -261,14 +263,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             value_to_store = computed_expression_value
 
         self.get_current_function().add_instruction(
-            LLVMInstructions.StoreInstruction(current_variable_reg, value_to_store))
-
-    def _generate_end_of_file(self):
-        end_of_file = ""
-        end_of_file += "; we exit with code 0 = success\n"
-        end_of_file += "ret i32 0\n"
-        end_of_file += "}\n"
-        return end_of_file
+            LLVMInstructions.StoreInstruction(variable_register, value_to_store))
 
     def to_file(self, filename: str):
         f = open(filename, "w+")
@@ -283,8 +278,6 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             llvm_code += self.get_printf_function_declaration() + "\n\n"
 
         for function in self.functions:
-            llvm_code += function.to_llvm()
-
-        llvm_code += self._generate_end_of_file()
+            llvm_code += function.to_llvm() + "\n"
 
         return llvm_code

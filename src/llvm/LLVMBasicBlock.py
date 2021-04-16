@@ -24,6 +24,9 @@ class LLVMBasicBlock(LLVMInterfaces.IToLLVM):
 
         return len(self.instructions) > 0 and self.instructions[-1].is_terminator()
 
+    def is_empty(self):
+        return len(self.instructions) == 0
+
     def get_number(self):
         """
         Returns the _number of this basic block

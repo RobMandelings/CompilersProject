@@ -143,9 +143,12 @@ class RelationalExprToken(enum_utils.NamedEnum):
 
 
 class ControlFlowToken(enum_utils.NamedEnum):
+    """
+    Control flow tokens break and continue are placed here, not the control flow token return
+    because it can also take a return value
+    """
     BREAK = 'break'
     CONTINUE = 'continue'
-    RETURN = 'return'
 
     @staticmethod
     def from_str(name: str):
@@ -153,7 +156,5 @@ class ControlFlowToken(enum_utils.NamedEnum):
             return ControlFlowToken.BREAK
         elif name == 'continue':
             return ControlFlowToken.CONTINUE
-        elif name == 'return':
-            return ControlFlowToken.RETURN
         else:
             return None

@@ -1,32 +1,25 @@
-from src.semantic_analysis.SymbolTable import *
-import src.llvm.LLVMValue as LLVMValues
+import src.SymbolTable as SymbolTable
+import src.llvm.LLVMValue as LLVMValue
 
 
-class LLVMVariableSymbol(Symbol):
+class LLVMSymbolTable(SymbolTable.SymbolTable):
+    """
+    (Sort of) symbol table which maps variables to their corresponding registers, in LLVM scopes don't really
+    exist but they are necessary in order to generate keep track of the right registers
+    """
 
-    def __init__(self, symbol_name: str, current_register: LLVMValues.LLVMRegister):
-        super().__init__(symbol_name)
-        assert current_register.data_type is not None
-        self.current_register = current_register
+    def __init__(self):
+        """
+        variable_mapper: maps variables to LLVMRegisters
+        """
+        super().__init__()
 
-    def get_data_type(self):
-        return self.get_current_register().get_data_type()
-
-    def get_current_register(self):
-        return self.current_register
-
-    def set_current_register(self, register):
-        self.current_register = register
-
-
-class LLVMSymbolTable(SymbolTable):
-
-    def insert_symbol(self, symbol: Symbol):
-        # This assertion will expand if more and more symbols are added
-        assert isinstance(symbol, LLVMVariableSymbol)
-        super().insert_symbol(symbol)
-
-    def lookup_variable(self, symbol_name: str):
-        lookup = self.lookup(symbol_name)
-        assert isinstance(lookup, LLVMVariableSymbol)
+    def get_variable_register(self, variable_name):
+        lookup = self.lookup(variable_name)
+        assert lookup is not None and isinstance(lookup, LLVMValue.LLVMRegister)
         return lookup
+
+    def insert_variable(self, variable_name: str, variable_register: LLVMValue.LLVMRegister):
+        assert isinstance(variable_register, LLVMValue.LLVMRegister)
+        assert self.lookup_local(variable_name) is None
+        self.insert_symbol(variable_name, variable_register)

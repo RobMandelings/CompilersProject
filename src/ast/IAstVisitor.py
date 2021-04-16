@@ -93,3 +93,7 @@ class IASTVisitor:
     @abstractmethod
     def visit_ast_function_declaration(self, ast):
         pass
+
+    @abstractmethod
+    def visit_ast_return_statement(self, ast):
+        pass

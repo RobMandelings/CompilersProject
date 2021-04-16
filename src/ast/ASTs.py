@@ -66,6 +66,9 @@ class ASTVariable(ASTLeaf):
     def __init__(self, content: str):
         super().__init__(content)
 
+    def get_name(self):
+        return self.get_content()
+
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_identifier(self)
 
@@ -618,6 +621,21 @@ class ASTArrayInit(AST):
 
     def accept(self, visitor: IASTVisitor):
         return visitor.visit_ast_array_init(self)
+
+
+class ASTReturnStatement(AST):
+
+    def __init__(self, return_value: AST):
+        super().__init__(f'return statement')
+        self.return_value = return_value
+        self.return_value.parent = self
+
+    def get_return_value(self):
+        assert isinstance(self.return_value, AST)
+        return self.return_value
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_return_statement(self)
 
 
 class ASTVariableDeclarationAndInit(ASTVariableDeclaration, ASTExpression):

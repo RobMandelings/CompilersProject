@@ -32,6 +32,23 @@ class Instruction(LLVMInterfaces.IToLLVM, abc.ABC):
         pass
 
 
+class ReturnInstruction(Instruction):
+
+    def __init__(self, return_value: LLVMValue.LLVMValue):
+        super().__init__()
+        self.return_value = return_value
+
+    def get_return_value(self):
+        assert isinstance(self.return_value, LLVMValue.LLVMValue)
+        return self.return_value
+
+    def is_terminator(self):
+        return True
+
+    def to_llvm(self):
+        return f'ret {self.get_return_value().get_data_type().get_llvm_name()} {self.get_return_value().to_llvm()}'
+
+
 class AssignInstruction(Instruction):
     """
     Instruction which has a resulting register

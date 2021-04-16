@@ -114,6 +114,9 @@ class ASTBaseVisitor(IASTVisitor):
             param.accept(self)
         ast.get_execution_body().accept(self)
 
+    def visit_ast_return_statement(self, ast: ASTReturnStatement):
+        ast.return_value.accept(self)
+
     def reset(self):
         """
         Resets the visitor to use it for another tree for example

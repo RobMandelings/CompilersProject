@@ -51,7 +51,7 @@ functionCall: ID '(' ((value ',')* value)? ')' ;
 
 // TODO Should be checked semantically that break and continue is only allowed in loops or switch statements
 controlFlowStatement: BREAK | CONTINUE | returnStatement ;
-returnStatement: RETURN value ;
+returnStatement: RETURN (value | expression);
 
 printfStatement: 'printf' '(' value ')' ;
 varDeclaration: (typeDeclaration ID) | arrayDeclaration ;

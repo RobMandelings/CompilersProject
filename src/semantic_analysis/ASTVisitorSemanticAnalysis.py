@@ -2,7 +2,7 @@ import copy
 
 from src.ast.ASTBaseVisitor import ASTBaseVisitor
 from src.ast.ASTs import *
-from src.semantic_analysis.SymbolTable import *
+from src.semantic_analysis.SymbolTableSemanticAnalyser import *
 
 
 class SemanticError(Exception):
@@ -17,7 +17,7 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
     PRE-CONDITION: all variables within the tree should exist and be defined. This can be checked using the unavailable variable usage visitor
     """
 
-    def __init__(self, last_symbol_table: SymbolTable):
+    def __init__(self, last_symbol_table: SymbolTableSemanticAnalyser):
         self.last_symbol_table = last_symbol_table
         # This becomes the actual data type after doing some lookups of the
         # variables and their data types and the literals entered as well
@@ -64,7 +64,7 @@ class ASTVisitorUndeclaredVariableUsed(ASTBaseVisitor):
     Used by the semantical analysis visitor to check if a certain AST contains undeclared variables
     """
 
-    def __init__(self, last_symbol_table: SymbolTable):
+    def __init__(self, last_symbol_table: SymbolTableSemanticAnalyser):
         """ The symbol table at the top of the stack in the semantical analysis vistor"""
         self.last_symbol_table = last_symbol_table
         self.undeclared_variables_used = list()
@@ -81,7 +81,7 @@ class ASTVisitorUninitializedVariableUsed(ASTBaseVisitor):
     Used by the semantical analysis visitor to check if a certain AST contains an unitialized variables
     """
 
-    def __init__(self, last_symbol_table: SymbolTable):
+    def __init__(self, last_symbol_table: SymbolTableSemanticAnalyser):
         """ The symbol table at the top of the stack in the semantical analysis vistor"""
         self.last_symbol_table = last_symbol_table
         self.uninitialized_variables_used = list()
@@ -102,7 +102,7 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
     Pre-condition: The variables used in these expressions must exist (checks must be done beforehand in the semantical analyser)
     """
 
-    def __init__(self, last_symbol_table: SymbolTable):
+    def __init__(self, last_symbol_table: SymbolTableSemanticAnalyser):
         self.last_symbol_table = last_symbol_table
         self.optimized_ast = None
 
@@ -215,7 +215,12 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
     def __init__(self, optimize=False):
         super().__init__()
         self.symbol_table_stack = list()
+        self.current_function = None
         self.optimize = optimize
+
+    def get_current_function(self):
+        assert self.current_function is None or isinstance(self.current_function, FunctionSymbol)
+        return self.current_function
 
     def get_last_symbol_table(self):
         """
@@ -223,7 +228,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         This corresponds the scope you are currently in
         """
         symbol_table = self.symbol_table_stack[-1]
-        assert isinstance(symbol_table, SymbolTable)
+        assert isinstance(symbol_table, SymbolTableSemanticAnalyser)
         return symbol_table
 
     def check_for_narrowing_result(self, declared_data_type: DataTypeToken, ast: AST):
@@ -237,13 +242,10 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         # This is the data type that was declared in the input program
 
-        if declared_data_type != resulting_data_type_visitor.resulting_data_type and not DataTypeToken.is_richer_than(
-                declared_data_type.get_token(), resulting_data_type_visitor.resulting_data_type.get_token()):
+        if declared_data_type != resulting_data_type_visitor.resulting_data_type and not DataType.DataType.is_richer_than(
+                declared_data_type, resulting_data_type_visitor.resulting_data_type):
             raise SemanticError("The result would be narrowed, and we do not yet support explicit or implicit casting")
             # TODO support implicit and explicit casting
-            # print(
-            #     "WARN: narrowing result of expression from datatype '" +
-            #     resulting_data_type_visitor.resulting_data_type.token_name + "' to datatype '" + declared_data_type.token_name + "'")
 
     def check_r_value_assignment(self, bin_expr: ASTAssignmentExpression):
         # TODO Needs to be improved with derefencing and all that stuff
@@ -373,7 +375,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
     def on_scope_entered(self):
 
-        new_symbol_table = SymbolTable()
+        new_symbol_table = SymbolTableSemanticAnalyser()
         if len(self.symbol_table_stack) > 0:
             new_symbol_table.set_parent(self.get_last_symbol_table())
 
@@ -403,20 +405,47 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         name += ')'
         return name
 
+    def on_function_entered(self, function_symbol: FunctionSymbol):
+        self.current_function = function_symbol
+
+    def on_function_exit(self):
+        self.current_function = None
+
+    def visit_ast_return_statement(self, ast: ASTReturnStatement):
+
+        if self.get_current_function() is None:
+            raise SemanticError(f'You cannot put a return value outside of a function')
+
+        return_value = ast.get_return_value()
+        if isinstance(return_value, ASTVariable):
+            return_value = self.get_last_symbol_table().lookup_variable(return_value.get_content())
+
+        if self.get_current_function().get_return_type() != return_value.get_data_type():
+            raise SemanticError(
+                f"The return type of the function '{self.get_current_function().symbol_name}' "
+                f"(data type '{self.get_current_function().get_return_type()}') and "
+                f"return type of the return value (data type '{return_value.get_data_type()}') aren't equal")
+
+        super().visit_ast_return_statement(ast)
+
     def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
         """
         Basically takes over the scope thing a little bit because of the parameters
         """
+
+        function_symbol = FunctionSymbol(self.get_function_name_for_symbol_table(ast), ast.get_params(),
+                                         ast.get_return_type().get_data_type())
         if self.get_last_symbol_table().lookup(self.get_function_name_for_symbol_table(ast)) is not None:
             raise SemanticError(f'function {self.get_function_name_for_symbol_table(ast)} already declared!\n')
 
         self.get_last_symbol_table().insert_symbol(
-            FunctionSymbol(self.get_function_name_for_symbol_table(ast), ast.get_params(),
-                           ast.get_return_type().get_data_type()))
+            function_symbol)
 
+        self.on_function_entered(function_symbol)
         self.on_scope_entered()
         for param in ast.get_params():
             param.accept(self)
         # Skip the on_scope entered thing because it is already done
         super().visit_ast_scope(ast.get_execution_body())
         self.on_scope_exit()
+        self.on_function_exit()

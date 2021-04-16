@@ -214,11 +214,18 @@ def create_ast_if_statement(cst):
     return if_statement
 
 
-def create_ast_control_flow_statement(cst: TerminalNodeImpl):
-    if cst.getSymbol().type == CLexer.BREAK:
-        return ASTControlFlowStatement(ControlFlowToken.BREAK)
-    elif cst.getSymbol().type == CLexer.CONTINUE:
-        return ASTControlFlowStatement(ControlFlowToken.CONTINUE)
+def create_ast_control_flow_statement(cst):
+    # Then it must be a break or a continue statement
+    if isinstance(cst, TerminalNodeImpl):
+        if cst.getSymbol().type == CLexer.BREAK:
+            return ASTControlFlowStatement(ControlFlowToken.BREAK)
+        elif cst.getSymbol().type == CLexer.CONTINUE:
+            return ASTControlFlowStatement(ControlFlowToken.CONTINUE)
+    elif isinstance(cst, CParser.ReturnStatementContext):
+
+        return_value = create_ast_from_cst(cst.children[1])
+        return ASTReturnStatement(return_value)
+
     elif cst.getSymbol().type == CLexer.RETURN:
         return ASTControlFlowStatement(ControlFlowToken.RETURN)
     else:
