@@ -199,7 +199,8 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         return resulting_register
 
     def declare_variable(self, ast: ASTs.ASTVariableDeclaration):
-        resulting_register = self.get_current_function().get_new_register(ast.get_data_type().get_pointer_version())
+        resulting_register = self.get_current_function().get_new_register(
+            DataType.DataType(ast.get_data_type().get_token(), ast.get_data_type().get_pointer_level() + 1))
         declared_variable = LLVMSymbolTable.LLVMVariableSymbol(ast.var_name_ast.get_content(),
                                                                resulting_register)
         self.symbol_table.insert_symbol(
