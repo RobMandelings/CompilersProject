@@ -179,7 +179,9 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         variable = self.symbol_table.lookup_variable(variable_name)
         assert variable is not None
 
-        register_to_print = self.get_current_function().get_new_register(variable.get_data_type().get_normal_version())
+        assert variable.get_data_type().get_pointer_level() == 1, "We currently support no pointers"
+        register_to_print = self.get_current_function().get_new_register(
+            DataType.DataType(variable.get_data_type().get_token(), 0))
 
         self.get_current_function().add_instruction(
             LLVMInstructions.LoadInstruction(register_to_print,

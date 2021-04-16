@@ -102,11 +102,10 @@ class LoadInstruction(AssignInstruction):
         data_type_to_allocate: the data type that will be allocated
         load_from_reg: the register to load the value from
         """
-        assert load_from_reg.get_data_type().is_pointer_type()
+        assert load_from_reg.get_data_type().is_pointer()
 
         super().__init__(resulting_reg)
         self.load_from_reg = load_from_reg
-        self.resulting_reg.set_data_type(load_from_reg.get_data_type().get_normal_version())
 
     def to_llvm(self):
         llvm_data_type_to_load = self.resulting_reg.get_data_type().get_llvm_name()

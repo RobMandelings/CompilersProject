@@ -1,6 +1,5 @@
-import src.ast.ASTTokens as ASTTokens
-import src.llvm.LLVMInterfaces as LLVMInterfaces
 import src.DataType as DataType
+import src.llvm.LLVMInterfaces as LLVMInterfaces
 
 
 class LLVMGlobalContainer(LLVMInterfaces.IToLLVM):
@@ -23,18 +22,18 @@ class LLVMGlobalContainer(LLVMInterfaces.IToLLVM):
         # E.g. %i for printf('%i', int)
         # Null termination is necessary
         c_type_selection = None
-        if data_type_to_print.get_token() == DataType.DataTypeToken.CHAR:
+        if data_type_to_print == DataType.NORMAL_CHAR:
             c_type_selection = '%c'
-        elif data_type_to_print.get_token() == DataType.DataTypeToken.INT:
+        elif data_type_to_print == DataType.NORMAL_INT:
             c_type_selection = '%i'
-        elif data_type_to_print.get_token() == DataType.DataTypeToken.FLOAT:
+        elif data_type_to_print == DataType.NORMAL_FLOAT:
             c_type_selection = '%f'
         else:
             raise NotImplementedError
 
         global_declaration_instruction = f'{global_variable} = private unnamed_addr constant [3 x i8] c"{c_type_selection}\\00", align 1'
         self.global_declaration_instructions.append(global_declaration_instruction)
-        self.__printf_type_strings[data_type_to_print.get_name] = global_variable
+        self.__printf_type_strings[data_type_to_print.get_name()] = global_variable
 
     def get_printf_type_string(self, data_type_to_print: DataType.DataType):
         """
