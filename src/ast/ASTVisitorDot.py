@@ -79,6 +79,6 @@ class ASTVisitorDot(ASTBaseVisitor):
         super().visit_ast_while_loop(ast)
         self.add_to_dot_node(ast)
 
-    def visit_ast_function(self, ast: ASTFunctionDeclaration):
-        super().visit_ast_function(ast)
+    def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
+        super().visit_ast_function_declaration(ast)
         self.add_to_dot_node(ast)

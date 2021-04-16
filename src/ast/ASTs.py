@@ -584,7 +584,7 @@ class ASTFunctionDeclaration(AST):
         return self.execution_body
 
     def accept(self, visitor):
-        visitor.visit_ast_function(self)
+        visitor.visit_ast_function_declaration(self)
 
 
 class ASTArrayInit(AST):

@@ -109,7 +109,7 @@ class ASTBaseVisitor(IASTVisitor):
         if ast.get_update_step() is not None:
             ast.get_update_step().accept(self)
 
-    def visit_ast_function(self, ast: ASTFunctionDeclaration):
+    def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
         for param in ast.get_params():
             param.accept(self)
         ast.get_execution_body().accept(self)
