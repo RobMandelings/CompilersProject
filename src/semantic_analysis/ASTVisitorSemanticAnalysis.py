@@ -24,28 +24,34 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
         self.resulting_data_type = None
         assert last_symbol_table is not None
 
+    def get_resulting_data_type(self):
+        assert isinstance(self.resulting_data_type, DataType.DataType)
+        return self.resulting_data_type
+
     def update_current_data_type(self, other_data_type):
         """
         Checks if the other data type given is richer than the current type and replaces it, otherwise do nothing
         """
+
+        assert isinstance(other_data_type, DataType.DataType)
 
         # TODO raise a semantic error if the data types are incomparable
 
         if self.resulting_data_type is None:
             self.resulting_data_type = other_data_type
         else:
-            if DataTypeToken.is_richer_than(other_data_type, self.resulting_data_type):
+            if DataType.DataType.is_richer_than(other_data_type, self.get_resulting_data_type()):
                 self.resulting_data_type = other_data_type
 
     def visit_ast_literal(self, ast: ASTLiteral):
-        if ast.get_data_type_token() == DataTypeToken.CHAR:
-            self.update_current_data_type(DataTypeToken.CHAR)
-        elif ast.get_data_type_token() == DataTypeToken.INT:
-            self.update_current_data_type(DataTypeToken.INT)
-        elif ast.get_data_type_token() == DataTypeToken.FLOAT:
-            self.update_current_data_type(DataTypeToken.FLOAT)
+        if ast.get_data_type() == DataType.NORMAL_CHAR:
+            self.update_current_data_type(DataType.NORMAL_CHAR)
+        elif ast.get_data_type() == DataType.NORMAL_INT:
+            self.update_current_data_type(DataType.NORMAL_INT)
+        elif ast.get_data_type() == DataType.NORMAL_FLOAT:
+            self.update_current_data_type(DataType.NORMAL_FLOAT)
         else:
-            raise NotImplementedError(f"Token type '{ast.get_data_type_token()}' not recognized as literal")
+            raise NotImplementedError(f"Token type '{ast.get_data_type()}' not recognized as literal")
 
     def visit_ast_identifier(self, ast: ASTVariable):
         variable = self.last_symbol_table.lookup_variable(ast.get_content())
@@ -178,7 +184,7 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
                 else:
                     raise NotImplementedError
 
-                return ASTLiteral(ast.value_applied_to.token,
+                return ASTLiteral(ast.value_applied_to.get_data_type_token(),
                                   str(
                                       factor * ast.value_applied_to.get_content_depending_on_data_type())).set_parent(
                     ast.parent)
@@ -232,7 +238,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         # This is the data type that was declared in the input program
 
         if declared_data_type != resulting_data_type_visitor.resulting_data_type and not DataTypeToken.is_richer_than(
-                declared_data_type, resulting_data_type_visitor.resulting_data_type):
+                declared_data_type.get_token(), resulting_data_type_visitor.resulting_data_type.get_token()):
             raise SemanticError("The result would be narrowed, and we do not yet support explicit or implicit casting")
             # TODO support implicit and explicit casting
             # print(
@@ -244,7 +250,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         if isinstance(bin_expr.left, ASTLiteral):
             raise SemanticError(
-                f"Assignment to an R-VALUE of type {bin_expr.left.token.token_name} (value is {bin_expr.left.get_content()})")
+                f"Assignment to an R-VALUE of type {bin_expr.left.get_data_type_token().token_name} "
+                f"(value is {bin_expr.left.get_content()})")
 
     def check_undeclared_variable_usage(self, ast: AST):
 

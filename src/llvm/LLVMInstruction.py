@@ -1,5 +1,6 @@
 import abc
 
+import src.DataType as DataType
 import src.ast.ASTTokens as ASTTokens
 import src.llvm.LLVMBasicBlock as LLVMBasicBlock
 import src.llvm.LLVMInterfaces as LLVMInterfaces
@@ -60,10 +61,14 @@ class AllocaInstruction(AssignInstruction):
 
     def __init__(self, resulting_reg: LLVMValue.LLVMRegister):
         super().__init__(resulting_reg)
-        assert resulting_reg.get_data_type().is_pointer_type()
+        assert resulting_reg.get_data_type().is_pointer()
 
     def to_llvm(self):
-        return super().to_llvm() + f"alloca {LLVMUtils.get_llvm_type(self.get_resulting_register().get_data_type().get_normal_version())}, align 4"
+        data_type = self.resulting_reg.get_data_type()
+        # You need to allocate with a data type that has pointer level of resulting reg - 1,
+        # the resulting reg will be a pointer to that data type
+        llvm_for_data_type = DataType.get_llvm_for_data_type(data_type.get_token(), data_type.get_pointer_level() - 1)
+        return super().to_llvm() + f"alloca {llvm_for_data_type}, align 4"
 
     def is_terminator(self):
         return False
@@ -73,13 +78,13 @@ class StoreInstruction(Instruction):
 
     def __init__(self, resulting_reg: LLVMValue.LLVMRegister, value_to_store: LLVMValue):
         super().__init__()
-        assert resulting_reg.get_data_type().is_pointer_type(), "The resulting register must be of " \
-                                                                "pointer type for a value to be stored in it!"
+        assert resulting_reg.get_data_type().is_pointer(), "The resulting register must be of " \
+                                                           "pointer type for a value to be stored in it!"
         self.resulting_reg = resulting_reg
         self.value_to_store = value_to_store
 
     def to_llvm(self):
-        datatype_str = LLVMUtils.get_llvm_type(self.value_to_store.get_data_type())
+        datatype_str = self.value_to_store.get_data_type().get_llvm_name()
         return f"store {datatype_str} {self.value_to_store.to_llvm()}, {datatype_str}* {self.resulting_reg}, align 4"
 
     def is_terminator(self):
@@ -104,7 +109,7 @@ class LoadInstruction(AssignInstruction):
         self.resulting_reg.set_data_type(load_from_reg.get_data_type().get_normal_version())
 
     def to_llvm(self):
-        llvm_data_type_to_load = LLVMUtils.get_llvm_type(self.resulting_reg.get_data_type())
+        llvm_data_type_to_load = self.resulting_reg.get_data_type().get_llvm_name()
         return super().to_llvm() + f"load {llvm_data_type_to_load}, {llvm_data_type_to_load}* {self.load_from_reg}"
 
 
@@ -114,7 +119,8 @@ class ConditionalBranchInstruction(Instruction):
     """
 
     def __init__(self, condition_reg: LLVMValue.LLVMRegister, if_true: LLVMBasicBlock, if_false: LLVMBasicBlock):
-        assert condition_reg.get_data_type() == ASTTokens.DataTypeToken.BOOL, "Condition register must be of i1 (bool) type"
+        assert condition_reg.get_data_type().get_token() == DataType.DataTypeToken.BOOL, "Condition register must be of i1 (bool) type"
+        assert not condition_reg.get_data_type().is_pointer(), "Condition register may not be a pointer"
         super().__init__()
         self.condition_reg = condition_reg
         self.if_true = if_true
@@ -157,9 +163,6 @@ class UnaryAssignInstruction(AssignInstruction):
     def get_operand(self):
         return self.operand
 
-    def get_llvm_data_type(self):
-        return LLVMUtils.get_llvm_type(self.operand.get_data_type())
-
 
 class BinaryAssignInstruction(AssignInstruction):
 
@@ -177,12 +180,12 @@ class BinaryAssignInstruction(AssignInstruction):
         """
         Returns the data types of the two operands (1 and 2) in llvm code (as a string)
         """
-        return LLVMUtils.get_llvm_type(self.operand1.get_data_type()), LLVMUtils.get_llvm_type(
-            self.operand2.get_data_type())
+        return self.operand1.get_data_type().get_llvm_name(), self.operand2.get_data_type().get_llvm_name()
 
-    @abc.abstractmethod
-    def get_llvm_for_operation(self):
-        raise NotImplementedError
+
+@abc.abstractmethod
+def get_llvm_for_operation(self):
+    raise NotImplementedError
 
 
 class BinaryArithmeticInstruction(BinaryAssignInstruction):
@@ -194,14 +197,14 @@ class BinaryArithmeticInstruction(BinaryAssignInstruction):
                  operand1: LLVMValue,
                  operand2: LLVMValue):
         super().__init__(resulting_reg, operation, operand1, operand2)
-        self.resulting_data_type = ASTTokens.DataTypeToken.get_resulting_data_type(operand1.get_data_type(),
-                                                                                   operand2.get_data_type())
+        self.resulting_data_type = DataType.DataType.get_resulting_data_type(operand1.get_data_type(),
+                                                                             operand2.get_data_type())
         self.operation_type = self.get_operation_type()
 
     def get_operation_type(self):
-        if self.operand1.get_data_type() == ASTTokens.DataTypeToken.INT and self.operand2.get_data_type() == ASTTokens.DataTypeToken.INT:
+        if self.operand1.get_data_type() == DataType.NORMAL_INT and self.operand2.get_data_type() == DataType.NORMAL_INT:
             return 'i32'
-        elif self.operand1.get_data_type() == ASTTokens.DataTypeToken.FLOAT and self.operand2.get_data_type() == ASTTokens.DataTypeToken.FLOAT:
+        elif self.operand1.get_data_type() == DataType.NORMAL_FLOAT and self.operand2.get_data_type() == DataType.NORMAL_FLOAT:
             return 'float'
         else:
             raise NotImplementedError
@@ -266,15 +269,15 @@ class DataTypeConvertInstruction(UnaryAssignInstruction):
         # TODO What to do with bool conversion and such? Is it a signed integer conversion or no?
         if (self.get_operand().get_data_type().is_integral_type() and
                 self.get_resulting_register().get_data_type().is_floating_point_type()):
-            return 'sitofp', f'to {LLVMUtils.get_llvm_type(self.get_resulting_register().get_data_type())}'
+            return 'sitofp', f'to {self.get_resulting_register().get_data_type().get_llvm_name()}'
         elif (self.get_operand().get_data_type().is_floating_point_type() and
               self.get_resulting_register().get_data_type().is_integral_type()):
-            return 'fptosi', f'to {LLVMUtils.get_llvm_type(self.get_resulting_register().get_data_type())}'
+            return 'fptosi', f'to {self.get_resulting_register().get_data_type().get_llvm_name()}'
         else:
             raise NotImplementedError
 
     def to_llvm(self):
-        return super().to_llvm() + f'{self.llvm_operation} {LLVMUtils.get_llvm_type(self.get_operand().get_data_type())}' \
+        return super().to_llvm() + f'{self.llvm_operation} {self.get_operand().get_data_type().get_llvm_name()}' \
                                    f' {self.get_operand().to_llvm()} {self.llvm_to_data_type}'
 
 
@@ -285,10 +288,10 @@ class CompareInstruction(BinaryAssignInstruction):
     # TODO comparing with constants such as 0 and stuff
     """
 
-    def __init__(self, resulting_reg: LLVMValue.LLVMRegister, operation: ASTTokens.RelationalExprToken,
+    def __init__(self, operation: ASTTokens.RelationalExprToken,
                  operand1: LLVMValue,
                  operand2: LLVMValue):
-        super().__init__(resulting_reg, operation, operand1, operand2)
+        super().__init__(LLVMValue.LLVMRegister(DataType.NORMAL_BOOL), operation, operand1, operand2)
         assert operand1.get_data_type() == operand2.get_data_type(), \
             "Data types to compare must be equal. Perform an instruction to convert a" \
             "lower data type to a higher one (e.g. sitofp for i32 -> float)"
@@ -297,7 +300,7 @@ class CompareInstruction(BinaryAssignInstruction):
         self.comparison_type = self.get_comparison_type()
 
     def get_resulting_data_type(self):
-        return ASTTokens.DataTypeToken.BOOL
+        return self.get_resulting_register().get_data_type()
 
     def get_comparison_type(self):
         """
@@ -307,11 +310,11 @@ class CompareInstruction(BinaryAssignInstruction):
         # Its the same, whether you pick operand1 or operand2 (they have the same data type)
         data_type_to_compare = self.operand1.get_data_type()
 
-        if data_type_to_compare == ASTTokens.DataTypeToken.DOUBLE or data_type_to_compare == ASTTokens.DataTypeToken.FLOAT:
+        if data_type_to_compare == DataType.NORMAL_DOUBLE or data_type_to_compare == DataType.NORMAL_FLOAT:
             return LLVMUtils.ComparisonDataType.FLOAT
-        elif data_type_to_compare == ASTTokens.DataTypeToken.INT:
+        elif data_type_to_compare == DataType.NORMAL_INT:
             return LLVMUtils.ComparisonDataType.INT
-        elif data_type_to_compare == ASTTokens.DataTypeToken.CHAR:
+        elif data_type_to_compare == DataType.NORMAL_CHAR:
             print("WARN: data type to compare is char, returning comparison data type INT. Not tested yet")
             return LLVMUtils.ComparisonDataType.INT
         else:
@@ -350,7 +353,7 @@ class CompareInstruction(BinaryAssignInstruction):
 
     def to_llvm(self):
         return super().to_llvm() + f'{self.get_llvm_comparison_type()} {self.get_llvm_for_operation()} ' \
-                                   f'{LLVMUtils.get_llvm_type(self.operand1.get_data_type())} {self.operand1}, {self.operand2}'
+                                   f'{self.operand1.get_data_type().get_llvm_name()} {self.operand1}, {self.operand2}'
 
 
 # TODO must be implemented
@@ -366,7 +369,7 @@ class UnaryArithmeticInstruction(AssignInstruction):
 
 class PrintfInstruction(AssignInstruction):
 
-    def __init__(self, resulting_reg: LLVMValue.LLVMRegister, register_to_print: LLVMValue.LLVMRegister,
+    def __init__(self, register_to_print: LLVMValue.LLVMRegister,
                  string_to_print_name: str):
         """
         Creates a PrintfInstructions string
@@ -374,9 +377,7 @@ class PrintfInstruction(AssignInstruction):
         type_to_print: the type to print (most likely a global constant you have defined)
         string_to_print_name: the global variable which contains the string to print (e.g. @.str.0)
         """
-        super().__init__(resulting_reg)
-
-        self.resulting_reg.set_data_type(ASTTokens.DataTypeToken.INT)
+        super().__init__(LLVMValue.LLVMRegister(DataType.NORMAL_INT))
 
         self.register_to_print = register_to_print
         self.string_to_print_name = string_to_print_name

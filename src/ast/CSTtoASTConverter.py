@@ -1,9 +1,9 @@
 from antlr4.tree.Tree import TerminalNodeImpl
 
-from src.DataType import *
 from src.antlr4_gen.CLexer import CLexer
 from src.antlr4_gen.CParser import *
 from src.ast.ASTs import *
+import src.DataType as DataType
 
 
 # TODO Improve to use a visitor pattern of the cst instead
@@ -342,13 +342,13 @@ def get_data_type(cst):
         pointer_level = len(cst.children) - 1
 
         if symbol_type == CLexer.CHAR:
-            return BoolDataType(pointer_level)
+            return DataType.DataType(DataType.DataTypeToken.CHAR, pointer_level)
         elif symbol_type == CLexer.INT:
-            return IntDataType(pointer_level)
+            return DataType.DataType(DataType.DataTypeToken.INT, pointer_level)
         elif symbol_type == CLexer.FLOAT:
-            return FloatDataType(pointer_level)
+            return DataType.DataType(DataType.DataTypeToken.FLOAT, pointer_level)
         elif symbol_type == CLexer.VOID:
-            return VoidDataType(pointer_level)
+            return DataType.DataType(DataType.DataTypeToken.VOID, pointer_level)
         else:
             raise NotImplementedError(f'Symbol type {symbol_type} not recognized for terminal node {cst_data_type}')
 
@@ -357,11 +357,11 @@ def get_data_type(cst):
         symbol_type = cst.getSymbol().type
 
         if symbol_type == CLexer.CHAR_LITERAL:
-            return CharDataType(0)
+            return DataType.NORMAL_CHAR
         elif symbol_type == CLexer.INT_LITERAL:
-            return IntDataType(0)
+            return DataType.NORMAL_INT
         elif symbol_type == CLexer.DOUBLE_LITERAL:
-            return DoubleDataType(0)
+            return DataType.NORMAL_DOUBLE
         else:
             raise NotImplementedError(f'Node {cst} not recognized for data type')
 

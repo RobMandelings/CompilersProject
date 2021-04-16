@@ -33,7 +33,7 @@ class LLVMValue(LLVMInterfaces.IToLLVM, ASTs.IHasDataType, ABC):
                     f"WARN: Register data type has already been set to {self.data_type.get_name()}. "
                     "You might want to remove the duplicate 'set_data_type'")
             else:
-                raise ValueError('Register cannot be set to another data_type once initialised')
+                raise ValueError('Register cannot be set to another other once initialised')
         self.data_type = data_type
         return self
 
@@ -77,6 +77,7 @@ class LLVMRegister(LLVMValue):
         """
         By default, sets the data type to none (usually the data type of the newly created register is not know immediately)
         """
+        assert data_type is None or isinstance(data_type, DataType.DataType)
         super().__init__(None, data_type)
 
     def get_value(self):

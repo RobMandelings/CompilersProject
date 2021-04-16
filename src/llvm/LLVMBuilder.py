@@ -1,3 +1,4 @@
+import src.DataType as DataType
 import src.ast.ASTTokens as ASTTokens
 import src.ast.ASTs as ASTs
 import src.llvm.LLVMFunction as LLVMFunctions
@@ -44,8 +45,12 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         # TODO remove duplicate code
         if operand1.get_data_type() != operand2.get_data_type():
 
-            richest_data_type_index = ASTTokens.DataTypeToken.get_richest_data_type(operand1.get_data_type(),
-                                                                                    operand2.get_data_type())
+            richest_data_type = DataType.DataType.get_resulting_data_type(operand1.get_data_type(),
+                                                                          operand2.get_data_type())
+            if operand1 == richest_data_type:
+                richest_data_type_index = 0
+            else:
+                richest_data_type_index = 1
 
             # If it is -1 they are equally rich
             if richest_data_type_index == 0:
@@ -86,18 +91,18 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
                 operand2 = converted_poorest_value
 
             if (isinstance(richest_value, LLVMValues.LLVMLiteral) and
-                    richest_value.get_data_type() == (ASTTokens.DataTypeToken.FLOAT | ASTTokens.DataTypeToken.DOUBLE)):
+                    richest_value.get_data_type().get_token() == (
+                            DataType.DataTypeToken.FLOAT | DataType.DataTypeToken.DOUBLE)):
 
                 if richest_value == operand1:
                     operand1 = LLVMUtils.get_llvm_for_literal(richest_value, operand1.get_data_type())
                 else:
                     operand2 = LLVMUtils.get_llvm_for_literal(richest_value, operand2.get_data_type())
 
-        register_to_return = self.get_current_function().get_new_register(ASTTokens.DataTypeToken.BOOL)
-        self.get_current_function().add_instruction(
-            LLVMInstructions.CompareInstruction(register_to_return, operation, operand1, operand2))
+        compare_instruction = LLVMInstructions.CompareInstruction(operation, operand1, operand2)
+        self.get_current_function().add_instruction(compare_instruction)
 
-        return register_to_return
+        return compare_instruction.get_resulting_register()
 
     def compute_expression(self, ast: ASTs.AST):
         """
@@ -120,7 +125,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
             if isinstance(operation, ASTs.BinaryArithmeticExprToken):
                 register_to_return = self.get_current_function().get_new_register(
-                    ASTTokens.DataTypeToken.get_resulting_data_type(operand1.get_data_type(), operand2.get_data_type()))
+                    DataType.DataType.get_resulting_data_type(operand1.get_data_type(), operand2.get_data_type()))
                 instruction = LLVMInstructions.BinaryArithmeticInstruction(register_to_return,
                                                                            operation, operand1,
                                                                            operand2)
@@ -160,8 +165,9 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             # We're assuming the variable register is always of pointer type,
             # so first load the variable value into a register and return it
 
+            # TODO not tested with pointers
             register_to_return = self.get_current_function().get_new_register(
-                ASTTokens.DataTypeToken.get_normal_version(variable.get_data_type()))
+                DataType.DataType(variable.get_data_type().get_token(), 0))
             self.get_current_function().add_instruction(
                 LLVMInstructions.LoadInstruction(register_to_return, variable.get_current_register()))
             return register_to_return
@@ -183,7 +189,9 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         # has the string %i\00 as type to use for the print. The global variable contains this string
         global_var_data_type = self.get_global_container().get_printf_type_string(register_to_print.get_data_type())
         resulting_register = self.get_current_function().get_new_register()
-        instruction = LLVMInstructions.PrintfInstruction(resulting_register, register_to_print, global_var_data_type)
+        # TODO handle assignments: printing variable results in the amount of characters printed, but they need to be
+        # able to be assigned to a variable
+        instruction = LLVMInstructions.PrintfInstruction(register_to_print, global_var_data_type)
         self.get_current_function().add_instruction(instruction)
 
         return resulting_register
@@ -206,7 +214,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         value_to_store = self.compute_expression(ast.value)
 
         new_register = self.get_current_function().get_new_register(
-            ast.data_type_ast.get_data_type().get_pointer_version())
+            DataType.DataType(ast.get_data_type().get_token(), ast.get_data_type().get_pointer_level() + 1))
 
         # TODO remove from code: don't work with symbol table anymore
         declared_variable = LLVMSymbolTable.LLVMVariableSymbol(ast.var_name_ast.get_content(),
@@ -235,7 +243,8 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
         computed_expression_value = self.compute_expression(right)
 
-        if computed_expression_value.get_data_type().is_pointer_type():
+        if computed_expression_value.get_data_type().is_pointer():
+            # TODO: This must be done using a derefence operator
             # TODO: This register is used to load from pointer type into an actual value of that data type (sure?)
             value_to_store = self.get_current_function().get_new_register()
             self.get_current_function().add_instruction(

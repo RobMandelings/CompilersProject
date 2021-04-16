@@ -1,4 +1,5 @@
 import abc
+from typing import Final
 
 import src.enum_utils as enum_utils
 
@@ -46,43 +47,6 @@ class DataTypeToken(enum_utils.NamedEnum):
         else:
             return None
 
-    @staticmethod
-    def is_richer_than(datatype1, datatype2):
-
-        assert isinstance(datatype1, DataTypeToken) and isinstance(datatype2, DataTypeToken)
-        """
-        Checks whether the first data_type given is richer than the second (richness can be checked above in the _order_ variable)
-        """
-        return datatype1.value > datatype2.value
-
-    @staticmethod
-    def get_richest_data_type(data_type1, data_type2):
-        """
-        Checks which data type is the richest and returns an index based on the result
-
-        returns:
-        0 if datatype1 is the richest data type
-        1 if datatype2 is the richest data type
-        -1 if they are equally rich
-        """
-
-        if DataTypeToken.is_richer_than(data_type1, data_type2):
-            return 0
-        elif DataTypeToken.is_richer_than(data_type2, data_type1):
-            return 1
-        else:
-            return -1
-
-    @staticmethod
-    def get_resulting_data_type(data_type1, data_type2):
-        """
-        Returns the richest of the two data_types given to be the resulting data type (of an operation)
-        """
-        if DataTypeToken.is_richer_than(data_type1, data_type2):
-            return data_type1
-        else:
-            return data_type2
-
 
 class DataType(abc.ABC):
     """
@@ -97,19 +61,34 @@ class DataType(abc.ABC):
         self.__pointer_level = pointer_level
         assert self.__pointer_level >= 0, "The pointer level should be at least 0."
 
+    def __str__(self):
+        return self.get_name()
+
     @staticmethod
     def is_richer_than(data_type1, data_type2):
         assert isinstance(data_type1, DataType) and isinstance(data_type2, DataType)
         if data_type1.get_pointer_level() == data_type2.get_pointer_level() == 0:
-            return DataTypeToken.is_richer_than(data_type1.get_token(), data_type2.get_token())
+            return data_type1.get_token().value > data_type2.get_token().value
         else:
             raise ValueError(
                 f'Cannot compare richness due to different pointer levels: '
                 f'{data_type1.get_pointer_level()} and {data_type2.get_pointer_level()}')
 
-    def equals(self, data_type):
-        assert isinstance(data_type, DataType)
-        return self.get_token() == data_type.get_token() and self.get_pointer_level() == data_type.get_pointer_level()
+    @staticmethod
+    def get_resulting_data_type(data_type1, data_type2):
+        assert data_type1.get_pointer_level() == data_type2.get_pointer_level(), "Not supported yet for pointers"
+        if DataType.is_richer_than(data_type1, data_type2):
+            return data_type1
+        else:
+            return data_type2
+
+    def __eq__(self, other):
+        assert self.get_pointer_level() == other.get_pointer_level(), "No support for pointers yet"
+        return self.get_token() == other.get_token() and self.get_pointer_level() == other.get_pointer_level()
+
+    def equals(self, other):
+        assert isinstance(other, DataType)
+        return self.__eq__(other)
 
     def get_token(self):
         """
@@ -134,38 +113,17 @@ class DataType(abc.ABC):
         return self.get_token().get_llvm_name() + ('*' * self.get_pointer_level())
 
 
-class BoolDataType(DataType):
-
-    def __init__(self, pointer_level: int):
-        super().__init__(DataTypeToken.BOOL, pointer_level)
-
-
-class CharDataType(DataType):
-
-    def __init__(self, pointer_level: int):
-        super().__init__(DataTypeToken.CHAR, pointer_level)
+def get_llvm_for_data_type(data_type_token: DataTypeToken, pointer_level):
+    """
+    A helper function to easily get the llvm name of artbitrary DataTypes with given pointer level.
+    Used this function if you don't have an instance of the specific DataType to get the llvm name for.
+    (look at alloca instruction)
+    """
+    return DataTypeToken.get_llvm_name(data_type_token) + ('*' * pointer_level)
 
 
-class IntDataType(DataType):
-
-    def __init__(self, pointer_level: int):
-        super().__init__(DataTypeToken.INT, pointer_level)
-
-
-class FloatDataType(DataType):
-
-    def __init__(self, pointer_level: int):
-        super().__init__(DataTypeToken.FLOAT, pointer_level)
-
-
-class DoubleDataType(DataType):
-
-    def __init__(self, pointer_level: int):
-        super().__init__(DataTypeToken.DOUBLE, pointer_level)
-
-
-class VoidDataType(DataType):
-
-    def __init__(self, pointer_level: int):
-        assert pointer_level > 0, "Void datatype must at least be of pointer level 1"
-        super().__init__(DataTypeToken.VOID, pointer_level)
+NORMAL_BOOL: Final = DataType(DataTypeToken.BOOL, 0)
+NORMAL_CHAR: Final = DataType(DataTypeToken.CHAR, 0)
+NORMAL_INT: Final = DataType(DataTypeToken.INT, 0)
+NORMAL_FLOAT: Final = DataType(DataTypeToken.FLOAT, 0)
+NORMAL_DOUBLE: Final = DataType(DataTypeToken.DOUBLE, 0)
