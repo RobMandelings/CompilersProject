@@ -1,16 +1,25 @@
+import collections
+
+import src.DataType as DataType
+import src.llvm.LLVMBasicBlock as LLVMBasicBlock
 import src.llvm.LLVMInstruction as LLVMInstruction
 import src.llvm.LLVMInterfaces as LLVMInterfaces
 import src.llvm.LLVMUtils as LLVMUtils
 import src.llvm.LLVMValue as LLVMValue
-import src.llvm.LLVMBasicBlock as LLVMBasicBlock
-import collections
 
 
 class LLVMFunction(LLVMInterfaces.IToLLVM):
 
-    def __init__(self, name: str):
-        self.name = name
-        self.local_variables_registers = dict()
+    def __init__(self, identifier: str, return_type: DataType.DataType, params: list):
+        """
+        Creates a new function in llvm.
+        return_type: DataType of the return type of this function
+        params: a list of LLVMRegisters with a specific data type
+        """
+        self.identifier = identifier
+        self.return_type = return_type
+        self.params = params
+
         self.basic_blocks = collections.OrderedDict()
         self.first_basic_block = LLVMBasicBlock.LLVMBasicBlock()
         self.basic_blocks[id(self.first_basic_block)] = self.first_basic_block
@@ -47,6 +56,10 @@ class LLVMFunction(LLVMInterfaces.IToLLVM):
 
         return basic_block
 
+    def get_return_type(self):
+        assert isinstance(self.return_type, DataType.DataType)
+        return self.return_type
+
     def get_new_register(self, data_type=None):
         """
         Returns the first local available register in LLVM (e.g. if registers %0-%6 are already in use, the newest register will be %7)
@@ -59,24 +72,45 @@ class LLVMFunction(LLVMInterfaces.IToLLVM):
         return register_to_return
 
     def update_numbering(self, counter):
-        first = True
+
+        for i in range(len(self.params)):
+            param = self.params[i]
+            assert isinstance(param, LLVMValue.LLVMRegister)
+            param.value = counter.get_value()
+            counter.increase()
+
+        # No idea why the counter has to be increased again but its necessary
+        counter.increase()
+
+        first_basic_block = True
         for basic_block_id, basic_block in self.basic_blocks.items():
 
-            if not first:
+            if not first_basic_block:
                 basic_block._number = counter.get_value()
                 counter.increase()
             else:
-                first = False
+                first_basic_block = False
 
             basic_block.update_numbering(counter)
 
     def to_llvm(self):
-        llvm_code = ""
 
         # This is the counter that will be used to give names to the definitive registers and labels of the basic blocks
         # We need to do this because due to building purposes, the current numbering is wrong
         counter = LLVMUtils.LLVMCounter()
         self.update_numbering(counter)
+
+        llvm_code = f'define dso_local {self.get_return_type().get_llvm_name()} @{self.identifier}('
+
+        for i in range(len(self.params)):
+            param = self.params[i]
+            assert isinstance(param, LLVMValue.LLVMRegister)
+
+            llvm_code += f'{param.get_data_type().get_llvm_name()} %{param.get_value()}'
+            if i != len(self.params) - 1:
+                llvm_code += ','
+
+        llvm_code += ') {\n'
 
         first = True
         for basic_block_id, basic_block in self.basic_blocks.items():
@@ -86,6 +120,8 @@ class LLVMFunction(LLVMInterfaces.IToLLVM):
             else:
                 first = False
 
-            llvm_code += f'{basic_block.to_llvm()} \n'
+            llvm_code += f'{basic_block.to_llvm()}\n'
+
+        llvm_code += '}'
 
         return llvm_code

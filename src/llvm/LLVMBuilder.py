@@ -15,9 +15,14 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
     def __init__(self):
         self.global_container = LLVMGlobalContainer.LLVMGlobalContainer()
         self.functions = list()
-        self.functions.append(LLVMFunctions.LLVMFunction("main"))
         self.symbol_table = LLVMSymbolTable.LLVMSymbolTable()
         pass
+
+    def get_printf_function_declaration(self):
+        return 'declare dso_local i32 @printf(i8*, ...)'
+
+    def add_function(self, function: LLVMFunctions.LLVMFunction):
+        self.functions.append(function)
 
     def get_current_function(self):
         """
@@ -258,14 +263,6 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         self.get_current_function().add_instruction(
             LLVMInstructions.StoreInstruction(current_variable_reg, value_to_store))
 
-    def _generate_begin_of_file(self):
-        begin_of_file = ""
-        begin_of_file += "declare i32 @printf(i8*, ...)\n"
-        # begin_of_file += "@.i = private unnamed_addr constant [3 x i8] c\"%i\\00\", align 1\n"
-        begin_of_file += "define i32 @main() {\n"
-        begin_of_file += "    start:\n"
-        return begin_of_file
-
     def _generate_end_of_file(self):
         end_of_file = ""
         end_of_file += "; we exit with code 0 = success\n"
@@ -282,8 +279,8 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
     def to_llvm(self):
         llvm_code = self.get_global_container().to_llvm() + "\n"
 
-        # Remove this and replace with just function things and other initializations
-        llvm_code += self._generate_begin_of_file() + "\n"
+        if self.get_global_container().has_printf_type_string():
+            llvm_code += self.get_printf_function_declaration() + "\n\n"
 
         for function in self.functions:
             llvm_code += function.to_llvm()

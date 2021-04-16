@@ -15,6 +15,9 @@ class LLVMGlobalContainer(LLVMInterfaces.IToLLVM):
         self.__printf_type_strings = dict()
         pass
 
+    def has_printf_type_string(self):
+        return len(self.__printf_type_strings) > 0
+
     def __add_printf_type_string(self, data_type_to_print: DataType.DataType):
 
         global_variable = f'@.str.{len(self.global_declaration_instructions)}'

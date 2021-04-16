@@ -39,6 +39,6 @@ class LLVMBasicBlock(LLVMInterfaces.IToLLVM):
         llvm_code = ""
 
         for instruction in self.instructions:
-            llvm_code += f"{instruction.to_llvm()}\n"
+            llvm_code += f"  {instruction.to_llvm()}\n"
 
         return llvm_code

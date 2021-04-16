@@ -81,6 +81,9 @@ class LLVMRegister(LLVMValue):
         super().__init__(None, data_type)
 
     def get_value(self):
+        """
+        Returns the number of this register. Still None if the numbers have not been updated (using update_numbering)
+        """
         assert isinstance(self.value, int)
         return self.value
 

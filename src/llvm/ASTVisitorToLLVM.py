@@ -4,6 +4,9 @@ import src.ast.ASTs as ASTs
 import src.llvm.LLVMBasicBlock as LLVMBasicBlock
 import src.llvm.LLVMBuilder as LLVMBuilder
 import src.llvm.LLVMInstruction as LLVMInstructions
+from src.ast.ASTs import ASTFunctionDeclaration
+from src.llvm.LLVMFunction import LLVMFunction
+from src.llvm.LLVMValue import LLVMRegister
 
 
 class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
@@ -193,6 +196,18 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
 
     def visit_ast_printf_instruction(self, ast: ASTs.ASTPrintfInstruction):
         self.builder.print_variable(ast.get_content())
+
+    def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
+        param_registers = list()
+
+        for param in ast.get_params():
+            assert isinstance(param, ASTs.ASTVariableDeclaration)
+            param_registers.append(LLVMRegister(param.get_data_type()))
+
+        return_type = ast.get_return_type().get_data_type()
+
+        self.builder.add_function(LLVMFunction(ast.get_name(), return_type, param_registers))
+        ast.get_execution_body().accept(self)
 
     def to_file(self, output_filename: str):
         self.builder.to_file(output_filename)
