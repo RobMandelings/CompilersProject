@@ -7,6 +7,9 @@ class Symbol:
     def __init__(self, symbol_name: str):
         self.symbol_name = symbol_name
 
+    def get_name(self):
+        return self.symbol_name
+
 
 class VariableSymbol(Symbol):
 
@@ -76,8 +79,3 @@ class SymbolTableSemanticAnalyser(SymbolTable.SymbolTable):
         """
         assert isinstance(parent, SymbolTableSemanticAnalyser) and not id(self) == id(parent)
         self.parent = parent
-
-    def insert_symbol(self, symbol_name: Symbol):
-        assert self.lookup_local(symbol_name.symbol_name) is None
-        self.symbols[symbol_name.symbol_name] = symbol_name
-        assert self.lookup_local(symbol_name.symbol_name) is not None

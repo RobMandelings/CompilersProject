@@ -118,10 +118,12 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
             ast.value_applied_to = self.do_constant_propagation(ast.value_applied_to)
         elif isinstance(ast, ASTVariable):
             variable = self.last_symbol_table.lookup_variable(ast.get_content())
-            # The variable in the symbol table still has a reaching definition, so we can replace this variable with the reaching definition
+            # The variable in the symbol table still has a reaching definition, so we can
+            # replace this variable with the reaching definition
             if variable.has_reaching_defintion():
                 # Return the reaching definition instead of the variable
-                # We need to make a deep copy so that they are not seen as one node anymore (changes to one node doesn't make changes to the other)
+                # We need to make a deep copy so that they are not seen as one node anymore
+                # (changes to one node doesn't make changes to the other)
                 # Otherwise this would also break visualisation because the DotVisitor uses the IDs of the Nodes
                 # Also the parent is different
 
@@ -347,8 +349,10 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
             if symbol_table.lookup(ast.var_name_ast.get_content()) is not None:
                 print(
                     f"[SemanticAnalysis] Warning: declaration of '{ast.var_name_ast.get_content()}' shadows a local variable. You might want to rename it")
-            symbol_table.insert_symbol(
-                VariableSymbol(ast.var_name_ast.get_content(), ast.get_data_type(), ast.is_const(), False))
+            var_name = ast.var_name_ast.get_content()
+            symbol_table.insert_symbol(var_name,
+                                       VariableSymbol(ast.var_name_ast.get_content(), ast.get_data_type(),
+                                                      ast.is_const(), False))
         else:
             raise SemanticError(
                 f"Variable with name '{ast.var_name_ast.get_content()}' has already been declared in this scope!")
@@ -439,7 +443,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
             raise SemanticError(f'function {self.get_function_name_for_symbol_table(ast)} already declared!\n')
 
         self.get_last_symbol_table().insert_symbol(
-            function_symbol)
+            function_symbol.get_name(), function_symbol)
 
         self.on_function_entered(function_symbol)
         self.on_scope_entered()
