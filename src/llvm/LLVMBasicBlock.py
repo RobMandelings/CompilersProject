@@ -17,6 +17,7 @@ class LLVMBasicBlock(LLVMInterfaces.IToLLVM):
         Safely adds a new instruction to the list of instructions
         """
         assert isinstance(instruction, LLVMInstruction.Instruction)
+        assert not isinstance(instruction, LLVMInstruction.AllocaInstruction)
         assert not self.has_terminal_instruction()
         self.instructions.append(instruction)
 
