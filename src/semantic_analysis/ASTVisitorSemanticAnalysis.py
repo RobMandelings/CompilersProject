@@ -153,7 +153,7 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
                     elif ast.get_token() == BinaryArithmeticExprToken.SUB:
                         result = left_value - right_value
                     elif ast.get_token() == BinaryArithmeticExprToken.DIV:
-                        if resulting_data_type == DataTypeToken.CHAR or resulting_data_type == DataTypeToken.INT:
+                        if resulting_data_type == DataType.DataTypeToken.CHAR or resulting_data_type == DataType.DataTypeToken.INT:
                             result = int(left_value / right_value)
                         else:
                             result = float(left_value / right_value)
@@ -234,7 +234,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         assert isinstance(symbol_table, SymbolTableSemanticAnalyser)
         return symbol_table
 
-    def check_for_narrowing_result(self, declared_data_type: DataTypeToken, ast: AST):
+    def check_for_narrowing_result(self, declared_data_type: DataType.DataTypeToken, ast: AST):
         """
         Checks if the result would be narrowed down into another data type (e.g. float to int). If so, warn to the log
         PRE-CONDITION: All variables need to be declared and initialized in order for lookups to work

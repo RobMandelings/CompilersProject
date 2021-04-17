@@ -1,6 +1,6 @@
 from abc import abstractmethod
 
-from src.DataType import DataType, DataTypeToken
+import src.DataType as DataType
 from src.ast.ASTTokens import *
 from src.ast.IAstVisitor import IASTVisitor
 
@@ -80,12 +80,12 @@ class ASTLiteral(ASTLeaf, IHasDataType):
     """
 
     def __init__(self, data_type: DataType, content: str):
-        assert isinstance(data_type, DataType) and not data_type.is_pointer()
+        assert isinstance(data_type, DataType.DataType) and not data_type.is_pointer()
         super().__init__(content)
         self.data_type = data_type
 
     def get_data_type(self):
-        assert isinstance(self.data_type, DataType)
+        assert isinstance(self.data_type, DataType.DataType)
         return self.data_type
 
     def get_data_type_token(self):
@@ -116,10 +116,10 @@ class ASTLiteral(ASTLeaf, IHasDataType):
         visitor.visit_ast_literal(self)
 
     def get_content_depending_on_data_type(self):
-        if self.get_data_type_token() == DataTypeToken.CHAR or self.get_data_type_token() == DataTypeToken.INT:
+        if self.get_data_type_token() == DataType.DataTypeToken.CHAR or self.get_data_type_token() == DataType.DataTypeToken.INT:
             # Both char and integers are integral types, so return an integer
             return int(self.get_content())
-        elif self.get_data_type_token() == DataTypeToken.FLOAT:
+        elif self.get_data_type_token() == DataType.DataTypeToken.FLOAT:
             return float(self.get_content())
         else:
             raise NotImplementedError
@@ -135,7 +135,7 @@ class ASTDataType(ASTLeaf, IHasToken, IHasDataType):
         return self.token
 
     def get_token(self):
-        assert isinstance(self.token, DataType)
+        assert isinstance(self.token, DataType.DataType)
         return self.token
 
     def accept(self, visitor: IASTVisitor):
@@ -158,7 +158,7 @@ class ASTArray(ASTLeaf, IHasDataType):
         return self.size
 
     def get_data_type(self):
-        assert isinstance(self.data_type, DataType)
+        assert isinstance(self.data_type, DataType.DataType)
         return self.data_type
 
 
@@ -270,8 +270,8 @@ class ASTBinaryExpression(ASTExpression, IHasDataType, IHasToken):
     def get_data_type(self):
         left_data_type = self.get_left().get_data_type()
         right_data_type = self.get_right().get_data_type()
-        assert isinstance(left_data_type, DataType) and isinstance(right_data_type, DataType)
-        if DataType.is_richer_than(left_data_type, right_data_type):
+        assert isinstance(left_data_type, DataType.DataType) and isinstance(right_data_type, DataType.DataType)
+        if DataType.DataType.is_richer_than(left_data_type, right_data_type):
             return left_data_type
         else:
             return right_data_type
@@ -303,7 +303,7 @@ class ASTArrayAccessElement(ASTLeaf):
 
     def get_index_accessed(self):
         assert isinstance(self.index_accessed, ASTLiteral) and \
-               self.index_accessed.get_data_type() == DataTypeToken.INT
+               self.index_accessed.get_data_type() == DataType.NORMAL_INT
         return self.index_accessed
 
 
@@ -537,12 +537,12 @@ class ASTArrayDeclaration(ASTVariableDeclaration):
 
     def __init__(self, data_type_and_attributes: list, name: ASTVariable, size: ASTLiteral):
         super().__init__(data_type_and_attributes, name)
-        assert size.get_data_type() == DataTypeToken.INT
+        assert size.get_data_type() == DataType.NORMAL_INT
         self.size = size
         self.content = f'variable declaration: array (size_ast: {self.size})'
 
     def get_size(self):
-        assert isinstance(self.size, ASTLiteral) and self.size.get_data_type() == DataTypeToken.INT
+        assert isinstance(self.size, ASTLiteral) and self.size.get_data_type() == DataType.NORMAL_INT
         return self.size
 
     def accept(self, visitor: IASTVisitor):
@@ -655,12 +655,12 @@ class ASTArrayDeclarationAndInit(ASTVariableDeclarationAndInit):
 
     def __init__(self, data_type_and_attributes: list, name: ASTVariable, size_ast: ASTLiteral, value: ASTArrayInit):
         super().__init__(data_type_and_attributes, name, value)
-        assert size_ast.get_data_type() == DataTypeToken.INT
+        assert size_ast.get_data_type() == DataType.NORMAL_INT
         self.content = f'var declaration and init: array ({size_ast.get_content()})'
         self.size_ast = size_ast
 
     def get_size(self):
-        assert isinstance(self.size_ast, ASTLiteral) and self.size_ast.get_data_type() == DataTypeToken.INT
+        assert isinstance(self.size_ast, ASTLiteral) and self.size_ast.get_data_type() == DataType.NORMAL_INT
         return self.size_ast
 
     def accept(self, visitor):
