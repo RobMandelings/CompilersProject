@@ -189,7 +189,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
             "WARN: binary expression directly visited in ASTVisitorToLLVM. Does nothing as it has no meaning by itself.")
 
     def visit_ast_assignment_expression(self, ast: ASTs.ASTAssignmentExpression):
-        self.builder.assign_value_to_variable(ast)
+        self.builder.assign_value(ast)
 
     def visit_ast_variable_declaration_and_init(self, ast: ASTs.ASTVariableDeclarationAndInit):
         self.builder.declare_and_init_variable(ast)
@@ -231,7 +231,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         self.get_current_function().add_instruction(instruction)
 
     def visit_ast_array_init(self, ast: ASTs.ASTArrayInit):
-        pass
+        raise NotImplementedError
 
     def visit_ast_array_declaration_and_init(self, ast: ASTs.ASTArrayDeclarationAndInit):
         pass

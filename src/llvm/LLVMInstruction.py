@@ -404,6 +404,17 @@ class UnaryArithmeticInstruction(AssignInstruction):
         raise NotImplementedError
 
 
+class GetElementPtrInstruction(AssignInstruction):
+
+    def __init__(self, resulting_register: LLVMValue.LLVMRegister, index: int, ):
+        super().__init__(resulting_register)
+        self.index = index
+
+    def to_llvm(self):
+        test = 0
+        return super().to_llvm() + f'getelementptr inbounds [{test} x {test}], [{test} x {test}]* {test}, i64 0, i64 {test}'
+
+
 class PrintfInstruction(AssignInstruction):
 
     def __init__(self, register_to_print: LLVMValue.LLVMRegister,

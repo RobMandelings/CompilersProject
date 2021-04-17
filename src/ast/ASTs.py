@@ -313,13 +313,13 @@ class ASTAssignmentExpression(ASTBinaryExpression):
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_assignment_expression(self)
 
-    def get_variable(self):
+    def get_left(self):
         """
         Inherits get_left from ASTBinaryExpression to do an extra check: the left must be an identifier in this case
 
         returns: an instance of ASTVariable (left side of the equation)
         """
-        assert isinstance(self.get_left(), ASTVariable)
+        assert isinstance(self.left, ASTVariable) or isinstance(self.left, ASTArrayAccessElement)
         return super().get_left()
 
 

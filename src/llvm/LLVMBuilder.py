@@ -241,29 +241,36 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         self.get_current_function().add_instruction(LLVMInstructions.AllocaInstruction(new_register))
         self.get_current_function().add_instruction(LLVMInstructions.StoreInstruction(new_register, value_to_store))
 
-    def assign_value_to_variable(self, ast: ASTs.ASTAssignmentExpression):
+    def assign_value(self, ast: ASTs.ASTAssignmentExpression):
         """
         Assigns a value to an existing variable (which has a current register),
         generating instructions in the process and adding them to the current basic block
         """
+
         # TODO Type conversions are not supported yet
         right = ast.get_right()
+        left = ast.get_left()
+        if isinstance(left, ASTs.ASTVariable):
+            variable_register = self.get_variable_register(ast.get_left().get_content())
 
-        variable_register = self.get_variable_register(ast.get_variable().get_content())
+            computed_expression_value = self.compute_expression(right)
 
-        computed_expression_value = self.compute_expression(right)
+            if computed_expression_value.get_data_type().is_pointer():
+                # TODO: This must be done using a derefence operator
+                # TODO: This register is used to load from pointer type into an actual value of that data type (sure?)
+                value_to_store = self.get_current_function().get_new_register()
+                self.get_current_function().add_instruction(
+                    LLVMInstructions.LoadInstruction(value_to_store, computed_expression_value))
+            else:
+                value_to_store = computed_expression_value
 
-        if computed_expression_value.get_data_type().is_pointer():
-            # TODO: This must be done using a derefence operator
-            # TODO: This register is used to load from pointer type into an actual value of that data type (sure?)
-            value_to_store = self.get_current_function().get_new_register()
             self.get_current_function().add_instruction(
-                LLVMInstructions.LoadInstruction(value_to_store, computed_expression_value))
-        else:
-            value_to_store = computed_expression_value
+                LLVMInstructions.StoreInstruction(variable_register, value_to_store))
 
-        self.get_current_function().add_instruction(
-            LLVMInstructions.StoreInstruction(variable_register, value_to_store))
+        elif isinstance(left.get_left(), ASTs.ASTArrayAccessElement):
+            array_start_register = self.get
+        else:
+            raise NotImplementedError
 
     def to_file(self, filename: str):
         f = open(filename, "w+")
