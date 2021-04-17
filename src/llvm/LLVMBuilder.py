@@ -207,7 +207,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         """
         Creates the instructions to call a function and returns the result as an LLVMRegister.
         """
-        best_match_function = self.find_best_match(ast.get_function_called().get_name(), ast.get_arguments())
+        best_match_function = self.find_best_match(ast.get_function_called(), ast.get_arguments())
 
         args_llvm_value = list()
 

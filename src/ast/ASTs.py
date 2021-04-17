@@ -548,6 +548,7 @@ class ASTFunctionDeclaration(AST):
 
     def __init__(self, function_name: str, params: list, return_type: ASTDataType, execution_body: ASTScope):
         super().__init__(f'function declaration:\n')
+        assert isinstance(function_name, str)
         self.function_name = function_name
         self.params = params
         for param in self.params:
@@ -622,10 +623,9 @@ class ASTArrayInit(AST):
 class ASTFunctionCall(ASTExpression):
 
     def __init__(self, function_called: str, params: list):
-        super().__init__(f'function call')
+        super().__init__(f'function call: {function_called}')
 
         self.function_called = function_called
-        self.function_called.parent = self
         self.params = params
         for param in self.params:
             param.parent = self
@@ -634,7 +634,7 @@ class ASTFunctionCall(ASTExpression):
         return self.params
 
     def get_function_called(self):
-        assert isinstance(self.function_called, ASTVariable)
+        assert isinstance(self.function_called, str)
         return self.function_called
 
     def accept(self, visitor: IASTVisitor):

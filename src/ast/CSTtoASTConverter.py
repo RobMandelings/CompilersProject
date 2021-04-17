@@ -48,7 +48,8 @@ def create_ast_var_declaration_and_init(cst):
 
 
 def create_ast_var_declaration(cst):
-    assert isinstance(cst.children[0], CParser.TypeDeclarationContext) or isinstance(cst.childer[0], CParser.ArrayDeclarationContext)
+    assert isinstance(cst.children[0], CParser.TypeDeclarationContext) or isinstance(cst.childer[0],
+                                                                                     CParser.ArrayDeclarationContext)
 
     data_type_and_attributes = create_ast_from_cst(cst.children[0])
     name = create_ast_from_cst(cst.children[1])
@@ -266,7 +267,7 @@ def create_ast_from_cst(cst):
         return ASTArrayAccessElement(create_ast_from_terminal_node(cst.children[0]),
                                      create_ast_from_terminal_node(cst.children[2]))
     elif isinstance(cst, CParser.FunctionCallContext):
-        function_called = create_ast_from_cst(cst.children[0])
+        function_called = cst.children[0].getSymbol().text
         param_range = range(1, len(cst.children) - 1)
         params = list()
         for i in param_range:

@@ -59,15 +59,6 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
         assert variable.is_initialized(), "Variable should be initialized"
         self.update_current_data_type(variable.data_type)
 
-    def visit_ast_function_call(self, ast: ASTFunctionCall):
-        """
-        We need to do it using a function call because otherwise the identifier of the function will be
-        recognized as a variable
-        """
-        # TODO we don't need to have an AST for each attribute, the identifier can just be part of this AST
-        for param in ast.get_arguments():
-            param.accept(self)
-
 
 class ASTVisitorUndeclaredVariableUsed(ASTBaseVisitor):
     """
@@ -84,10 +75,6 @@ class ASTVisitorUndeclaredVariableUsed(ASTBaseVisitor):
         table_element = self.last_symbol_table.lookup(ast.get_content())
         if not table_element:
             self.undeclared_variables_used.append(ast)
-
-    def visit_ast_function_call(self, ast: ASTFunctionCall):
-        for param in ast.get_arguments():
-            param.accept(self)
 
 
 class ASTVisitorUninitializedVariableUsed(ASTBaseVisitor):
@@ -109,10 +96,6 @@ class ASTVisitorUninitializedVariableUsed(ASTBaseVisitor):
             assert isinstance(table_element, VariableSymbol)
             if not table_element.is_initialized():
                 self.uninitialized_variables_used.append(ast)
-
-    def visit_ast_function_call(self, ast: ASTFunctionCall):
-        for param in ast.get_arguments():
-            param.accept(self)
 
 
 class ASTVisitorOptimizer(ASTBaseVisitor):
