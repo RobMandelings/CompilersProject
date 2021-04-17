@@ -3,7 +3,7 @@ from graphviz import Digraph
 import src.DataType as DataType
 from src.ast.ASTBaseVisitor import ASTBaseVisitor
 from src.ast.ASTs import ASTPrintfInstruction, ASTUnaryExpression, ASTLiteral, ASTControlFlowStatement, \
-    ASTFunctionDeclaration, ASTArrayDeclaration, ASTArrayInit, ASTReturnStatement
+    ASTFunctionDeclaration, ASTArrayDeclaration, ASTArrayInit, ASTReturnStatement, ASTFunctionCall
 
 
 class ASTVisitorDot(ASTBaseVisitor):
@@ -77,6 +77,10 @@ class ASTVisitorDot(ASTBaseVisitor):
 
     def visit_ast_while_loop(self, ast):
         super().visit_ast_while_loop(ast)
+        self.add_to_dot_node(ast)
+
+    def visit_ast_function_call(self, ast: ASTFunctionCall):
+        super().visit_ast_function_call(ast)
         self.add_to_dot_node(ast)
 
     def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):

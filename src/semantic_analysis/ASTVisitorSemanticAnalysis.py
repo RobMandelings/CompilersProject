@@ -395,17 +395,19 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         super().visit_ast_scope(ast)
         self.on_scope_exit()
 
-    def get_function_name_for_symbol_table(self, ast: ASTFunctionDeclaration):
+    def get_function_name_for_symbol_table(self, function_identifier: str, param_data_types: list):
         """
         Creates an appropriate function name to put as key in the symbol table, taking into account which functions
         can be overloaded and which not
+        function_identifier: the identifier of the function
+        param_data_types: DataTypes of the parameters
         """
-        name = f'{ast.get_name()}('
+        name = f'{function_identifier}('
 
-        for i in range(0, len(ast.get_params())):
-            param = ast.get_params()[i]
-            name += param.get_data_type().get_name()
-            if i != len(ast.get_params()) - 1:
+        for i in range(0, len(param_data_types)):
+            param_data_type = param_data_types[i]
+            name += param_data_type.get_name()
+            if i != len(param_data_types) - 1:
                 name += ','
 
         name += ')'
@@ -451,15 +453,46 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         if not boolean_result:
             print("WARN: the result of an expression does not return boolean type")
 
+    def visit_ast_function_call(self, ast: ASTFunctionCall):
+
+        function_identifier = ast.get_function_called().get_name()
+
+        param_data_types = list()
+
+        for param in ast.get_params():
+            self.check_undeclared_variable_usage(param)
+            self.check_uninitialized_variable_usage(param)
+
+            resulting_data_type_visitor = ASTVisitorResultingDataType(self.get_last_symbol_table())
+            param.accept(resulting_data_type_visitor)
+            param_data_types.append(resulting_data_type_visitor.get_resulting_data_type())
+
+        function_name_for_symbol_table = self.get_function_name_for_symbol_table(function_identifier, param_data_types)
+        function_lookup = self.get_last_symbol_table().lookup(function_name_for_symbol_table)
+
+        if function_lookup is None:
+            raise SemanticError(f'Function {function_name_for_symbol_table} is not declared! Cannot call this function')
+
     def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
         """
         Basically takes over the scope thing a little bit because of the parameters
         """
 
-        function_symbol = FunctionSymbol(self.get_function_name_for_symbol_table(ast), ast.get_params(),
+        function_identifier = ast.get_name()
+        param_data_types = list()
+
+        for param in ast.get_params():
+            param_data_types.append(param.get_data_type())
+
+        function_name_for_symbol_table = self.get_function_name_for_symbol_table(function_identifier, param_data_types)
+
+        function_symbol = FunctionSymbol(function_name_for_symbol_table,
+                                         ast.get_params(),
                                          ast.get_return_type().get_data_type())
-        if self.get_last_symbol_table().lookup(self.get_function_name_for_symbol_table(ast)) is not None:
-            raise SemanticError(f'function {self.get_function_name_for_symbol_table(ast)} already declared!\n')
+        if self.get_last_symbol_table().lookup(
+                function_name_for_symbol_table) is not None:
+            raise SemanticError(
+                f'function {function_name_for_symbol_table} already declared!\n')
 
         self.get_last_symbol_table().insert_symbol(
             function_symbol.get_name(), function_symbol)

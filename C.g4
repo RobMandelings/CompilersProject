@@ -54,8 +54,8 @@ controlFlowStatement: BREAK | CONTINUE | returnStatement ;
 returnStatement: RETURN (value | expression);
 
 printfStatement: 'printf' '(' value ')' ;
-varDeclaration: (typeDeclaration ID) | arrayDeclaration ;
-arrayDeclaration: typeDeclaration ID '[' INT_LITERAL ']' ;
+varDeclaration: typeDeclaration ID arrayDeclaration? ;
+arrayDeclaration: '[' INT_LITERAL ']' ;
 
 typeDeclaration:
     // TODO instead of 'const int' also support 'int const'?

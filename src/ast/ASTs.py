@@ -620,6 +620,28 @@ class ASTArrayInit(AST):
         return visitor.visit_ast_array_init(self)
 
 
+class ASTFunctionCall(AST):
+
+    def __init__(self, function_called: str, params: list):
+        super().__init__(f'function call')
+
+        self.function_called = function_called
+        self.function_called.parent = self
+        self.params = params
+        for param in self.params:
+            param.parent = self
+
+    def get_params(self):
+        return self.params
+
+    def get_function_called(self):
+        assert isinstance(self.function_called, ASTVariable)
+        return self.function_called
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_function_call(self)
+
+
 class ASTReturnStatement(AST):
 
     def __init__(self, return_value: AST):

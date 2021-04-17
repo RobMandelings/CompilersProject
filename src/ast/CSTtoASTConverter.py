@@ -53,8 +53,9 @@ def create_ast_var_declaration(cst):
     data_type_and_attributes = create_ast_from_cst(cst.children[0])
     name = create_ast_from_cst(cst.children[1])
 
-    if isinstance(cst, CParser.ArrayDeclarationContext):
-        size = create_ast_from_cst(cst.children[3])
+    if isinstance(cst.children[2], CParser.ArrayDeclarationContext):
+        array_declaration = cst.children[2]
+        size = create_ast_from_cst(array_declaration.children[1])
         return ASTArrayDeclaration(data_type_and_attributes, name, size)
     else:
         return ASTVariableDeclaration(data_type_and_attributes, name)
@@ -264,6 +265,16 @@ def create_ast_from_cst(cst):
         # We know the children of the arrayAccessElement are terminal nodes (being the identifier and the size required)
         return ASTArrayAccessElement(create_ast_from_terminal_node(cst.children[0]),
                                      create_ast_from_terminal_node(cst.children[2]))
+    elif isinstance(cst, CParser.FunctionCallContext):
+        function_called = create_ast_from_cst(cst.children[0])
+        param_range = range(1, len(cst.children) - 1)
+        params = list()
+        for i in param_range:
+            param = create_ast_from_cst(cst.children[i])
+            if param is not None:
+                params.append(param)
+
+        return ASTFunctionCall(function_called, params)
     elif isinstance(cst, CParser.VarDeclarationAndInitContext):
         return create_ast_var_declaration_and_init(cst)
     elif isinstance(cst, CParser.VarDeclarationContext) or isinstance(cst, CParser.ArrayDeclarationContext):
