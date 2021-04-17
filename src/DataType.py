@@ -48,7 +48,7 @@ class DataTypeToken(enum_utils.NamedEnum):
             return None
 
 
-class DataType(abc.ABC):
+class DataType:
     """
     Uses the DataTypeToken enum under the hood, but also takes into account the pointer levels
     """
@@ -116,7 +116,7 @@ class DataType(abc.ABC):
 def get_llvm_for_data_type(data_type_token: DataTypeToken, pointer_level):
     """
     A helper function to easily get the llvm name of artbitrary DataTypes with given pointer level.
-    Used this function if you don't have an instance of the specific DataType to get the llvm name for.
+    Use this function if you don't have an instance of the specific DataType to get the llvm name for.
     (look at alloca instruction)
     """
     return DataTypeToken.get_llvm_name(data_type_token) + ('*' * pointer_level)
