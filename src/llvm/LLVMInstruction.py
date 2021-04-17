@@ -114,11 +114,19 @@ class AllocaArrayInstruction(AllocaInstruction):
 
 class StoreInstruction(Instruction):
 
-    def __init__(self, resulting_reg: LLVMValue.LLVMRegister, value_to_store: LLVMValue):
+    def __init__(self, put_in_register: LLVMValue.LLVMRegister, value_to_store: LLVMValue):
+        """
+        put_in_register: the register to put the value-to-store in
+        value_to_store: either an LLVMLiteral or LLVMRegister which value will be stored in the LLVMRegister
+        """
         super().__init__()
-        assert resulting_reg.get_data_type().is_pointer(), "The resulting register must be of " \
-                                                           "pointer type for a value to be stored in it!"
-        self.resulting_reg = resulting_reg
+        assert (
+                put_in_register.get_data_type().get_pointer_level() ==
+                value_to_store.get_data_type().get_pointer_level() + 1), \
+            "The value to store must be one pointer level lower than the" \
+            "register to store it in"
+
+        self.resulting_reg = put_in_register
         self.value_to_store = value_to_store
 
     def to_llvm(self):
@@ -147,7 +155,7 @@ class LoadInstruction(AssignInstruction):
 
     def to_llvm(self):
         llvm_data_type_to_load = self.resulting_reg.get_data_type().get_llvm_name()
-        return super().to_llvm() + f"load {llvm_data_type_to_load}, {llvm_data_type_to_load}* {self.load_from_reg}"
+        return super().to_llvm() + f"load {llvm_data_type_to_load}, {llvm_data_type_to_load}* {self.load_from_reg}, align 4"
 
 
 class ConditionalBranchInstruction(Instruction):
@@ -406,7 +414,8 @@ class UnaryArithmeticInstruction(AssignInstruction):
 
 class GetElementPtrInstruction(AssignInstruction):
 
-    def __init__(self, resulting_register: LLVMValue.LLVMRegister, index: str, size: LLVMValue.LLVMLiteral, array_register: LLVMValue.LLVMRegister):
+    def __init__(self, resulting_register: LLVMValue.LLVMRegister, index: str, size: LLVMValue.LLVMLiteral,
+                 array_register: LLVMValue.LLVMRegister):
         super().__init__(resulting_register)
         self.index = index
         self.size = size
@@ -416,7 +425,8 @@ class GetElementPtrInstruction(AssignInstruction):
         assert isinstance(array_register, LLVMValue.LLVMRegister)
 
     def to_llvm(self):
-        datatype = DataType.DataType(self.array_register.get_data_type().get_token(), self.array_register.get_data_type().get_pointer_level() - 1)
+        datatype = DataType.DataType(self.array_register.get_data_type().get_token(),
+                                     self.array_register.get_data_type().get_pointer_level() - 1)
         return super().to_llvm() + f'getelementptr inbounds [{self.size.get_value()} x {datatype.get_llvm_name()}], ' \
                                    f'[{self.size.get_value()} x {datatype.get_llvm_name()}]* {self.array_register.to_llvm()}, i64 0, i64 {self.index}'
 
@@ -446,7 +456,7 @@ class PrintfInstruction(AssignInstruction):
 
 class CallInstruction(AssignInstruction):
 
-    def __init__(self, function_to_call, params: list):
+    def __init__(self, function_to_call, args: list):
         from src.llvm.LLVMFunction import LLVMFunction
         """
         Function to call: should be an LLVMFunction.LLVMFunction instance
@@ -454,20 +464,20 @@ class CallInstruction(AssignInstruction):
         """
         assert isinstance(function_to_call, LLVMFunction)
         self.function_to_call = function_to_call
-        self.params = params
+        self.args = args
         super().__init__(LLVMValue.LLVMRegister(function_to_call.get_return_type()))
 
     def to_llvm(self):
         llvm_code = f'{super().to_llvm()}call {self.function_to_call.get_return_type().get_llvm_name()} ' \
                     f'@{self.function_to_call.get_identifier()}('
 
-        for i in range(len(self.params)):
-            param = self.params[i]
-            assert isinstance(param, LLVMValue.LLVMValue)
+        for i in range(len(self.args)):
+            arg = self.args[i]
+            assert isinstance(arg, LLVMValue.LLVMValue)
 
-            llvm_code += f'{param.get_data_type().get_llvm_name()} {param.get_value()}'
+            llvm_code += f'{arg.get_data_type().get_llvm_name()} {arg.to_llvm()}'
 
-            if i != len(self.params) - 1:
+            if i != len(self.args) - 1:
                 llvm_code += ','
 
         llvm_code += ')'

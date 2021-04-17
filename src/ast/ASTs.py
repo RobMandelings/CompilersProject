@@ -253,7 +253,7 @@ class ASTUnaryPointerExpression(ASTUnaryExpression, IHasToken):
         visitor.visit_ast_unary_expression(self)
 
 
-class ASTBinaryExpression(ASTExpression, IHasDataType, IHasToken):
+class ASTBinaryExpression(ASTExpression, IHasToken):
 
     def __init__(self, content: str, left: AST, right: AST):
         assert isinstance(left, AST) and isinstance(right, AST)
@@ -262,15 +262,6 @@ class ASTBinaryExpression(ASTExpression, IHasDataType, IHasToken):
         self.right = right
         self.left.parent = self
         self.right.parent = self
-
-    def get_data_type(self):
-        left_data_type = self.get_left().get_data_type()
-        right_data_type = self.get_right().get_data_type()
-        assert isinstance(left_data_type, DataType.DataType) and isinstance(right_data_type, DataType.DataType)
-        if DataType.DataType.is_richer_than(left_data_type, right_data_type):
-            return left_data_type
-        else:
-            return right_data_type
 
     def get_token(self):
         raise NotImplementedError("Generic method")
@@ -282,7 +273,6 @@ class ASTBinaryExpression(ASTExpression, IHasDataType, IHasToken):
         return self.left
 
     def get_right(self):
-        assert isinstance(self.right, ASTExpression) or isinstance(self.right, ASTLiteral)
         return self.right
 
 
@@ -474,8 +464,14 @@ class ASTVariableDeclaration(AST):
         self.var_name_ast = name
         self.var_name_ast.parent = self
 
+    def get_var_name_ast(self):
+        """
+        Returns the AST version of the variable name
+        """
+        return self.var_name_ast
+
     def get_var_name(self):
-        return self.var_name_ast.get_content()
+        return self.get_var_name_ast().get_name()
 
     def is_const(self):
         for attribute in self.type_attributes:
@@ -623,7 +619,7 @@ class ASTArrayInit(AST):
         return visitor.visit_ast_array_init(self)
 
 
-class ASTFunctionCall(AST):
+class ASTFunctionCall(ASTExpression):
 
     def __init__(self, function_called: str, params: list):
         super().__init__(f'function call')
@@ -634,7 +630,7 @@ class ASTFunctionCall(AST):
         for param in self.params:
             param.parent = self
 
-    def get_params(self):
+    def get_arguments(self):
         return self.params
 
     def get_function_called(self):

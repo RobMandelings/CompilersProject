@@ -200,7 +200,9 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         self.builder.print_variable(ast.get_content())
 
     def on_scope_entered(self):
-        self.builder.symbol_table_stack.append(LLVMSymbolTable.LLVMSymbolTable())
+        new_symbol_table = LLVMSymbolTable.LLVMSymbolTable()
+        new_symbol_table.parent = self.builder.get_last_symbol_table()
+        self.builder.symbol_table_stack.append(new_symbol_table)
 
     def on_scope_exit(self):
         self.builder.symbol_table_stack.pop()
@@ -211,7 +213,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         self.on_scope_exit()
 
     def visit_ast_function_call(self, ast: ASTFunctionCall):
-        self.builder.create_function_call(ast)
+        self.builder.compute_expression(ast)
 
     def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
         param_registers = list()
@@ -220,9 +222,21 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
             assert isinstance(param, ASTs.ASTVariableDeclaration)
             param_registers.append(LLVMValue.LLVMRegister(param.get_data_type()))
 
+        assert len(param_registers) == len(ast.get_params())
+
         return_type = ast.get_return_type().get_data_type()
 
         self.builder.add_function(LLVMFunction(ast.get_name(), return_type, param_registers))
+
+        # Now that the function has been created, loop again over each of the parameters
+        for i in range(len(ast.get_params())):
+            param_register = param_registers[i]
+            param = ast.get_params()[i]
+            assert isinstance(param, ASTs.ASTVariableDeclaration)
+            resulting_reg = self.builder.declare_variable(param)
+            self.builder.get_current_function().add_instruction(
+                LLVMInstructions.StoreInstruction(resulting_reg, param_register))
+
         ast.get_execution_body().accept(self)
         current_function = self.builder.get_current_function()
 
@@ -238,7 +252,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
     def visit_ast_return_statement(self, ast: ASTReturnStatement):
 
         if isinstance(ast.get_return_value(), ASTs.ASTExpression):
-            return_value = self.builder.compute_expression(ast)
+            return_value = self.builder.compute_expression(ast.get_return_value())
         elif isinstance(ast.get_return_value(), ASTs.ASTVariable):
             variable_register = self.builder.get_variable_register(ast.get_return_value().get_name())
             return_value = LLVMValue.LLVMRegister(DataType.DataType(variable_register.get_data_type().get_token(),

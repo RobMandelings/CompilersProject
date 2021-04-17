@@ -61,15 +61,13 @@ class SymbolTableSemanticAnalyser(SymbolTable.SymbolTable):
     def __init__(self):
         super().__init__()
 
-    def lookup_variable(self, symbol: Symbol):
+    def lookup_variable(self, symbol_name: str):
         """
         Looks up a variable in the symbol table
         PRE-CONDITION: the symbol name given for lookup should result in a symbol which is actually a VariableSymbol.
         The semantic error checks should be executed before using this
         """
-        symbol = self.lookup(symbol)
-        assert isinstance(symbol, Symbol)
-        variable = symbol
+        variable = self.lookup(symbol_name)
         assert isinstance(variable, VariableSymbol)
         return variable
 

@@ -56,8 +56,17 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
 
     def visit_ast_identifier(self, ast: ASTVariable):
         variable = self.last_symbol_table.lookup_variable(ast.get_content())
-        assert variable.is_initialized()
+        assert variable.is_initialized(), "Variable should be initialized"
         self.update_current_data_type(variable.data_type)
+
+    def visit_ast_function_call(self, ast: ASTFunctionCall):
+        """
+        We need to do it using a function call because otherwise the identifier of the function will be
+        recognized as a variable
+        """
+        # TODO we don't need to have an AST for each attribute, the identifier can just be part of this AST
+        for param in ast.get_arguments():
+            param.accept(self)
 
 
 class ASTVisitorUndeclaredVariableUsed(ASTBaseVisitor):
@@ -75,6 +84,10 @@ class ASTVisitorUndeclaredVariableUsed(ASTBaseVisitor):
         table_element = self.last_symbol_table.lookup(ast.get_content())
         if not table_element:
             self.undeclared_variables_used.append(ast)
+
+    def visit_ast_function_call(self, ast: ASTFunctionCall):
+        for param in ast.get_arguments():
+            param.accept(self)
 
 
 class ASTVisitorUninitializedVariableUsed(ASTBaseVisitor):
@@ -96,6 +109,10 @@ class ASTVisitorUninitializedVariableUsed(ASTBaseVisitor):
             assert isinstance(table_element, VariableSymbol)
             if not table_element.is_initialized():
                 self.uninitialized_variables_used.append(ast)
+
+    def visit_ast_function_call(self, ast: ASTFunctionCall):
+        for param in ast.get_arguments():
+            param.accept(self)
 
 
 class ASTVisitorOptimizer(ASTBaseVisitor):
@@ -224,6 +241,16 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
     def get_current_function(self):
         assert self.current_function is None or isinstance(self.current_function, FunctionSymbol)
         return self.current_function
+
+    def get_resulting_data_type(self, ast: ASTExpression):
+        """
+        Calculates the resulting data type using a visitor for the AST. This is necessary because some variables
+        need to be looked up in a symbol table for it to determine the resulting (richest) data type
+        """
+        assert isinstance(ast, ASTExpression)
+        resulting_data_type_visitor = ASTVisitorResultingDataType(self.get_last_symbol_table())
+        ast.accept(resulting_data_type_visitor)
+        return resulting_data_type_visitor.get_resulting_data_type()
 
     def get_last_symbol_table(self):
         """
@@ -428,7 +455,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         if isinstance(return_value, ASTVariable):
             return_value = self.get_last_symbol_table().lookup_variable(return_value.get_content())
 
-        if self.get_current_function().get_return_type() != return_value.get_data_type():
+        if self.get_current_function().get_return_type() != self.get_resulting_data_type(return_value):
             raise SemanticError(
                 f"The return type of the function '{self.get_current_function().symbol_name}' "
                 f"(data type '{self.get_current_function().get_return_type()}') and "
@@ -459,7 +486,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         param_data_types = list()
 
-        for param in ast.get_params():
+        for param in ast.get_arguments():
             self.check_undeclared_variable_usage(param)
             self.check_uninitialized_variable_usage(param)
 
@@ -500,7 +527,16 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         self.on_function_entered(function_symbol)
         self.on_scope_entered()
         for param in ast.get_params():
-            param.accept(self)
+            # A little bit different then with normal variable declarations, which is why we handle it ourselves
+            # The variable symbol will be set on initialized in the symbol table as it is a parameter, so values
+            # are passed in
+            assert isinstance(param, ASTVariableDeclaration)
+            var_name = param.get_var_name()
+            self.get_last_symbol_table().insert_symbol(var_name,
+                                                       VariableSymbol(param.get_var_name_ast().get_content(),
+                                                                      param.get_data_type(),
+                                                                      param.is_const(), True))
+
         # Skip the on_scope entered thing because it is already done
         super().visit_ast_scope(ast.get_execution_body())
         self.on_scope_exit()

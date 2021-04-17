@@ -120,7 +120,7 @@ class ASTBaseVisitor(IASTVisitor):
 
     def visit_ast_function_call(self, ast: ASTFunctionCall):
         ast.get_function_called().accept(self)
-        for param in ast.get_params():
+        for param in ast.get_arguments():
             param.accept(self)
 
     def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):

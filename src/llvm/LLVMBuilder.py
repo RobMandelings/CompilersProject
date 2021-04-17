@@ -63,18 +63,6 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
     def add_function(self, function: LLVMFunctions.LLVMFunction):
         self.functions.append(function)
 
-    def create_function_call(self, ast: ASTs.ASTFunctionCall):
-        best_match_function = self.find_best_match(ast.get_function_called().get_name(), ast.get_params())
-
-        params_llvm_value = list()
-
-        for param in ast.get_params():
-            resulting_llvm_value = self.compute_expression(param)
-            params_llvm_value.append(resulting_llvm_value)
-
-        self.get_current_function().add_instruction(
-            LLVMInstructions.CallInstruction(best_match_function, params_llvm_value))
-
     def get_current_function(self):
         """
         Returns the current function that is being generated in LLVM code. Instructions should be appended to this
@@ -160,69 +148,94 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
         return compare_instruction.get_resulting_register()
 
+    def __compute_binary_expression(self, ast: ASTs.ASTBinaryExpression):
+
+        operand1 = self.compute_expression(ast.left)
+        operand2 = self.compute_expression(ast.right)
+
+        instruction = None
+        operation = ast.get_token()
+
+        if isinstance(operation, ASTs.BinaryArithmeticExprToken):
+            register_to_return = self.get_current_function().get_new_register(
+                DataType.DataType.get_resulting_data_type(operand1.get_data_type(), operand2.get_data_type()))
+            instruction = LLVMInstructions.BinaryArithmeticInstruction(register_to_return,
+                                                                       operation, operand1,
+                                                                       operand2)
+        elif isinstance(operation, ASTTokens.RelationalExprToken):
+
+            return self.compute_compare_expression(operation, operand1, operand2)
+        else:
+            raise NotImplementedError("This type of instructions are not yet supported")
+
+        if instruction is not None:
+            assert isinstance(instruction, LLVMInstructions.AssignInstruction)
+            self.get_current_function().add_instruction(instruction)
+
+        return register_to_return
+
+    def __compute_unary_expression(self, ast: ASTs.ASTUnaryExpression):
+
+        if isinstance(ast, ASTs.ASTUnaryArithmeticExpression):
+            raise NotImplementedError
+        elif isinstance(ast, ASTs.ASTUnaryPointerExpression):
+            raise NotImplementedError
+        else:
+            raise NotImplementedError
+
+    def __compute_variable_value_into_register(self, ast: ASTs.ASTVariable):
+        """
+        Adds the necessary instructions to load the value of a variable into a register
+
+        returns: the register that contains the value of the variable
+        """
+
+        # First look up the variable in the symbol table, then retrieve the data type of this variable
+        variable_register = self.get_variable_register(ast.get_content())
+
+        # We're assuming the variable register is always of pointer type,
+        # so first load the variable value into a register and return it
+
+        # TODO not tested with pointers
+        register_to_return = self.get_current_function().get_new_register(
+            DataType.DataType(variable_register.get_data_type().get_token(), 0))
+        self.get_current_function().add_instruction(
+            LLVMInstructions.LoadInstruction(register_to_return, variable_register))
+        return register_to_return
+
+    def __compute_function_call(self, ast: ASTs.ASTFunctionCall):
+        """
+        Creates the instructions to call a function and returns the result as an LLVMRegister.
+        """
+        best_match_function = self.find_best_match(ast.get_function_called().get_name(), ast.get_arguments())
+
+        args_llvm_value = list()
+
+        for arg in ast.get_arguments():
+            resulting_llvm_value = self.compute_expression(arg)
+            args_llvm_value.append(resulting_llvm_value)
+
+        call_instruction = LLVMInstructions.CallInstruction(best_match_function, args_llvm_value)
+
+        self.get_current_function().add_instruction(call_instruction)
+
+        return call_instruction.get_resulting_register()
+
     def compute_expression(self, ast: ASTs.AST):
         """
-        Computes an expression of the given AST, generating the corresponding instructions in the process
-        ast: the AST to compute the expression for
-
-        returns: LLVMValue:
+        Generates the instructions to compute anything that can be computed
         """
 
         if isinstance(ast, ASTs.ASTBinaryExpression):
-            operand1 = self.compute_expression(ast.left)
-            operand2 = self.compute_expression(ast.right)
-
-            instruction = None
-            operation = ast.get_token()
-
-            if isinstance(operation, ASTs.BinaryArithmeticExprToken):
-                register_to_return = self.get_current_function().get_new_register(
-                    DataType.DataType.get_resulting_data_type(operand1.get_data_type(), operand2.get_data_type()))
-                instruction = LLVMInstructions.BinaryArithmeticInstruction(register_to_return,
-                                                                           operation, operand1,
-                                                                           operand2)
-            elif isinstance(operation, ASTTokens.RelationalExprToken):
-
-                return self.compute_compare_expression(operation, operand1, operand2)
-            else:
-                raise NotImplementedError("This type of instructions are not yet supported")
-
-            if instruction is not None:
-                assert isinstance(instruction, LLVMInstructions.AssignInstruction)
-                self.get_current_function().add_instruction(instruction)
-                return register_to_return
-
+            return self.__compute_binary_expression(ast)
         elif isinstance(ast, ASTs.ASTUnaryExpression):
-            # TODO compute unary expressions
-
-            if isinstance(ast, ASTs.ASTUnaryArithmeticExpression):
-
-                raise NotImplementedError
-                value_register = self.compute_expression(ast.value_applied_to)
-
-            elif isinstance(ast, ASTs.ASTUnaryPointerExpression):
-                raise NotImplementedError
-            else:
-                raise NotImplementedError
-
+            return self.__compute_unary_expression(ast)
         elif isinstance(ast, ASTs.ASTLiteral):
-            # If it's a literal, just return the value and data type of this value instead of creating a register for it
             return LLVMValues.LLVMLiteral(ast.get_value(), ast.get_data_type())
         elif isinstance(ast, ASTs.ASTVariable):
-
-            # First look up the variable in the symbol table, then retrieve the data type of this variable
-            # TODO remove symbol table and put into some kind of dictionary
-            variable_register = self.get_variable_register(ast.get_content())
-
-            # We're assuming the variable register is always of pointer type,
-            # so first load the variable value into a register and return it
-
-            # TODO not tested with pointers
-            register_to_return = self.get_current_function().get_new_register(
-                DataType.DataType(variable_register.get_data_type().get_token(), 0))
-            self.get_current_function().add_instruction(
-                LLVMInstructions.LoadInstruction(register_to_return, variable_register))
-            return register_to_return
+            return self.__compute_variable_value_into_register(ast)
+        elif isinstance(ast, ASTs.ASTFunctionCall):
+            return self.__compute_function_call(ast)
         else:
             raise NotImplementedError
 
@@ -251,12 +264,18 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         return resulting_register
 
     def declare_variable(self, ast: ASTs.ASTVariableDeclaration):
+        """
+        Declares a variable in LLVM using an Alloca instruction
+
+        returns: the LLVMRegister created for this variable
+        """
         resulting_register = self.get_current_function().get_new_register(
             DataType.DataType(ast.get_data_type().get_token(), ast.get_data_type().get_pointer_level() + 1))
-        self.get_last_symbol_table().insert_variable(ast.get_content(), resulting_register)
+        self.get_last_symbol_table().insert_variable(ast.get_var_name(), resulting_register)
 
         instruction = LLVMInstructions.AllocaInstruction(resulting_register)
         self.get_current_function().add_instruction(instruction)
+        return resulting_register
 
     def declare_and_init_variable(self, ast: ASTs.ASTVariableDeclarationAndInit):
         """
@@ -279,7 +298,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         Declares an array using LLVM instructions
         """
         resulting_register = LLVMValue.LLVMRegister(
-                DataType.DataType(ast.get_data_type().get_token(), ast.get_data_type().get_pointer_level() + 1))
+            DataType.DataType(ast.get_data_type().get_token(), ast.get_data_type().get_pointer_level() + 1))
         llvm_size = LLVMValue.LLVMLiteral(ast.get_size().get_value(), ast.get_size().get_data_type())
         self.get_last_symbol_table().insert_array(ast.get_var_name(), resulting_register, llvm_size)
         instruction = LLVMInstructions.AllocaArrayInstruction(resulting_register, llvm_size)
@@ -300,11 +319,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             computed_expression_value = self.compute_expression(right)
 
             if computed_expression_value.get_data_type().is_pointer():
-                # TODO: This must be done using a derefence operator
-                # TODO: This register is used to load from pointer type into an actual value of that data type (sure?)
-                value_to_store = self.get_current_function().get_new_register()
-                self.get_current_function().add_instruction(
-                    LLVMInstructions.LoadInstruction(value_to_store, computed_expression_value))
+                raise NotImplementedError
             else:
                 value_to_store = computed_expression_value
 
@@ -316,7 +331,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
             computed_expression_value = self.compute_expression(right)
 
-            #Gewoon overgenomen van hierboven, moet nog misschien nog aangepast worden?
+            # Gewoon overgenomen van hierboven, moet nog misschien nog aangepast worden?
             if computed_expression_value.get_data_type().is_pointer():
                 # TODO: This must be done using a derefence operator
                 # TODO: This register is used to load from pointer type into an actual value of that data type (sure?)
@@ -325,8 +340,13 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
                     LLVMInstructions.LoadInstruction(value_to_store, computed_expression_value))
             else:
                 value_to_store = computed_expression_value
-            register_to_store = self.get_current_function().get_new_register(DataType.DataType(array_symbol.get_register().get_data_type().get_token(), array_symbol.get_register().get_data_type().get_pointer_level() + 1))
-            instruction_1 = LLVMInstructions.GetElementPtrInstruction(register_to_store, left.get_index_accessed().get_content(), array_symbol.get_size(), array_symbol.get_register())
+            register_to_store = self.get_current_function().get_new_register(
+                DataType.DataType(array_symbol.get_register().get_data_type().get_token(),
+                                  array_symbol.get_register().get_data_type().get_pointer_level() + 1))
+            instruction_1 = LLVMInstructions.GetElementPtrInstruction(register_to_store,
+                                                                      left.get_index_accessed().get_content(),
+                                                                      array_symbol.get_size(),
+                                                                      array_symbol.get_register())
             self.get_current_function().add_instruction(instruction_1)
             instruction_2 = LLVMInstructions.StoreInstruction(register_to_store, computed_expression_value)
             self.get_current_function().add_instruction(instruction_2)

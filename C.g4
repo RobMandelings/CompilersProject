@@ -47,11 +47,11 @@ scope:
     '{' '}' |
     '{' statement+ '}';
 
-functionCall: ID '(' ((value ',')* value)? ')' ;
+functionCall: ID '(' ((expression ',')* expression)? ')' ;
 
 // TODO Should be checked semantically that break and continue is only allowed in loops or switch statements
 controlFlowStatement: BREAK | CONTINUE | returnStatement ;
-returnStatement: RETURN (value | expression);
+returnStatement: RETURN (expression);
 
 printfStatement: 'printf' '(' value ')' ;
 varDeclaration: typeDeclaration ID arrayDeclaration? ;
@@ -100,7 +100,7 @@ pointerExpression:
     | finalExpression
     ;
 enclosedExpression: '(' expression ')';
-finalExpression: enclosedExpression | value ;
+finalExpression: enclosedExpression | value | functionCall ;
 
 dataType: (CHAR | INT | FLOAT | VOID) ('*')*  ;
 value: ID | CHAR_LITERAL | INT_LITERAL | DOUBLE_LITERAL;
