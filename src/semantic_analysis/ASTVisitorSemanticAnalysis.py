@@ -225,12 +225,12 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         assert self.current_function is None or isinstance(self.current_function, FunctionSymbol)
         return self.current_function
 
-    def get_resulting_data_type(self, ast: ASTExpression):
+    def get_resulting_data_type(self, ast: AST):
         """
         Calculates the resulting data type using a visitor for the AST. This is necessary because some variables
         need to be looked up in a symbol table for it to determine the resulting (richest) data type
         """
-        assert isinstance(ast, ASTExpression)
+
         resulting_data_type_visitor = ASTVisitorResultingDataType(self.get_last_symbol_table())
         ast.accept(resulting_data_type_visitor)
         return resulting_data_type_visitor.get_resulting_data_type()
@@ -435,8 +435,6 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
             raise SemanticError(f'You cannot put a return value outside of a function')
 
         return_value = ast.get_return_value()
-        if isinstance(return_value, ASTVariable):
-            return_value = self.get_last_symbol_table().lookup_variable(return_value.get_content())
 
         if self.get_current_function().get_return_type() != self.get_resulting_data_type(return_value):
             raise SemanticError(
