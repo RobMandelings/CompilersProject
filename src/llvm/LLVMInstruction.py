@@ -102,7 +102,15 @@ class AllocaArrayInstruction(AllocaInstruction):
         # You need to allocate with a data type that has pointer level of resulting reg - 1,
         # the resulting reg will be a pointer to that data type
         llvm_for_data_type = DataType.get_llvm_for_data_type(data_type.get_token(), data_type.get_pointer_level() - 1)
-        return super().to_llvm() + f"alloca [{self.size.get_value()} x {llvm_for_data_type}], align 16"
+        align_const = 0
+        array_size = self.size.get_value()
+        if array_size < 4:
+            align_const = 4
+        elif array_size >= 4:
+            align_const = 16
+        return AssignInstruction.to_llvm(
+            self) + f"alloca [{self.size.get_value()} x {llvm_for_data_type}], align {align_const}"
+
 
 class StoreInstruction(Instruction):
 

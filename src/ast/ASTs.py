@@ -486,7 +486,7 @@ class ASTVariableDeclaration(AST):
         Returns the token that represents the DataType of this variable (DataTypeToken)
         """
         assert isinstance(self.data_type_ast, ASTDataType)
-        return self.data_type_ast.get_token()
+        return self.data_type_ast.get_data_type()
 
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_variable_declaration(self)

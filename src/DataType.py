@@ -58,6 +58,7 @@ class DataType:
         self.__data_type_token = data_type_token
         self.__pointer_level = pointer_level
         assert self.__pointer_level >= 0, "The pointer level should be at least 0."
+        assert isinstance(self.__data_type_token, DataTypeToken)
 
     def __str__(self):
         return self.get_name()
@@ -92,6 +93,7 @@ class DataType:
         """
         Returns the underlying data type such as char, int or bool regardless of pointer level
         """
+        assert isinstance(self.__data_type_token, DataTypeToken)
         return self.__data_type_token
 
     def get_name(self):
