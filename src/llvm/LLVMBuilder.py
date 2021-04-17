@@ -157,11 +157,9 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         operation = ast.get_token()
 
         if isinstance(operation, ASTs.BinaryArithmeticExprToken):
-            register_to_return = self.get_current_function().get_new_register(
-                DataType.DataType.get_resulting_data_type(operand1.get_data_type(), operand2.get_data_type()))
-            instruction = LLVMInstructions.BinaryArithmeticInstruction(register_to_return,
-                                                                       operation, operand1,
+            instruction = LLVMInstructions.BinaryArithmeticInstruction(operation, operand1,
                                                                        operand2)
+            register_to_return = instruction.get_resulting_register()
         elif isinstance(operation, ASTTokens.RelationalExprToken):
 
             return self.compute_compare_expression(operation, operand1, operand2)
@@ -177,7 +175,17 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
     def __compute_unary_expression(self, ast: ASTs.ASTUnaryExpression):
 
         if isinstance(ast, ASTs.ASTUnaryArithmeticExpression):
-            raise NotImplementedError
+            # In LLVM its all binary instructions
+            resulting_reg = self.compute_expression(ast.get_value_applied_to())
+            # Do nothing with plus as it doesn't do anything
+            if ast.get_token() == ASTTokens.UnaryArithmeticExprToken.MINUS:
+                invert_instruction = LLVMInstructions.BinaryArithmeticInstruction(
+                    ASTTokens.BinaryArithmeticExprToken.SUB,
+                    LLVMValue.LLVMLiteral(str(0), DataType.NORMAL_INT), resulting_reg)
+                self.get_current_function().add_instruction(invert_instruction)
+                resulting_reg = invert_instruction.get_resulting_register()
+
+            return resulting_reg
         elif isinstance(ast, ASTs.ASTPointerExpression):
             raise NotImplementedError
         else:

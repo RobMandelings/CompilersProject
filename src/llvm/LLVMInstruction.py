@@ -238,12 +238,13 @@ class BinaryArithmeticInstruction(BinaryAssignInstruction):
     Instructions which apply arithmetics on registers and puts the result in another register
     """
 
-    def __init__(self, resulting_reg: LLVMValue.LLVMRegister, operation: ASTTokens.BinaryArithmeticExprToken,
+    def __init__(self, operation: ASTTokens.BinaryArithmeticExprToken,
                  operand1: LLVMValue,
                  operand2: LLVMValue):
-        super().__init__(resulting_reg, operation, operand1, operand2)
-        self.resulting_data_type = DataType.DataType.get_resulting_data_type(operand1.get_data_type(),
-                                                                             operand2.get_data_type())
+        resulting_data_type = DataType.DataType.get_resulting_data_type(operand1.get_data_type(),
+                                                                        operand2.get_data_type())
+        super().__init__(LLVMValue.LLVMRegister(resulting_data_type),
+                         operation, operand1, operand2)
         self.operation_type = self.get_operation_type()
 
     def get_operation_type(self):

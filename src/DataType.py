@@ -47,8 +47,7 @@ class DataTypeToken(enum_utils.NamedEnum):
     @staticmethod
     def is_richer_than(data_type1, data_type2):
         assert isinstance(data_type1, DataTypeToken) and isinstance(data_type2, DataTypeToken)
-        assert data_type1.get_pointer_level() == data_type2.get_pointer_level() == 0
-        return data_type1.get_token().value > data_type2.get_token().value
+        return data_type1.value > data_type2.value
 
 
 class DataType:

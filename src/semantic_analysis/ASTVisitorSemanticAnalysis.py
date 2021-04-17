@@ -44,7 +44,8 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
 
             # Doesn't matter which one you pick, the pointer levels are the same
             if self.resulting_data_type.get_pointer_level() == other_data_type.get_pointer_level() == 0:
-                if DataType.DataTypeToken.is_richer_than(other_data_type, self.get_resulting_data_type()):
+                if DataType.DataTypeToken.is_richer_than(other_data_type.get_token(),
+                                                         self.get_resulting_data_type().get_token()):
                     self.resulting_data_type = other_data_type
             else:
                 if self.resulting_data_type != other_data_type:
