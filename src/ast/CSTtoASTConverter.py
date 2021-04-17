@@ -264,6 +264,16 @@ def create_ast_from_cst(cst):
         # We know the children of the arrayAccessElement are terminal nodes (being the identifier and the size required)
         return ASTArrayAccessElement(create_ast_from_terminal_node(cst.children[0]),
                                      create_ast_from_terminal_node(cst.children[2]))
+    elif isinstance(cst, CParser.FunctionCallContext):
+        function_called = create_ast_from_cst(cst.children[0])
+        param_range = range(1, len(cst.children) - 1)
+        params = list()
+        for i in param_range:
+            param = create_ast_from_cst(cst.children[i])
+            if param is not None:
+                params.append(param)
+
+        return ASTFunctionCall(function_called, params)
     elif isinstance(cst, CParser.VarDeclarationAndInitContext):
         return create_ast_var_declaration_and_init(cst)
     elif isinstance(cst, CParser.VarDeclarationContext) or isinstance(cst, CParser.ArrayDeclarationContext):

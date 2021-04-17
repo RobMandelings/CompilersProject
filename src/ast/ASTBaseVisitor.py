@@ -118,6 +118,11 @@ class ASTBaseVisitor(IASTVisitor):
     def visit_conditional_statement(self, ast: ASTConditionalStatement):
         pass
 
+    def visit_ast_function_call(self, ast: ASTFunctionCall):
+        ast.get_function_called().accept(self)
+        for param in ast.get_params():
+            param.accept(self)
+
     def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
         for param in ast.get_params():
             param.accept(self)
