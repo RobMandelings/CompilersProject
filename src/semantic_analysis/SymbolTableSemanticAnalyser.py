@@ -61,7 +61,7 @@ class SymbolTableSemanticAnalyser(SymbolTable.SymbolTable):
     def __init__(self):
         super().__init__()
 
-    def lookup_variable(self, symbol: str):
+    def lookup_variable(self, symbol: Symbol):
         """
         Looks up a variable in the symbol table
         PRE-CONDITION: the symbol name given for lookup should result in a symbol which is actually a VariableSymbol.

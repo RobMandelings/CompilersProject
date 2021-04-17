@@ -8,6 +8,7 @@ import src.llvm.LLVMInterfaces as LLVMInterfaces
 import src.llvm.LLVMSymbolTable as LLVMSymbolTable
 import src.llvm.LLVMUtils as LLVMUtils
 import src.llvm.LLVMValue as LLVMValues
+from src.llvm import LLVMValue
 
 
 class LLVMBuilder(LLVMInterfaces.IToLLVM):
@@ -273,6 +274,17 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         self.get_current_function().add_instruction(LLVMInstructions.AllocaInstruction(new_register))
         self.get_current_function().add_instruction(LLVMInstructions.StoreInstruction(new_register, value_to_store))
 
+    def declare_array(self, ast: ASTs.ASTArrayDeclaration):
+        """
+        Declares an array using LLVM instructions
+        """
+        resulting_register = LLVMValue.LLVMRegister(
+                DataType.DataType(ast.get_data_type().get_token(), ast.get_data_type().get_pointer_level() + 1))
+        llvm_size = LLVMValue.LLVMLiteral(ast.get_size().get_value(), ast.get_size().get_data_type())
+        self.get_last_symbol_table().insert_array(ast.get_var_name(), resulting_register, llvm_size)
+        instruction = LLVMInstructions.AllocaArrayInstruction(resulting_register, llvm_size)
+        self.get_current_function().add_instruction(instruction)
+
     def assign_value(self, ast: ASTs.ASTAssignmentExpression):
         """
         Assigns a value to an existing variable (which has a current register),
@@ -283,7 +295,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         right = ast.get_right()
         left = ast.get_left()
         if isinstance(left, ASTs.ASTVariable):
-            variable_register = self.get_variable_register(ast.get_left().get_content())
+            variable_register = self.get_variable_register(left.get_content())
 
             computed_expression_value = self.compute_expression(right)
 
@@ -299,8 +311,25 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             self.get_current_function().add_instruction(
                 LLVMInstructions.StoreInstruction(variable_register, value_to_store))
 
-        elif isinstance(left.get_left(), ASTs.ASTArrayAccessElement):
-            array_start_register = self.get
+        elif isinstance(left, ASTs.ASTArrayAccessElement):
+            array_symbol = self.get_last_symbol_table().get_array_symbol(left.get_content())
+
+            computed_expression_value = self.compute_expression(right)
+
+            #Gewoon overgenomen van hierboven, moet nog misschien nog aangepast worden?
+            if computed_expression_value.get_data_type().is_pointer():
+                # TODO: This must be done using a derefence operator
+                # TODO: This register is used to load from pointer type into an actual value of that data type (sure?)
+                value_to_store = self.get_current_function().get_new_register()
+                self.get_current_function().add_instruction(
+                    LLVMInstructions.LoadInstruction(value_to_store, computed_expression_value))
+            else:
+                value_to_store = computed_expression_value
+            register_to_store = self.get_current_function().get_new_register(DataType.DataType(array_symbol.get_register().get_data_type().get_token(), array_symbol.get_register().get_data_type().get_pointer_level() + 1))
+            instruction_1 = LLVMInstructions.GetElementPtrInstruction(register_to_store, left.get_index_accessed().get_content(), array_symbol.get_size(), array_symbol.get_register())
+            self.get_current_function().add_instruction(instruction_1)
+            instruction_2 = LLVMInstructions.StoreInstruction(register_to_store, computed_expression_value)
+            self.get_current_function().add_instruction(instruction_2)
         else:
             raise NotImplementedError
 

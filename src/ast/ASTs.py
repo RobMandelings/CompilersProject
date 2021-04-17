@@ -302,6 +302,9 @@ class ASTArrayAccessElement(ASTLeaf):
                self.index_accessed.get_data_type() == DataType.NORMAL_INT
         return self.index_accessed
 
+    def get_content(self):
+        return self.variable_accessed.get_content()
+
 
 class ASTAssignmentExpression(ASTBinaryExpression):
 

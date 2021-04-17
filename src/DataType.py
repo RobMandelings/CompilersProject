@@ -110,6 +110,7 @@ class DataType:
         return self.get_pointer_level() > 0
 
     def get_llvm_name(self):
+        pointer_level = self.get_pointer_level()
         return self.get_token().get_llvm_name() + ('*' * self.get_pointer_level())
 
 

@@ -406,13 +406,19 @@ class UnaryArithmeticInstruction(AssignInstruction):
 
 class GetElementPtrInstruction(AssignInstruction):
 
-    def __init__(self, resulting_register: LLVMValue.LLVMRegister, index: int, ):
+    def __init__(self, resulting_register: LLVMValue.LLVMRegister, index: str, size: LLVMValue.LLVMLiteral, array_register: LLVMValue.LLVMRegister):
         super().__init__(resulting_register)
         self.index = index
+        self.size = size
+        self.array_register = array_register
+        assert isinstance(size, LLVMValue.LLVMLiteral)
+        assert isinstance(index, str)
+        assert isinstance(array_register, LLVMValue.LLVMRegister)
 
     def to_llvm(self):
-        test = 0
-        return super().to_llvm() + f'getelementptr inbounds [{test} x {test}], [{test} x {test}]* {test}, i64 0, i64 {test}'
+        datatype = DataType.DataType(self.array_register.get_data_type().get_token(), self.array_register.get_data_type().get_pointer_level() - 1)
+        return super().to_llvm() + f'getelementptr inbounds [{self.size.get_value()} x {datatype.get_llvm_name()}], ' \
+                                   f'[{self.size.get_value()} x {datatype.get_llvm_name()}]* {self.array_register.to_llvm()}, i64 0, i64 {self.index}'
 
 
 class PrintfInstruction(AssignInstruction):

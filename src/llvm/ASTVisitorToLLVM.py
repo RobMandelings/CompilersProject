@@ -227,10 +227,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         current_function = self.builder.get_current_function()
 
     def visit_ast_array_declaration(self, ast: ASTs.ASTArrayDeclaration):
-        instruction = LLVMInstructions.AllocaArrayInstruction(
-            LLVMValue.LLVMRegister(DataType.DataType(ast.get_data_type().get_token(), ast.get_data_type().get_pointer_level() + 1)),
-            LLVMValue.LLVMLiteral(ast.get_size().get_value(), ast.get_size().get_data_type()))
-        self.get_current_function().add_instruction(instruction)
+        self.builder.declare_array(ast)
 
     def visit_ast_array_init(self, ast: ASTs.ASTArrayInit):
         raise NotImplementedError
