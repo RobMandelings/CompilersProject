@@ -32,9 +32,13 @@ class ASTBaseVisitor(IASTVisitor):
         for child in ast.children:
             child.accept(self)
 
+    def visit_ast_expression(self, ast: ASTExpression):
+        pass
+
     def visit_ast_unary_expression(self, ast: ASTUnaryExpression):
         assert isinstance(ast, ASTUnaryExpression)
         ast.value_applied_to.accept(self)
+        self.visit_ast_expression(ast)
 
     def visit_ast_binary_expression(self, ast: ASTBinaryExpression):
         assert isinstance(ast, ASTBinaryExpression)
@@ -101,6 +105,7 @@ class ASTBaseVisitor(IASTVisitor):
         ast.get_execution_body().accept(self)
         if ast.get_else_statement() is not None:
             ast.get_else_statement().accept(self)
+        self.visit_conditional_statement(ast)
 
     def visit_ast_while_loop(self, ast: ASTWhileLoop):
         assert isinstance(ast, ASTWhileLoop)
@@ -108,6 +113,10 @@ class ASTBaseVisitor(IASTVisitor):
         ast.get_execution_body().accept(self)
         if ast.get_update_step() is not None:
             ast.get_update_step().accept(self)
+        self.visit_conditional_statement(ast)
+
+    def visit_conditional_statement(self, ast: ASTConditionalStatement):
+        pass
 
     def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
         for param in ast.get_params():

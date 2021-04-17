@@ -9,6 +9,9 @@ class LLVMBasicBlock(LLVMInterfaces.IToLLVM):
         self.instructions = list()
         self._number = None
 
+    def __repr__(self):
+        return f'LLVMBasicBlock, number: {self._number}. ID: {id(self)}'
+
     def add_instruction(self, instruction):
         """
         Safely adds a new instruction to the list of instructions

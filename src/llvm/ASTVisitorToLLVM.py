@@ -223,10 +223,6 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         self.builder.add_function(LLVMFunction(ast.get_name(), return_type, param_registers))
         ast.get_execution_body().accept(self)
         current_function = self.builder.get_current_function()
-        if current_function.get_current_basic_block().is_empty():
-            current_function.basic_blocks.pop(next(reversed(current_function.basic_blocks)))
-        elif current_function.get_current_basic_block().has_terminal_instruction():
-            raise NotImplementedError("this case hasn't been handled yet. what should happen?")
 
     def visit_ast_return_statement(self, ast: ASTReturnStatement):
 

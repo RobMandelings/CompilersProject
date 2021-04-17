@@ -14,7 +14,8 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
     This visitor is used whenever the semantic analysis visitor needs to decide what the data type of the result
     of a (binary) expression is.
 
-    PRE-CONDITION: all variables within the tree should exist and be defined. This can be checked using the unavailable variable usage visitor
+    PRE-CONDITION: all variables within the tree should exist and be defined.
+    This can be checked using the unavailable variable usage visitor
     """
 
     def __init__(self, last_symbol_table: SymbolTableSemanticAnalyser):
@@ -296,7 +297,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
     def visit_ast_binary_expression(self, ast: ASTBinaryExpression):
         # Do nothing, just some optimization
-        pass
+        self.check_undeclared_variable_usage(ast)
+        self.check_uninitialized_variable_usage(ast)
 
     def optimize_expression(self, ast: AST):
         """
@@ -313,9 +315,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         symbol_table = self.get_last_symbol_table()
 
         # Do some semantic checks. If all checks don't raise any errors, continue on with the new value
-        self.check_undeclared_variable_usage(ast.right)
         self.check_undeclared_variable_usage(ast.left)
-        self.check_uninitialized_variable_usage(ast.right)
+        self.visit_ast_binary_expression(ast.get_right())
 
         self.check_const_assignment(ast)
 
@@ -348,7 +349,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         if symbol_table.lookup_local(ast.var_name_ast.get_content()) is None:
             if symbol_table.lookup(ast.var_name_ast.get_content()) is not None:
                 print(
-                    f"[SemanticAnalysis] Warning: declaration of '{ast.var_name_ast.get_content()}' shadows a local variable. You might want to rename it")
+                    f"[SemanticAnalysis] Warning: declaration of '{ast.var_name_ast.get_content()}'"
+                    f" shadows a local variable. You might want to rename it")
             var_name = ast.var_name_ast.get_content()
             symbol_table.insert_symbol(var_name,
                                        VariableSymbol(ast.var_name_ast.get_content(), ast.get_data_type(),
@@ -431,6 +433,23 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                 f"return type of the return value (data type '{return_value.get_data_type()}') aren't equal")
 
         super().visit_ast_return_statement(ast)
+
+    def visit_conditional_statement(self, ast: ASTConditionalStatement):
+        condition_ast = ast.get_condition()
+
+        boolean_result = False
+
+        if isinstance(condition_ast, ASTLiteral):
+            if condition_ast.get_data_type() == DataType.NORMAL_BOOL:
+                boolean_result = True
+        elif isinstance(condition_ast, ASTVariable):
+            variable_symbol = self.get_last_symbol_table().lookup_variable(condition_ast.get_content())
+
+            if variable_symbol.get_data_type() == DataType.NORMAL_BOOL:
+                boolean_result = True
+
+        if not boolean_result:
+            print("WARN: the result of an expression does not return boolean type")
 
     def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
         """

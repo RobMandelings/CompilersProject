@@ -31,6 +31,10 @@ class IASTVisitor:
         pass
 
     @abstractmethod
+    def visit_ast_expression(self, ast):
+        pass
+
+    @abstractmethod
     def visit_ast_unary_expression(self, ast):
         pass
 
@@ -88,6 +92,10 @@ class IASTVisitor:
 
     @abstractmethod
     def visit_ast_while_loop(self, ast):
+        pass
+
+    @abstractmethod
+    def visit_conditional_statement(self, ast):
         pass
 
     @abstractmethod

@@ -231,12 +231,12 @@ class ASTUnaryArithmeticExpression(ASTUnaryExpression, IHasToken):
 
 class ASTPointerExpression(ASTUnaryExpression, IHasToken):
 
-    def __init__(self, token: UnaryArithmeticExprToken, value_applied_to: AST):
+    def __init__(self, token: PointerExprToken, value_applied_to: AST):
         super().__init__(token.token_name, value_applied_to)
         self.token = token
 
     def get_token(self):
-        assert isinstance(self.token, UnaryArithmeticExprToken)
+        assert isinstance(self.token, PointerExprToken)
         return self.token
 
     def accept(self, visitor: IASTVisitor):
@@ -400,6 +400,7 @@ class ASTConditionalStatement(AST):
         raise NotImplementedError
 
     def get_condition(self):
+        assert isinstance(self.condition, AST)
         return self.condition
 
     def get_execution_body(self):
