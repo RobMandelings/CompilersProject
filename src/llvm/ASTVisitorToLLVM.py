@@ -1,15 +1,14 @@
+import src.DataType as DataType
 import src.ast.ASTBaseVisitor as ASTBaseVisitor
 import src.ast.ASTTokens as ASTTokens
 import src.ast.ASTs as ASTs
 import src.llvm.LLVMBasicBlock as LLVMBasicBlock
 import src.llvm.LLVMBuilder as LLVMBuilder
 import src.llvm.LLVMInstruction as LLVMInstructions
-from src.ast.ASTs import ASTFunctionDeclaration, ASTReturnStatement, ASTScope
-from src.llvm.LLVMFunction import LLVMFunction
-
-import src.llvm.LLVMValue as LLVMValue
-import src.DataType as DataType
 import src.llvm.LLVMSymbolTable as LLVMSymbolTable
+import src.llvm.LLVMValue as LLVMValue
+from src.ast.ASTs import ASTFunctionDeclaration, ASTReturnStatement, ASTScope, ASTFunctionCall
+from src.llvm.LLVMFunction import LLVMFunction
 
 
 class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
@@ -210,6 +209,9 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         self.on_scope_entered()
         super().visit_ast_scope(ast)
         self.on_scope_exit()
+
+    def visit_ast_function_call(self, ast: ASTFunctionCall):
+        self.builder.create_function_call(ast)
 
     def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
         param_registers = list()

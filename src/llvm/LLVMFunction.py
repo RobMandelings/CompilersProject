@@ -20,9 +20,19 @@ class LLVMFunction(LLVMInterfaces.IToLLVM):
         self.return_type = return_type
         self.params = params
 
+        self.__alloca_instructions = list()
         self.basic_blocks = collections.OrderedDict()
         self.first_basic_block = LLVMBasicBlock.LLVMBasicBlock()
         self.basic_blocks[id(self.first_basic_block)] = self.first_basic_block
+
+    def get_identifier(self):
+        return self.identifier
+
+    def get_nr_params(self):
+        """
+        Returns the number of parameters of this function
+        """
+        return len(self.params)
 
     def get_first_basic_block(self):
         return self.first_basic_block
@@ -38,7 +48,10 @@ class LLVMFunction(LLVMInterfaces.IToLLVM):
         return self.basic_blocks.get(next(reversed(self.basic_blocks)))
 
     def add_instruction(self, instruction: LLVMInstruction.Instruction):
-        self.get_current_basic_block().add_instruction(instruction)
+        if isinstance(instruction, LLVMInstruction.AllocaInstruction):
+            self.__alloca_instructions.append(instruction)
+        else:
+            self.get_current_basic_block().add_instruction(instruction)
 
     def add_basic_block(self, basic_block: LLVMBasicBlock = None):
         """
@@ -82,6 +95,10 @@ class LLVMFunction(LLVMInterfaces.IToLLVM):
         # No idea why the counter has to be increased again but its necessary
         counter.increase()
 
+        for alloca_instruction in self.__alloca_instructions:
+            assert isinstance(alloca_instruction, LLVMInstruction.AllocaInstruction)
+            alloca_instruction.update_numbering(counter)
+
         first_basic_block = True
         for basic_block_id, basic_block in self.basic_blocks.items():
 
@@ -93,7 +110,23 @@ class LLVMFunction(LLVMInterfaces.IToLLVM):
 
             basic_block.update_numbering(counter)
 
+    def _add_ret_if_necessary(self):
+
+        # Maybe do this in a better way but for now it's good, just append ret to the basic block if it is empty
+        # LLVM does this in a weird way
+        if not self.get_current_basic_block().has_terminal_instruction():
+            allocated_reg = LLVMValue.LLVMRegister(DataType.DataType(self.get_return_type().get_token(),
+                                                                     self.get_return_type().get_pointer_level() + 1))
+            alloca_instruction = LLVMInstruction.AllocaInstruction(allocated_reg)
+            self.add_instruction(alloca_instruction)
+
+            loaded_reg = LLVMValue.LLVMRegister(self.get_return_type())
+            self.add_instruction(LLVMInstruction.LoadInstruction(loaded_reg, allocated_reg))
+            self.add_instruction(LLVMInstruction.ReturnInstruction(loaded_reg))
+
     def to_llvm(self):
+
+        self._add_ret_if_necessary()
 
         # This is the counter that will be used to give names to the definitive registers and labels of the basic blocks
         # We need to do this because due to building purposes, the current numbering is wrong
@@ -111,6 +144,9 @@ class LLVMFunction(LLVMInterfaces.IToLLVM):
                 llvm_code += ','
 
         llvm_code += ') {\n'
+
+        for alloca_instruction in self.__alloca_instructions:
+            llvm_code += f'  {alloca_instruction.to_llvm()}\n'
 
         first = True
         for basic_block_id, basic_block in self.basic_blocks.items():
