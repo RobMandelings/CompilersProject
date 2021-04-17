@@ -54,9 +54,9 @@ class PointerExprToken(enum_utils.NamedEnum):
     def from_str(name: str):
 
         if name == '*':
-            return PointerExprToken.PLUS
+            return PointerExprToken.DEREFERENCE
         elif name == '&':
-            return PointerExprToken.MINUS
+            return PointerExprToken.ADDRESS
         else:
             return None
 

@@ -228,25 +228,11 @@ class ASTUnaryArithmeticExpression(ASTUnaryExpression, IHasToken):
 class ASTPointerExpression(ASTUnaryExpression, IHasToken):
 
     def __init__(self, token: PointerExprToken, value_applied_to: AST):
-        super().__init__(token.token_name, value_applied_to)
+        super().__init__(token.name.lower(), value_applied_to)
         self.token = token
 
     def get_token(self):
         assert isinstance(self.token, PointerExprToken)
-        return self.token
-
-    def accept(self, visitor: IASTVisitor):
-        visitor.visit_ast_unary_expression(self)
-
-
-class ASTUnaryPointerExpression(ASTUnaryExpression, IHasToken):
-
-    def __init__(self, token: UnaryArithmeticExprToken, value_applied_to: AST):
-        super().__init__(token.token_name, value_applied_to)
-        self.token = token
-
-    def get_token(self):
-        assert isinstance(self.token, UnaryArithmeticExprToken)
         return self.token
 
     def accept(self, visitor: IASTVisitor):

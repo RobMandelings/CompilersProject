@@ -119,7 +119,7 @@ def create_ast_expression(cst):
         if unary_arithmetic_expr_token is not None:
             return ASTUnaryArithmeticExpression(unary_arithmetic_expr_token, value_applied_to)
         elif pointer_expr_token is not None:
-            return ASTUnaryPointerExpression(pointer_expr_token, value_applied_to)
+            return ASTPointerExpression(pointer_expr_token, value_applied_to)
         else:
             raise NotImplementedError
 
