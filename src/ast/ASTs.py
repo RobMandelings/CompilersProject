@@ -129,14 +129,10 @@ class ASTDataType(ASTLeaf, IHasToken, IHasDataType):
 
     def __init__(self, data_type: DataType):
         super().__init__(data_type.get_name())
-        self.token = data_type
+        self.data_type = data_type
 
     def get_data_type(self):
-        return self.token
-
-    def get_token(self):
-        assert isinstance(self.token, DataType.DataType)
-        return self.token
+        return self.data_type
 
     def accept(self, visitor: IASTVisitor):
         assert isinstance(visitor, IASTVisitor)
@@ -490,7 +486,7 @@ class ASTVariableDeclaration(AST):
         Returns the token that represents the DataType of this variable (DataTypeToken)
         """
         assert isinstance(self.data_type_ast, ASTDataType)
-        return self.data_type_ast.get_token()
+        return self.data_type_ast.get_data_type()
 
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_variable_declaration(self)

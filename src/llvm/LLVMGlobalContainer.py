@@ -12,6 +12,7 @@ class LLVMGlobalContainer(LLVMInterfaces.IToLLVM):
 
     def __init__(self):
         self.global_declaration_instructions = list()
+        self.global_array_declaration_instructions = list()
         self.__printf_type_strings = dict()
         pass
 
@@ -64,4 +65,6 @@ class LLVMGlobalContainer(LLVMInterfaces.IToLLVM):
         string_to_return = ''
         for global_declaration in self.global_declaration_instructions:
             string_to_return += global_declaration + "\n"
+        for array_declaration in self.global_array_declaration_instructions:
+            string_to_return += array_declaration + "\n"
         return string_to_return

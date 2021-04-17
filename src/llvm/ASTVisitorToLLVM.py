@@ -226,6 +226,18 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         ast.get_execution_body().accept(self)
         current_function = self.builder.get_current_function()
 
+    def visit_ast_array_declaration(self, ast: ASTs.ASTArrayDeclaration):
+        instruction = LLVMInstructions.AllocaArrayInstruction(
+            LLVMValue.LLVMRegister(DataType.DataType(ast.get_data_type().get_token(), ast.get_data_type().get_pointer_level() + 1)),
+            LLVMValue.LLVMLiteral(ast.get_size().get_value(), ast.get_size().get_data_type()))
+        self.get_current_function().add_instruction(instruction)
+
+    def visit_ast_array_init(self, ast: ASTs.ASTArrayInit):
+        pass
+
+    def visit_ast_array_declaration_and_init(self, ast: ASTs.ASTArrayDeclarationAndInit):
+        pass
+
     def visit_ast_return_statement(self, ast: ASTReturnStatement):
 
         if isinstance(ast.get_return_value(), ASTs.ASTExpression):

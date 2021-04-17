@@ -1,6 +1,4 @@
 import abc
-from typing import Final
-
 import src.enum_utils as enum_utils
 
 
@@ -60,6 +58,7 @@ class DataType:
         self.__data_type_token = data_type_token
         self.__pointer_level = pointer_level
         assert self.__pointer_level >= 0, "The pointer level should be at least 0."
+        assert isinstance(self.__data_type_token, DataTypeToken)
 
     def __str__(self):
         return self.get_name()
@@ -94,6 +93,7 @@ class DataType:
         """
         Returns the underlying data type such as char, int or bool regardless of pointer level
         """
+        assert isinstance(self.__data_type_token, DataTypeToken)
         return self.__data_type_token
 
     def get_name(self):
@@ -122,8 +122,10 @@ def get_llvm_for_data_type(data_type_token: DataTypeToken, pointer_level):
     return DataTypeToken.get_llvm_name(data_type_token) + ('*' * pointer_level)
 
 
-NORMAL_BOOL: Final = DataType(DataTypeToken.BOOL, 0)
-NORMAL_CHAR: Final = DataType(DataTypeToken.CHAR, 0)
-NORMAL_INT: Final = DataType(DataTypeToken.INT, 0)
-NORMAL_FLOAT: Final = DataType(DataTypeToken.FLOAT, 0)
-NORMAL_DOUBLE: Final = DataType(DataTypeToken.DOUBLE, 0)
+# Final
+
+NORMAL_BOOL = DataType(DataTypeToken.BOOL, 0)
+NORMAL_CHAR = DataType(DataTypeToken.CHAR, 0)
+NORMAL_INT = DataType(DataTypeToken.INT, 0)
+NORMAL_FLOAT = DataType(DataTypeToken.FLOAT, 0)
+NORMAL_DOUBLE = DataType(DataTypeToken.DOUBLE, 0)
