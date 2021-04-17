@@ -53,8 +53,9 @@ def create_ast_var_declaration(cst):
     data_type_and_attributes = create_ast_from_cst(cst.children[0])
     name = create_ast_from_cst(cst.children[1])
 
-    if isinstance(cst, CParser.ArrayDeclarationContext):
-        size = create_ast_from_cst(cst.children[3])
+    if isinstance(cst.children[2], CParser.ArrayDeclarationContext):
+        array_declaration = cst.children[2]
+        size = create_ast_from_cst(array_declaration.children[1])
         return ASTArrayDeclaration(data_type_and_attributes, name, size)
     else:
         return ASTVariableDeclaration(data_type_and_attributes, name)
