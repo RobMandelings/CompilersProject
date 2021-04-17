@@ -1,6 +1,4 @@
 import abc
-from typing import Final
-
 import src.enum_utils as enum_utils
 
 
@@ -122,8 +120,10 @@ def get_llvm_for_data_type(data_type_token: DataTypeToken, pointer_level):
     return DataTypeToken.get_llvm_name(data_type_token) + ('*' * pointer_level)
 
 
-NORMAL_BOOL: Final = DataType(DataTypeToken.BOOL, 0)
-NORMAL_CHAR: Final = DataType(DataTypeToken.CHAR, 0)
-NORMAL_INT: Final = DataType(DataTypeToken.INT, 0)
-NORMAL_FLOAT: Final = DataType(DataTypeToken.FLOAT, 0)
-NORMAL_DOUBLE: Final = DataType(DataTypeToken.DOUBLE, 0)
+# Final
+
+NORMAL_BOOL = DataType(DataTypeToken.BOOL, 0)
+NORMAL_CHAR = DataType(DataTypeToken.CHAR, 0)
+NORMAL_INT = DataType(DataTypeToken.INT, 0)
+NORMAL_FLOAT = DataType(DataTypeToken.FLOAT, 0)
+NORMAL_DOUBLE = DataType(DataTypeToken.DOUBLE, 0)

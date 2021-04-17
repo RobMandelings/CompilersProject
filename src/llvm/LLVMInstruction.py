@@ -91,6 +91,19 @@ class AllocaInstruction(AssignInstruction):
         return False
 
 
+class AllocaArrayInstruction(AllocaInstruction):
+    def __init__(self, resulting_reg: LLVMValue.LLVMRegister, size: LLVMValue.LLVMLiteral):
+        super().__init__(resulting_reg)
+        self.size = size
+        assert resulting_reg.get_data_type().is_pointer()
+
+    def to_llvm(self):
+        data_type = self.resulting_reg.get_data_type()
+        # You need to allocate with a data type that has pointer level of resulting reg - 1,
+        # the resulting reg will be a pointer to that data type
+        llvm_for_data_type = DataType.get_llvm_for_data_type(data_type.get_token(), data_type.get_pointer_level() - 1)
+        return super().to_llvm() + f"alloca [{self.size.get_value()} x {llvm_for_data_type}], align 16"
+
 class StoreInstruction(Instruction):
 
     def __init__(self, resulting_reg: LLVMValue.LLVMRegister, value_to_store: LLVMValue):

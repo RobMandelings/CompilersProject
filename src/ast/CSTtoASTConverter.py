@@ -48,7 +48,7 @@ def create_ast_var_declaration_and_init(cst):
 
 
 def create_ast_var_declaration(cst):
-    assert isinstance(cst.children[0], CParser.TypeDeclarationContext)
+    assert isinstance(cst.children[0], CParser.TypeDeclarationContext) or isinstance(cst.childer[0], CParser.ArrayDeclarationContext)
 
     data_type_and_attributes = create_ast_from_cst(cst.children[0])
     name = create_ast_from_cst(cst.children[1])

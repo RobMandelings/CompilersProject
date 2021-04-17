@@ -75,7 +75,7 @@ class LLVMRegister(LLVMValue):
 
     def __init__(self, data_type=None):
         """
-        By default, sets the data type to none (usually the data type of the newly created register is not know immediately)
+        By default, sets the data type to none (usually the data type of the newly created register is not known immediately)
         """
         assert data_type is None or isinstance(data_type, DataType.DataType)
         super().__init__(None, data_type)
