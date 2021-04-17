@@ -39,8 +39,40 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         """
         pass
 
+    def find_best_match(self, function_identifier: str, params):
+
+        assert isinstance(function_identifier, str)
+        functions_with_same_nr_params = list()
+
+        for function in self.functions:
+            assert isinstance(function, LLVMFunctions.LLVMFunction)
+
+            if not function.identifier == function_identifier:
+                continue
+
+            if len(function.params) == len(params):
+                functions_with_same_nr_params.append(function)
+
+        if len(functions_with_same_nr_params) > 1:
+            raise NotImplementedError('We currently do not support function which overloaded parameters')
+        else:
+            assert len(functions_with_same_nr_params) != 0
+            return functions_with_same_nr_params[0]
+
     def add_function(self, function: LLVMFunctions.LLVMFunction):
         self.functions.append(function)
+
+    def create_function_call(self, ast: ASTs.ASTFunctionCall):
+        best_match_function = self.find_best_match(ast.get_function_called().get_name(), ast.get_params())
+
+        params_llvm_value = list()
+
+        for param in ast.get_params():
+            resulting_llvm_value = self.compute_expression(param)
+            params_llvm_value.append(resulting_llvm_value)
+
+        self.get_current_function().add_instruction(
+            LLVMInstructions.CallInstruction(best_match_function, params_llvm_value))
 
     def get_current_function(self):
         """

@@ -404,3 +404,34 @@ class PrintfInstruction(AssignInstruction):
     def to_llvm(self):
         # TODO must be customized to be able to print completely custom names
         return super().to_llvm() + f"call i32 (i8*, ...) @printf(i8* getelementptr inbounds([3 x i8], [3 x i8]* {self.string_to_print_name}, i64 0, i64 0), i32 {self.register_to_print})"
+
+
+class CallInstruction(AssignInstruction):
+
+    def __init__(self, function_to_call, params: list):
+        from src.llvm.LLVMFunction import LLVMFunction
+        """
+        Function to call: should be an LLVMFunction.LLVMFunction instance
+        Params: list of llvm values
+        """
+        assert isinstance(function_to_call, LLVMFunction)
+        self.function_to_call = function_to_call
+        self.params = params
+        super().__init__(LLVMValue.LLVMRegister(function_to_call.get_return_type()))
+
+    def to_llvm(self):
+        llvm_code = f'{super().to_llvm()}call {self.function_to_call.get_return_type().get_llvm_name()} ' \
+                    f'@{self.function_to_call.get_identifier()}('
+
+        for i in range(len(self.params)):
+            param = self.params[i]
+            assert isinstance(param, LLVMValue.LLVMValue)
+
+            llvm_code += f'{param.get_data_type().get_llvm_name()} {param.get_value()}'
+
+            if i != len(self.params) - 1:
+                llvm_code += ','
+
+        llvm_code += ')'
+
+        return llvm_code

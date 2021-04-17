@@ -24,6 +24,15 @@ class LLVMFunction(LLVMInterfaces.IToLLVM):
         self.first_basic_block = LLVMBasicBlock.LLVMBasicBlock()
         self.basic_blocks[id(self.first_basic_block)] = self.first_basic_block
 
+    def get_identifier(self):
+        return self.identifier
+
+    def get_nr_params(self):
+        """
+        Returns the number of parameters of this function
+        """
+        return len(self.params)
+
     def get_first_basic_block(self):
         return self.first_basic_block
 
