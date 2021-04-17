@@ -207,6 +207,10 @@ class ASTUnaryExpression(ASTExpression):
         self.value_applied_to = value_applied_to
         self.value_applied_to.parent = self
 
+    def get_value_applied_to(self):
+        assert isinstance(self.value_applied_to, AST)
+        return self.value_applied_to
+
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_unary_expression(self)
 
@@ -236,7 +240,7 @@ class ASTPointerExpression(ASTUnaryExpression, IHasToken):
         return self.token
 
     def accept(self, visitor: IASTVisitor):
-        visitor.visit_ast_unary_expression(self)
+        visitor.visit_ast_pointer_expression(self)
 
 
 class ASTBinaryExpression(ASTExpression, IHasToken):

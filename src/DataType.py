@@ -1,4 +1,3 @@
-import abc
 import src.enum_utils as enum_utils
 
 
@@ -45,6 +44,12 @@ class DataTypeToken(enum_utils.NamedEnum):
         else:
             return None
 
+    @staticmethod
+    def is_richer_than(data_type1, data_type2):
+        assert isinstance(data_type1, DataTypeToken) and isinstance(data_type2, DataTypeToken)
+        assert data_type1.get_pointer_level() == data_type2.get_pointer_level() == 0
+        return data_type1.get_token().value > data_type2.get_token().value
+
 
 class DataType:
     """
@@ -64,25 +69,19 @@ class DataType:
         return self.get_name()
 
     @staticmethod
-    def is_richer_than(data_type1, data_type2):
-        assert isinstance(data_type1, DataType) and isinstance(data_type2, DataType)
-        if data_type1.get_pointer_level() == data_type2.get_pointer_level() == 0:
-            return data_type1.get_token().value > data_type2.get_token().value
-        else:
-            raise ValueError(
-                f'Cannot compare richness due to different pointer levels: '
-                f'{data_type1.get_pointer_level()} and {data_type2.get_pointer_level()}')
-
-    @staticmethod
     def get_resulting_data_type(data_type1, data_type2):
-        assert data_type1.get_pointer_level() == data_type2.get_pointer_level(), "Not supported yet for pointers"
-        if DataType.is_richer_than(data_type1, data_type2):
+        """
+        Returns the resulting data type, given the fact that they aren't pointers. This compiler doesn't
+        support implicit conversion of types yet.
+        """
+        assert isinstance(data_type1, DataType) and isinstance(data_type2, DataType)
+        assert data_type1.get_pointer_level() == data_type2.get_pointer_level() == 0
+        if DataTypeToken.is_richer_than(data_type1.get_token(), data_type2.get_token()):
             return data_type1
         else:
             return data_type2
 
     def __eq__(self, other):
-        assert self.get_pointer_level() == other.get_pointer_level(), "No support for pointers yet"
         return self.get_token() == other.get_token() and self.get_pointer_level() == other.get_pointer_level()
 
     def equals(self, other):

@@ -7,7 +7,7 @@ import src.llvm.LLVMBuilder as LLVMBuilder
 import src.llvm.LLVMInstruction as LLVMInstructions
 import src.llvm.LLVMSymbolTable as LLVMSymbolTable
 import src.llvm.LLVMValue as LLVMValue
-from src.ast.ASTs import ASTFunctionDeclaration, ASTReturnStatement, ASTScope, ASTFunctionCall
+from src.ast.ASTs import ASTFunctionDeclaration, ASTReturnStatement, ASTScope, ASTFunctionCall, ASTPointerExpression
 from src.llvm.LLVMFunction import LLVMFunction
 
 
@@ -69,8 +69,6 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
                     self.get_current_basic_block().add_instruction(
                         LLVMInstructions.UnconditionalBranchInstruction(after_while_loop_basic_block))
                     self.get_current_function().add_basic_block(LLVMBasicBlock.LLVMBasicBlock())
-                elif child.control_flow_token == ASTTokens.ControlFlowToken.RETURN:
-                    pass
                 else:
                     raise NotImplementedError
 

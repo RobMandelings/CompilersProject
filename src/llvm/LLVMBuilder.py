@@ -178,7 +178,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
         if isinstance(ast, ASTs.ASTUnaryArithmeticExpression):
             raise NotImplementedError
-        elif isinstance(ast, ASTs.ASTUnaryPointerExpression):
+        elif isinstance(ast, ASTs.ASTPointerExpression):
             raise NotImplementedError
         else:
             raise NotImplementedError

@@ -41,8 +41,17 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
         if self.resulting_data_type is None:
             self.resulting_data_type = other_data_type
         else:
-            if DataType.DataType.is_richer_than(other_data_type, self.get_resulting_data_type()):
-                self.resulting_data_type = other_data_type
+
+            # Doesn't matter which one you pick, the pointer levels are the same
+            if self.resulting_data_type.get_pointer_level() == other_data_type.get_pointer_level() == 0:
+                if DataType.DataTypeToken.is_richer_than(other_data_type, self.get_resulting_data_type()):
+                    self.resulting_data_type = other_data_type
+            else:
+                if self.resulting_data_type != other_data_type:
+                    raise SemanticError(
+                        f'Cannot get resulting data type: pointer types '
+                        f'{self.resulting_data_type.get_name()} and '
+                        f'{other_data_type.get_name()} are incompatible')
 
     def visit_ast_literal(self, ast: ASTLiteral):
         if ast.get_data_type() == DataType.NORMAL_CHAR:
@@ -58,6 +67,25 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
         variable = self.last_symbol_table.lookup_variable(ast.get_content())
         assert variable.is_initialized(), "Variable should be initialized"
         self.update_current_data_type(variable.data_type)
+
+    def visit_ast_pointer_expression(self, ast: ASTPointerExpression):
+        # Create another resulting data type visitor to find out what the data type is
+        # of the 'value applied to' (can be a lot of things)
+        resulting_data_type_visitor = ASTVisitorResultingDataType(self.last_symbol_table)
+        ast.get_value_applied_to().accept(resulting_data_type_visitor)
+        resulting_data_type = resulting_data_type_visitor.get_resulting_data_type()
+        # TODO test with functions
+        if ast.get_token() == PointerExprToken.ADDRESS:
+            self.update_current_data_type(
+                DataType.DataType(resulting_data_type.get_token(), resulting_data_type.get_pointer_level() + 1))
+        elif ast.get_token() == PointerExprToken.DEREFERENCE:
+            if resulting_data_type.get_pointer_level() > 0:
+                self.update_current_data_type(
+                    DataType.DataType(resulting_data_type.get_token(), resulting_data_type.get_pointer_level() - 1))
+            else:
+                raise SemanticError(f'Cannot dereference an expression of type {resulting_data_type.get_name()}!')
+        else:
+            raise NotImplementedError
 
 
 class ASTVisitorUndeclaredVariableUsed(ASTBaseVisitor):
@@ -141,7 +169,7 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
 
             if isinstance(ast.left, ASTLiteral) and isinstance(ast.right, ASTLiteral):
 
-                resulting_data_type = ast.get_data_type()
+                resulting_data_type = DataType.DataType.get_resulting_data_type(ast.left, ast.right)
 
                 left_value = ast.left.get_content_depending_on_data_type()
                 right_value = ast.right.get_content_depending_on_data_type()
@@ -244,21 +272,28 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         assert isinstance(symbol_table, SymbolTableSemanticAnalyser)
         return symbol_table
 
-    def check_for_narrowing_result(self, declared_data_type: DataType.DataTypeToken, ast: AST):
+    def check_for_narrowing_result(self, declared_data_type: DataType.DataType, ast: AST):
         """
         Checks if the result would be narrowed down into another data type (e.g. float to int). If so, warn to the log
         PRE-CONDITION: All variables need to be declared and initialized in order for lookups to work
         """
-        resulting_data_type_visitor = ASTVisitorResultingDataType(self.get_last_symbol_table())
-        ast.accept(resulting_data_type_visitor)
-        assert resulting_data_type_visitor.resulting_data_type is not None
+        resulting_data_type = self.get_resulting_data_type(ast)
 
         # This is the data type that was declared in the input program
 
-        if declared_data_type != resulting_data_type_visitor.resulting_data_type and not DataType.DataType.is_richer_than(
-                declared_data_type, resulting_data_type_visitor.resulting_data_type):
-            raise SemanticError("The result would be narrowed, and we do not yet support explicit or implicit casting")
-            # TODO support implicit and explicit casting
+        if declared_data_type != resulting_data_type:
+
+            if declared_data_type.get_pointer_level() == resulting_data_type.get_pointer_level():
+
+                if DataType.DataTypeToken.is_richer_than(resulting_data_type, declared_data_type):
+                    raise SemanticError(
+                        "The result would be narrowed, and we do not yet support explicit or implicit casting")
+            else:
+
+                raise SemanticError(
+                    f'Cannot get resulting data type: pointer types '
+                    f'{resulting_data_type.get_name()} and '
+                    f'{declared_data_type.get_name()} are incompatible')
 
     def check_r_value_assignment(self, bin_expr: ASTAssignmentExpression):
         # TODO Needs to be improved with derefencing and all that stuff
