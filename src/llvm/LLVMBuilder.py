@@ -186,8 +186,21 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
                 resulting_reg = invert_instruction.get_resulting_register()
 
             return resulting_reg
-        elif isinstance(ast, ASTs.ASTPointerExpression):
-            raise NotImplementedError
+        elif isinstance(ast, ASTs.ASTDereferencedVariable):
+
+            variable = ast.get_value_applied_to()
+            assert isinstance(variable,
+                              ASTs.ASTVariable), "Currently only support for simple pointer expressions with variables"
+
+            variable_reg = self.get_last_symbol_table().get_variable_register(variable.get_var_name())
+
+            # if ast.get_token() == ASTTokens.PointerExprToken.ADDRESS:
+            #
+            #     return variable_reg
+            #
+            # elif ast.get_token() == ASTTokens.PointerExprToken.DEREFERENCE:
+            # else:
+
         else:
             raise NotImplementedError
 
@@ -204,12 +217,16 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         # We're assuming the variable register is always of pointer type,
         # so first load the variable value into a register and return it
 
-        # TODO not tested with pointers
-        register_to_return = self.get_current_function().get_new_register(
-            DataType.DataType(variable_register.get_data_type().get_token(), 0))
-        self.get_current_function().add_instruction(
-            LLVMInstructions.LoadInstruction(register_to_return, variable_register))
-        return register_to_return
+        load_from_reg = variable_register
+        resulting_reg = load_from_reg
+        for i in range(1, ast.get_dereference_count() + 1):
+            resulting_reg = LLVMValue.LLVMRegister(DataType.DataType(variable_register.get_data_type().get_token(),
+                                                                     variable_register.get_data_type().get_pointer_level() - i))
+            self.get_current_function().add_instruction(
+                LLVMInstructions.LoadInstruction(resulting_reg, load_from_reg))
+            load_from_reg = resulting_reg
+
+        return resulting_reg
 
     def __compute_function_call(self, ast: ASTs.ASTFunctionCall):
         """

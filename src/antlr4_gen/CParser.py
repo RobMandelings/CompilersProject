@@ -137,8 +137,8 @@ def serializedATN():
         buf.write("\2\2\u011d\u0122\5\62\32\2\u011e\u011f\7\21\2\2\u011f")
         buf.write("\u0122\5\62\32\2\u0120\u0122\5\64\33\2\u0121\u011c\3\2")
         buf.write("\2\2\u0121\u011e\3\2\2\2\u0121\u0120\3\2\2\2\u0122\63")
-        buf.write("\3\2\2\2\u0123\u0124\7\22\2\2\u0124\u0129\58\35\2\u0125")
-        buf.write("\u0126\7\24\2\2\u0126\u0129\58\35\2\u0127\u0129\58\35")
+        buf.write("\3\2\2\2\u0123\u0124\7\22\2\2\u0124\u0129\5\64\33\2\u0125")
+        buf.write("\u0126\7\24\2\2\u0126\u0129\5\64\33\2\u0127\u0129\58\35")
         buf.write("\2\u0128\u0123\3\2\2\2\u0128\u0125\3\2\2\2\u0128\u0127")
         buf.write("\3\2\2\2\u0129\65\3\2\2\2\u012a\u012b\7\3\2\2\u012b\u012c")
         buf.write("\5*\26\2\u012c\u012d\7\5\2\2\u012d\67\3\2\2\2\u012e\u0132")
@@ -2209,6 +2209,10 @@ class CParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
+        def pointerExpression(self):
+            return self.getTypedRuleContext(CParser.PointerExpressionContext,0)
+
+
         def finalExpression(self):
             return self.getTypedRuleContext(CParser.FinalExpressionContext,0)
 
@@ -2246,14 +2250,14 @@ class CParser ( Parser ):
                 self.state = 289
                 self.match(CParser.T__15)
                 self.state = 290
-                self.finalExpression()
+                self.pointerExpression()
                 pass
             elif token in [CParser.T__17]:
                 self.enterOuterAlt(localctx, 2)
                 self.state = 291
                 self.match(CParser.T__17)
                 self.state = 292
-                self.finalExpression()
+                self.pointerExpression()
                 pass
             elif token in [CParser.T__0, CParser.ID, CParser.CHAR_LITERAL, CParser.INT_LITERAL, CParser.DOUBLE_LITERAL]:
                 self.enterOuterAlt(localctx, 3)

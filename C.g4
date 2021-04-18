@@ -95,15 +95,17 @@ unaryExpression:
     | pointerExpression
     ;
 pointerExpression:
-    '*' finalExpression
-    | '&' finalExpression
+    '*' pointerExpression
+    | '&' pointerExpression
     | finalExpression
     ;
+
 enclosedExpression: '(' expression ')';
 finalExpression: enclosedExpression | value | functionCall ;
 
 dataType: (CHAR | INT | FLOAT | VOID) ('*')*  ;
 value: ID | CHAR_LITERAL | INT_LITERAL | DOUBLE_LITERAL;
+
 // Reserved words
 BREAK: 'break';
 CONTINUE: 'continue';

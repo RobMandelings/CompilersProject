@@ -40,9 +40,6 @@ class ASTBaseVisitor(IASTVisitor):
         ast.value_applied_to.accept(self)
         self.visit_ast_expression(ast)
 
-    def visit_ast_pointer_expression(self, ast: ASTPointerExpression):
-        self.visit_ast_unary_expression(ast)
-
     def visit_ast_binary_expression(self, ast: ASTBinaryExpression):
         assert isinstance(ast, ASTBinaryExpression)
         ast.left.accept(self)

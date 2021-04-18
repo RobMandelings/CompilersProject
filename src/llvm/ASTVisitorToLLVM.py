@@ -7,7 +7,7 @@ import src.llvm.LLVMBuilder as LLVMBuilder
 import src.llvm.LLVMInstruction as LLVMInstructions
 import src.llvm.LLVMSymbolTable as LLVMSymbolTable
 import src.llvm.LLVMValue as LLVMValue
-from src.ast.ASTs import ASTFunctionDeclaration, ASTReturnStatement, ASTScope, ASTFunctionCall, ASTPointerExpression
+from src.ast.ASTs import ASTFunctionDeclaration, ASTReturnStatement, ASTScope, ASTFunctionCall
 from src.llvm.LLVMFunction import LLVMFunction
 
 
@@ -252,7 +252,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         if isinstance(ast.get_return_value(), ASTs.ASTExpression):
             return_value = self.builder.compute_expression(ast.get_return_value())
         elif isinstance(ast.get_return_value(), ASTs.ASTVariable):
-            variable_register = self.builder.get_variable_register(ast.get_return_value().get_name())
+            variable_register = self.builder.get_variable_register(ast.get_return_value().get_var_name())
             return_value = LLVMValue.LLVMRegister(DataType.DataType(variable_register.get_data_type().get_token(),
                                                                     variable_register.get_data_type().get_pointer_level() - 1))
             self.builder.get_current_function().add_instruction(

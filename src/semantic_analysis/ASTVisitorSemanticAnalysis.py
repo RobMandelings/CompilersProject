@@ -67,26 +67,11 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
     def visit_ast_identifier(self, ast: ASTVariable):
         variable = self.last_symbol_table.lookup_variable(ast.get_content())
         assert variable.is_initialized(), "Variable should be initialized"
-        self.update_current_data_type(variable.data_type)
 
-    def visit_ast_pointer_expression(self, ast: ASTPointerExpression):
-        # Create another resulting data type visitor to find out what the data type is
-        # of the 'value applied to' (can be a lot of things)
-        resulting_data_type_visitor = ASTVisitorResultingDataType(self.last_symbol_table)
-        ast.get_value_applied_to().accept(resulting_data_type_visitor)
-        resulting_data_type = resulting_data_type_visitor.get_resulting_data_type()
-        # TODO test with functions
-        if ast.get_token() == PointerExprToken.ADDRESS:
-            self.update_current_data_type(
-                DataType.DataType(resulting_data_type.get_token(), resulting_data_type.get_pointer_level() + 1))
-        elif ast.get_token() == PointerExprToken.DEREFERENCE:
-            if resulting_data_type.get_pointer_level() > 0:
-                self.update_current_data_type(
-                    DataType.DataType(resulting_data_type.get_token(), resulting_data_type.get_pointer_level() - 1))
-            else:
-                raise SemanticError(f'Cannot dereference an expression of type {resulting_data_type.get_name()}!')
-        else:
-            raise NotImplementedError
+        # The resulting data type is the data type you get when you apply the amount of derefencing
+        variable_data_type_with_derefencing = DataType.DataType(variable.get_data_type().get_token(),
+                                                                variable.get_data_type().get_pointer_level() - ast.get_dereference_count())
+        self.update_current_data_type(variable_data_type_with_derefencing)
 
 
 class ASTVisitorUndeclaredVariableUsed(ASTBaseVisitor):
@@ -398,8 +383,11 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                     f"[SemanticAnalysis] Warning: declaration of '{ast.var_name_ast.get_content()}'"
                     f" shadows a local variable. You might want to rename it")
             var_name = ast.var_name_ast.get_content()
+            # The variables are automatically stored as pointers. You need to dereference in order to the the underlying data type.
             symbol_table.insert_symbol(var_name,
-                                       VariableSymbol(ast.var_name_ast.get_content(), ast.get_data_type(),
+                                       VariableSymbol(ast.var_name_ast.get_content(),
+                                                      DataType.DataType(ast.get_data_type().get_token(),
+                                                                        ast.get_data_type().get_pointer_level() + 1),
                                                       ast.is_const(), False))
         else:
             raise SemanticError(
@@ -452,7 +440,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         for i in range(0, len(param_data_types)):
             param_data_type = param_data_types[i]
-            name += param_data_type.get_name()
+            name += param_data_type.get_var_name()
             if i != len(param_data_types) - 1:
                 name += ','
 
@@ -499,7 +487,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
     def visit_ast_function_call(self, ast: ASTFunctionCall):
 
-        function_identifier = ast.get_function_called().get_name()
+        function_identifier = ast.get_function_called().get_var_name()
 
         param_data_types = list()
 

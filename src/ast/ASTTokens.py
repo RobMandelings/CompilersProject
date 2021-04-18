@@ -46,21 +46,6 @@ class UnaryArithmeticExprToken(enum_utils.NamedEnum):
             return None
 
 
-class PointerExprToken(enum_utils.NamedEnum):
-    DEREFERENCE = '*'
-    ADDRESS = '&'
-
-    @staticmethod
-    def from_str(name: str):
-
-        if name == '*':
-            return PointerExprToken.DEREFERENCE
-        elif name == '&':
-            return PointerExprToken.ADDRESS
-        else:
-            return None
-
-
 class BinaryArithmeticExprToken(enum_utils.NamedEnum):
     ADD = '+'
     SUB = '-'
