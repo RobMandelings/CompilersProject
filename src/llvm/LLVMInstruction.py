@@ -458,12 +458,12 @@ class PrintfInstruction(AssignInstruction):
 class CallInstruction(AssignInstruction):
 
     def __init__(self, function_to_call, args: list):
-        from src.llvm.LLVMFunction import LLVMFunction
+        from src.llvm.LLVMFunction import LLVMDefinedFunction
         """
         Function to call: should be an LLVMFunction.LLVMFunction instance
         Params: list of llvm values
         """
-        assert isinstance(function_to_call, LLVMFunction)
+        assert isinstance(function_to_call, LLVMDefinedFunction)
         self.function_to_call = function_to_call
         self.args = args
         super().__init__(LLVMValue.LLVMRegister(function_to_call.get_return_type()))

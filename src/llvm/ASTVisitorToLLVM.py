@@ -8,7 +8,7 @@ import src.llvm.LLVMInstruction as LLVMInstructions
 import src.llvm.LLVMSymbolTable as LLVMSymbolTable
 import src.llvm.LLVMValue as LLVMValue
 from src.ast.ASTs import ASTFunctionDeclaration, ASTReturnStatement, ASTScope, ASTFunctionCall, ASTFunctionDefinition
-from src.llvm.LLVMFunction import LLVMFunction
+from src.llvm.LLVMFunction import LLVMDefinedFunction
 
 
 class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
@@ -214,7 +214,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         self.builder.compute_expression(ast)
 
     def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
-        pass
+        self.builder.get_function_holder().add_declared_function(ast)
 
     def visit_ast_function_definition(self, ast: ASTFunctionDefinition):
         param_registers = list()
@@ -227,7 +227,8 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
 
         return_type = ast.get_function_declaration().get_return_type_ast().get_data_type()
 
-        self.builder.add_function(LLVMFunction(ast.get_function_declaration().get_name(), return_type, param_registers))
+        self.builder.get_function_holder().add_defined_function(
+            LLVMDefinedFunction(ast.get_function_declaration().get_name(), return_type, param_registers))
 
         # Now that the function has been created, loop again over each of the parameters
         for i in range(len(ast.get_function_declaration().get_params())):

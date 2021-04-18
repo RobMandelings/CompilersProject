@@ -1,3 +1,4 @@
+import abc
 import collections
 
 import src.DataType as DataType
@@ -6,9 +7,57 @@ import src.llvm.LLVMInstruction as LLVMInstruction
 import src.llvm.LLVMInterfaces as LLVMInterfaces
 import src.llvm.LLVMUtils as LLVMUtils
 import src.llvm.LLVMValue as LLVMValue
+import src.ast.ASTs as ASTs
 
 
-class LLVMFunction(LLVMInterfaces.IToLLVM):
+class LLVMFunction(LLVMInterfaces.IToLLVM, abc.ABC):
+
+    def __init__(self, identifier: str, return_type: DataType.DataType, params: list):
+        self.identifier = identifier
+        self.return_type = return_type
+        self.params = params
+
+    def get_identifier(self):
+        return self.identifier
+
+    def get_return_type(self):
+        assert isinstance(self.return_type, DataType.DataType)
+        return self.return_type
+
+    def get_param_data_types(self):
+        param_data_types = list()
+        for param in self.params:
+            if isinstance(param, ASTs.IHasDataType):
+                param_data_types.append(param.get_data_type())
+            elif isinstance(param, DataType.DataType):
+                param_data_types.append(param)
+
+        return param_data_types
+
+
+class LLVMDeclaredFunction(LLVMFunction):
+
+    def __init__(self, identifier: str, return_type: DataType.DataType, params: list):
+        super().__init__(identifier, return_type, params)
+
+    def to_llvm(self):
+        llvm_code = f'declare dso_local {self.return_type.get_llvm_name()} @{self.identifier}('
+        param_data_types = self.get_param_data_types()
+        if len(param_data_types) == 0:
+            llvm_code += '...'
+        else:
+            for i in range(len(param_data_types)):
+                param_data_type = param_data_types[i]
+                llvm_code += param_data_type.get_llvm_name()
+
+                if i != len(param_data_types) - 1:
+                    llvm_code += ','
+
+        llvm_code += ')'
+        return llvm_code
+
+
+class LLVMDefinedFunction(LLVMFunction):
 
     def __init__(self, identifier: str, return_type: DataType.DataType, params: list):
         """
@@ -16,17 +65,11 @@ class LLVMFunction(LLVMInterfaces.IToLLVM):
         return_type: DataType of the return type of this function
         params: a list of LLVMRegisters with a specific data type
         """
-        self.identifier = identifier
-        self.return_type = return_type
-        self.params = params
-
+        super().__init__(identifier, return_type, params)
         self.__alloca_instructions = list()
         self.basic_blocks = collections.OrderedDict()
         self.first_basic_block = LLVMBasicBlock.LLVMBasicBlock()
         self.basic_blocks[id(self.first_basic_block)] = self.first_basic_block
-
-    def get_identifier(self):
-        return self.identifier
 
     def get_nr_params(self):
         """
@@ -68,10 +111,6 @@ class LLVMFunction(LLVMInterfaces.IToLLVM):
         self.basic_blocks[id(basic_block)] = basic_block
 
         return basic_block
-
-    def get_return_type(self):
-        assert isinstance(self.return_type, DataType.DataType)
-        return self.return_type
 
     def get_new_register(self, data_type=None):
         """
