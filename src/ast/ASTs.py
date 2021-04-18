@@ -63,10 +63,27 @@ class ASTVariable(ASTLeaf):
     Name which refers to a specific location in memory (l-values, such as variables for example)
     """
 
-    def __init__(self, content: str):
-        super().__init__(content)
+    def __init__(self, variable_name: str):
+        self.variable_name = variable_name
+        self._dereference_count = 1
+        super().__init__(variable_name)
 
-    def get_name(self):
+    def increase_dereference_count(self):
+        self._dereference_count += 1
+
+    def decrease_dereference_count(self):
+        self._dereference_count -= 1
+        assert self._dereference_count >= 0
+
+    def get_dereference_count(self):
+        return self._dereference_count
+
+    def get_name_with_dereference(self):
+        dereference_text = '*' * self._dereference_count
+        name_with_dereference = f'{dereference_text}{self.variable_name}'
+        return name_with_dereference
+
+    def get_var_name(self):
         return self.get_content()
 
     def accept(self, visitor: IASTVisitor):
@@ -227,20 +244,6 @@ class ASTUnaryArithmeticExpression(ASTUnaryExpression, IHasToken):
 
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_unary_expression(self)
-
-
-class ASTPointerExpression(ASTUnaryExpression, IHasToken):
-
-    def __init__(self, token: PointerExprToken, value_applied_to: AST):
-        super().__init__(token.name.lower(), value_applied_to)
-        self.token = token
-
-    def get_token(self):
-        assert isinstance(self.token, PointerExprToken)
-        return self.token
-
-    def accept(self, visitor: IASTVisitor):
-        visitor.visit_ast_pointer_expression(self)
 
 
 class ASTBinaryExpression(ASTExpression, IHasToken):
@@ -464,7 +467,7 @@ class ASTVariableDeclaration(AST):
         return self.var_name_ast
 
     def get_var_name(self):
-        return self.get_var_name_ast().get_name()
+        return self.get_var_name_ast().get_var_name()
 
     def is_const(self):
         for attribute in self.type_attributes:

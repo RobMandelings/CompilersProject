@@ -3,7 +3,6 @@ from antlr4.tree.Tree import TerminalNodeImpl
 from src.antlr4_gen.CLexer import CLexer
 from src.antlr4_gen.CParser import *
 from src.ast.ASTs import *
-import src.DataType as DataType
 
 
 # TODO Improve to use a visitor pattern of the cst instead
@@ -48,18 +47,19 @@ def create_ast_var_declaration_and_init(cst):
 
 
 def create_ast_var_declaration(cst):
-    assert isinstance(cst.children[0], CParser.TypeDeclarationContext) or isinstance(cst.childer[0],
+    assert isinstance(cst.children[0], CParser.TypeDeclarationContext) or isinstance(cst.children[0],
                                                                                      CParser.ArrayDeclarationContext)
 
     data_type_and_attributes = create_ast_from_cst(cst.children[0])
-    name = create_ast_from_cst(cst.children[1])
+    # By default it is wrapped in a Dereference Node
+    variable = create_ast_from_cst(cst.children[1])
 
     if len(cst.children) == 3 and isinstance(cst.children[2], CParser.ArrayDeclarationContext):
         array_declaration = cst.children[2]
         size = create_ast_from_cst(array_declaration.children[1])
-        return ASTArrayDeclaration(data_type_and_attributes, name, size)
+        return ASTArrayDeclaration(data_type_and_attributes, variable, size)
     else:
-        return ASTVariableDeclaration(data_type_and_attributes, name)
+        return ASTVariableDeclaration(data_type_and_attributes, variable)
 
 
 def create_type_asts(cst):
@@ -112,14 +112,26 @@ def create_ast_expression(cst):
     elif is_unary_expression(cst):
 
         unary_arithmetic_expr_token = get_unary_arithmetic_expr_token(cst)
-        pointer_expr_token = get_pointer_expr_token(cst)
 
         value_applied_to = create_ast_from_cst(cst.children[1])
 
         if unary_arithmetic_expr_token is not None:
             return ASTUnaryArithmeticExpression(unary_arithmetic_expr_token, value_applied_to)
-        elif pointer_expr_token is not None:
-            return ASTPointerExpression(pointer_expr_token, value_applied_to)
+        elif is_pointer_expression(cst):
+
+            # In this compiler, the address operator only undo's the implicit
+            # derefence, so it must be a dereferenced node
+            variable = create_ast_from_cst(cst.children[1])
+            assert isinstance(variable, ASTVariable)
+
+            if cst.children[0].getSymbol().text == '&':
+                variable.decrease_dereference_count()
+                return variable
+            elif cst.children[0].getSymbol().text == '*':
+                variable.increase_dereference_count()
+                return variable
+            else:
+                raise NotImplementedError
         else:
             raise NotImplementedError
 
@@ -407,7 +419,8 @@ def get_relational_expr_token(cst: ParserRuleContext):
 def is_unary_expression(cst: ParserRuleContext):
     if len(cst.children) == 2 and isinstance(cst.children[0], TerminalNodeImpl):
         if (UnaryArithmeticExprToken.from_str(cst.children[0].getSymbol().text) is not None or
-                PointerExprToken.from_str(cst.children[0].getSymbol().text) is not None):
+                cst.children[0].getSymbol().text == '&' or cst.children[
+                    0].getSymbol().text == '*'):
             return True
 
     return False
@@ -418,9 +431,13 @@ def get_unary_arithmetic_expr_token(cst: ParserRuleContext):
     return UnaryArithmeticExprToken.from_str(cst.children[0].getSymbol().text)
 
 
-def get_pointer_expr_token(cst: ParserRuleContext):
-    assert is_unary_expression(cst)
-    return PointerExprToken.from_str(cst.children[0].getSymbol().text)
+def is_pointer_expression(cst: ParserRuleContext):
+    if len(cst.children) == 2 and isinstance(cst.children[0], TerminalNodeImpl):
+        if cst.children[0].getSymbol().text == '&' or \
+                cst.children[0].getSymbol().text == '*':
+            return True
+
+    return False
 
 
 def is_assignment_expression(cst: ParserRuleContext):

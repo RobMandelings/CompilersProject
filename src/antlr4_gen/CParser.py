@@ -138,10 +138,10 @@ def serializedATN():
         buf.write("\5\62\32\2\u011f\u0120\7\21\2\2\u0120\u0123\5\62\32\2")
         buf.write("\u0121\u0123\5\64\33\2\u0122\u011d\3\2\2\2\u0122\u011f")
         buf.write("\3\2\2\2\u0122\u0121\3\2\2\2\u0123\63\3\2\2\2\u0124\u0125")
-        buf.write("\7\22\2\2\u0125\u012a\58\35\2\u0126\u0127\7\24\2\2\u0127")
-        buf.write("\u012a\58\35\2\u0128\u012a\58\35\2\u0129\u0124\3\2\2\2")
-        buf.write("\u0129\u0126\3\2\2\2\u0129\u0128\3\2\2\2\u012a\65\3\2")
-        buf.write("\2\2\u012b\u012c\7\3\2\2\u012c\u012d\5*\26\2\u012d\u012e")
+        buf.write("\7\22\2\2\u0125\u012a\5\64\33\2\u0126\u0127\7\24\2\2\u0127")
+        buf.write("\u012a\5\64\33\2\u0128\u012a\58\35\2\u0129\u0124\3\2\2")
+        buf.write("\2\u0129\u0126\3\2\2\2\u0129\u0128\3\2\2\2\u012a\65\3")
+        buf.write("\2\2\2\u012b\u012c\7\3\2\2\u012c\u012d\5*\26\2\u012d\u012e")
         buf.write("\7\5\2\2\u012e\67\3\2\2\2\u012f\u0133\5\66\34\2\u0130")
         buf.write("\u0133\5<\37\2\u0131\u0133\5\24\13\2\u0132\u012f\3\2\2")
         buf.write("\2\u0132\u0130\3\2\2\2\u0132\u0131\3\2\2\2\u01339\3\2")
@@ -2220,6 +2220,10 @@ class CParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
+        def pointerExpression(self):
+            return self.getTypedRuleContext(CParser.PointerExpressionContext,0)
+
+
         def finalExpression(self):
             return self.getTypedRuleContext(CParser.FinalExpressionContext,0)
 
@@ -2257,14 +2261,14 @@ class CParser ( Parser ):
                 self.state = 290
                 self.match(CParser.T__15)
                 self.state = 291
-                self.finalExpression()
+                self.pointerExpression()
                 pass
             elif token in [CParser.T__17]:
                 self.enterOuterAlt(localctx, 2)
                 self.state = 292
                 self.match(CParser.T__17)
                 self.state = 293
-                self.finalExpression()
+                self.pointerExpression()
                 pass
             elif token in [CParser.T__0, CParser.ID, CParser.CHAR_LITERAL, CParser.INT_LITERAL, CParser.DOUBLE_LITERAL]:
                 self.enterOuterAlt(localctx, 3)

@@ -33,9 +33,6 @@ class IASTVisitor(abc.ABC):
     def visit_ast_unary_expression(self, ast):
         pass
 
-    def visit_ast_pointer_expression(self, ast):
-        pass
-
     def visit_ast_binary_expression(self, ast):
         pass
 
