@@ -339,6 +339,11 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         self.check_undeclared_variable_usage(ast)
         self.check_uninitialized_variable_usage(ast)
 
+    def visit_ast_binary_compare_expression(self, ast: ASTRelationalExpression):
+        self.check_undeclared_variable_usage(ast)
+        self.check_uninitialized_variable_usage(ast)
+        self.check_resulting_data_type(ast)
+
     def optimize_expression(self, ast: AST):
         """
         Optimizes an expression using constant propagation and constant folding

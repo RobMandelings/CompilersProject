@@ -56,7 +56,7 @@ def serializedATN():
         buf.write("\3\2\2\2\66\u0125\3\2\2\28\u0138\3\2\2\2:\u013f\3\2\2")
         buf.write("\2<\u0141\3\2\2\2>\u0148\3\2\2\2@\u014a\3\2\2\2B\u0151")
         buf.write("\3\2\2\2DF\5\n\6\2ED\3\2\2\2FI\3\2\2\2GE\3\2\2\2GH\3\2")
-        buf.write("\2\2HK\3\2\2\2IG\3\2\2\2JL\5\6\4\2KJ\3\2\2\2LM\3\2\2\2")
+        buf.write("\2\2HK\3\2\2\2IG\3\2\2\2JL\5\4\3\2KJ\3\2\2\2LM\3\2\2\2")
         buf.write("MK\3\2\2\2MN\3\2\2\2N\3\3\2\2\2OT\5\b\5\2PQ\5\6\4\2QR")
         buf.write("\7\3\2\2RT\3\2\2\2SO\3\2\2\2SP\3\2\2\2T\5\3\2\2\2UV\5")
         buf.write("@!\2VW\7#\2\2Wa\7\4\2\2XY\5\"\22\2YZ\7\5\2\2Z\\\3\2\2")
@@ -299,11 +299,11 @@ class CParser ( Parser ):
                 return self.getTypedRuleContext(CParser.IncludeContext,i)
 
 
-        def functionDeclaration(self, i:int=None):
+        def functionStatement(self, i:int=None):
             if i is None:
-                return self.getTypedRuleContexts(CParser.FunctionDeclarationContext)
+                return self.getTypedRuleContexts(CParser.FunctionStatementContext)
             else:
-                return self.getTypedRuleContext(CParser.FunctionDeclarationContext,i)
+                return self.getTypedRuleContext(CParser.FunctionStatementContext,i)
 
 
         def getRuleIndex(self):
@@ -348,7 +348,7 @@ class CParser ( Parser ):
             _la = self._input.LA(1)
             while True:
                 self.state = 72
-                self.functionDeclaration()
+                self.functionStatement()
                 self.state = 75 
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
