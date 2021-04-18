@@ -239,15 +239,20 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
         symbol_table = self.get_last_symbol_table()
         array_symbol = symbol_table.get_array_symbol(ast.get_variable_accessed().get_content())
-        register_with_element_ptr = self.get_current_function().get_new_register(DataType.DataType(array_element_register.get_data_type().get_token(), 1))
+        register_with_element_ptr = self.get_current_function().get_new_register(
+            DataType.DataType(array_element_register.get_data_type().get_token(), 1))
         index = ast.get_index_accessed()
         instruction = getElementPtr_instruction = LLVMInstructions.GetElementPtrInstruction(register_with_element_ptr,
-                                                                      str(ast.get_index_accessed().get_value()), array_symbol.get_size(),
-                                                                      array_element_register)
+                                                                                            str(
+                                                                                                ast.get_index_accessed().get_value()),
+                                                                                            array_symbol.get_size(),
+                                                                                            array_element_register)
         self.get_current_function().add_instruction(instruction)
-        register_to_return = self.get_current_function().get_new_register(DataType.DataType(array_element_register.get_data_type().get_token(), 0))
+        register_to_return = self.get_current_function().get_new_register(
+            DataType.DataType(array_element_register.get_data_type().get_token(), 0))
 
-        self.get_current_function().add_instruction(LLVMInstructions.LoadInstruction(register_to_return, register_with_element_ptr))
+        self.get_current_function().add_instruction(
+            LLVMInstructions.LoadInstruction(register_to_return, register_with_element_ptr))
         return register_to_return
 
     def __compute_function_call(self, ast: ASTs.ASTFunctionCall):
@@ -396,9 +401,9 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
                 DataType.DataType(array_symbol.get_register().get_data_type().get_token(),
                                   array_symbol.get_register().get_data_type().get_pointer_level()))
             getElementPtr_instruction = LLVMInstructions.GetElementPtrInstruction(register_to_store,
-                                                                      left.get_index_accessed().get_content(),
-                                                                      array_symbol.get_size(),
-                                                                      array_symbol.get_register())
+                                                                                  left.get_index_accessed().get_content(),
+                                                                                  array_symbol.get_size(),
+                                                                                  array_symbol.get_register())
             self.get_current_function().add_instruction(getElementPtr_instruction)
             store_instruction = LLVMInstructions.StoreInstruction(register_to_store, computed_expression_value)
             self.get_current_function().add_instruction(store_instruction)
@@ -421,5 +426,3 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             llvm_code += function.to_llvm() + "\n"
 
         return llvm_code
-
-
