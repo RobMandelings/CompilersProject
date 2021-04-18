@@ -190,9 +190,9 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
             variable = ast.get_value_applied_to()
             assert isinstance(variable,
-                              ASTs.ASTVariable), "Currently only support for simple pointer expressions with variables"
+                              ASTs.ASTIdentifier), "Currently only support for simple pointer expressions with variables"
 
-            variable_reg = self.get_last_symbol_table().get_variable_register(variable.get_var_name())
+            variable_reg = self.get_last_symbol_table().get_variable_register(variable.get_name())
 
             # if ast.get_token() == ASTTokens.PointerExprToken.ADDRESS:
             #
@@ -204,7 +204,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         else:
             raise NotImplementedError
 
-    def __compute_variable_value_into_register(self, ast: ASTs.ASTVariable):
+    def __compute_variable_value_into_register(self, ast: ASTs.ASTIdentifier):
         """
         Adds the necessary instructions to load the value of a variable into a register
 
@@ -279,7 +279,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             return self.__compute_unary_expression(ast)
         elif isinstance(ast, ASTs.ASTLiteral):
             return LLVMValues.LLVMLiteral(ast.get_value(), ast.get_data_type())
-        elif isinstance(ast, ASTs.ASTVariable):
+        elif isinstance(ast, ASTs.ASTIdentifier):
             return self.__compute_variable_value_into_register(ast)
         elif isinstance(ast, ASTs.ASTFunctionCall):
             return self.__compute_function_call(ast)
@@ -365,7 +365,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         # TODO Type conversions are not supported yet
         right = ast.get_right()
         left = ast.get_left()
-        if isinstance(left, ASTs.ASTVariable):
+        if isinstance(left, ASTs.ASTIdentifier):
             variable_register = self.get_variable_register(left.get_content())
 
             computed_expression_value = self.compute_expression(right)

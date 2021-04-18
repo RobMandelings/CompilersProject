@@ -73,7 +73,7 @@ def create_type_asts(cst):
 
 def create_ast_from_terminal_node(cst: TerminalNodeImpl):
     if is_identifier(cst):
-        return ASTVariable(cst.getSymbol().text)
+        return ASTIdentifier(cst.getSymbol().text)
     else:
 
         type_attribute_token = get_type_attribute_token(cst)
@@ -122,7 +122,7 @@ def create_ast_expression(cst):
             # In this compiler, the address operator only undo's the implicit
             # derefence, so it must be a dereferenced node
             variable = create_ast_from_cst(cst.children[1])
-            assert isinstance(variable, ASTVariable)
+            assert isinstance(variable, ASTIdentifier)
 
             if cst.children[0].getSymbol().text == '&':
                 variable.decrease_dereference_count()

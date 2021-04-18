@@ -61,18 +61,24 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
             self.update_current_data_type(DataType.NORMAL_INT)
         elif ast.get_data_type() == DataType.NORMAL_FLOAT:
             self.update_current_data_type(DataType.NORMAL_FLOAT)
+        elif ast.get_data_type() == DataType.NORMAL_DOUBLE:
+            self.update_current_data_type(DataType.NORMAL_DOUBLE)
         else:
             raise NotImplementedError(f"Token type '{ast.get_data_type()}' not recognized as literal")
 
-    def visit_ast_identifier(self, ast: ASTVariable):
+    def visit_ast_identifier(self, ast: ASTIdentifier):
         variable = self.last_symbol_table.lookup_variable(ast.get_content())
-        assert variable.is_initialized(), "Variable should be initialized"
-        self.update_current_data_type(variable.data_type)
 
-        # The resulting data type is the data type you get when you apply the amount of derefencing
-        variable_data_type_with_derefencing = DataType.DataType(variable.get_data_type().get_token(),
-                                                                variable.get_data_type().get_pointer_level() - ast.get_dereference_count())
-        self.update_current_data_type(variable_data_type_with_derefencing)
+        if isinstance(variable, VariableSymbol):
+            assert variable.is_initialized(), "Variable should be initialized"
+
+            # The resulting data type is the data type you get when you apply the amount of derefencing
+            variable_data_type_with_derefencing = DataType.DataType(variable.get_data_type().get_token(),
+                                                                    variable.get_data_type().get_pointer_level() - ast.get_dereference_count())
+            self.update_current_data_type(variable_data_type_with_derefencing)
+        else:
+            raise SemanticError(
+                'Identifier does not correspond to a variable with a data type. Cannot get resulting data type')
 
     def visit_ast_access_element(self, ast: ASTArrayAccessElement):
         access_element = self.last_symbol_table.lookup_variable(ast.get_content())
@@ -90,7 +96,7 @@ class ASTVisitorUndeclaredVariableUsed(ASTBaseVisitor):
         self.undeclared_variables_used = list()
         assert last_symbol_table is not None
 
-    def visit_ast_identifier(self, ast: ASTVariable):
+    def visit_ast_identifier(self, ast: ASTIdentifier):
         table_element = self.last_symbol_table.lookup(ast.get_content())
         if not table_element:
             self.undeclared_variables_used.append(ast)
@@ -107,7 +113,7 @@ class ASTVisitorUninitializedVariableUsed(ASTBaseVisitor):
         self.uninitialized_variables_used = list()
         assert last_symbol_table is not None
 
-    def visit_ast_identifier(self, ast: ASTVariable):
+    def visit_ast_identifier(self, ast: ASTIdentifier):
         super().visit_ast_identifier(ast)
         table_element = self.last_symbol_table.lookup(ast.get_content())
         if table_element:
@@ -128,8 +134,8 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
         self.last_symbol_table = last_symbol_table
         self.optimized_ast = None
 
-    def replace_identifier_if_applicable(self, ast: ASTVariable):
-        assert isinstance(ast, ASTVariable)
+    def replace_identifier_if_applicable(self, ast: ASTIdentifier):
+        assert isinstance(ast, ASTIdentifier)
 
     def do_constant_propagation(self, ast: AST):
 
@@ -138,7 +144,7 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
             ast.right = self.do_constant_propagation(ast.right)
         elif isinstance(ast, ASTUnaryExpression):
             ast.value_applied_to = self.do_constant_propagation(ast.value_applied_to)
-        elif isinstance(ast, ASTVariable):
+        elif isinstance(ast, ASTIdentifier):
             variable = self.last_symbol_table.lookup_variable(ast.get_content())
             # The variable in the symbol table still has a reaching definition, so we can
             # replace this variable with the reaching definition
@@ -226,7 +232,7 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
     def visit_ast_unary_expression(self, ast: ASTUnaryExpression):
         self.optimize(ast)
 
-    def visit_ast_identifier(self, ast: ASTVariable):
+    def visit_ast_identifier(self, ast: ASTIdentifier):
         self.optimize(ast)
 
     def visit_ast_literal(self, ast: ASTLiteral):
@@ -279,7 +285,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
             if declared_data_type.get_pointer_level() == resulting_data_type.get_pointer_level():
 
-                if DataType.DataTypeToken.is_richer_than(resulting_data_type.get_token(), declared_data_type.get_token()):
+                if DataType.DataTypeToken.is_richer_than(resulting_data_type.get_token(),
+                                                         declared_data_type.get_token()):
                     raise SemanticError(
                         "The result would be narrowed, and we do not yet support explicit or implicit casting")
             else:
@@ -338,11 +345,28 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         # Do nothing, just some optimization
         self.check_undeclared_variable_usage(ast)
         self.check_uninitialized_variable_usage(ast)
+        self.check_resulting_data_type(ast)
 
     def visit_ast_binary_compare_expression(self, ast: ASTRelationalExpression):
+
         self.check_undeclared_variable_usage(ast)
         self.check_uninitialized_variable_usage(ast)
-        self.check_resulting_data_type(ast)
+
+        if isinstance(ast.left, ASTExpression):
+            self.check_resulting_data_type(ast.left)
+        if isinstance(ast.right, ASTExpression):
+            self.check_resulting_data_type(ast.right)
+
+        if isinstance(ast.left, ASTIdentifier) and isinstance(ast.right, ASTIdentifier):
+            lookup_left = self.get_last_symbol_table().lookup(ast.left.get_name())
+            lookup_right = self.get_last_symbol_table().lookup(ast.right.get_name())
+
+            if isinstance(lookup_left, ArraySymbol) and isinstance(lookup_right, ArraySymbol):
+                print("Warning: array comparison always evaluates to false")
+            elif isinstance(lookup_left, VariableSymbol) and isinstance(lookup_right, VariableSymbol):
+                self.check_resulting_data_type(ast)
+            else:
+                raise NotImplementedError
 
     def optimize_expression(self, ast: AST):
         """
@@ -479,7 +503,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         for i in range(0, len(param_data_types)):
             param_data_type = param_data_types[i]
-            name += param_data_type.get_var_name()
+            name += param_data_type.get_name()
             if i != len(param_data_types) - 1:
                 name += ','
 
@@ -515,7 +539,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         if isinstance(condition_ast, ASTLiteral):
             if condition_ast.get_data_type() == DataType.NORMAL_BOOL:
                 boolean_result = True
-        elif isinstance(condition_ast, ASTVariable):
+        elif isinstance(condition_ast, ASTIdentifier):
             variable_symbol = self.get_last_symbol_table().lookup_variable(condition_ast.get_content())
 
             if variable_symbol.get_data_type() == DataType.NORMAL_BOOL:

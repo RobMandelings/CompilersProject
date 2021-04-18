@@ -253,8 +253,8 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
 
         if isinstance(ast.get_return_value(), ASTs.ASTExpression):
             return_value = self.builder.compute_expression(ast.get_return_value())
-        elif isinstance(ast.get_return_value(), ASTs.ASTVariable):
-            variable_register = self.builder.get_variable_register(ast.get_return_value().get_var_name())
+        elif isinstance(ast.get_return_value(), ASTs.ASTIdentifier):
+            variable_register = self.builder.get_variable_register(ast.get_return_value().get_name())
             return_value = LLVMValue.LLVMRegister(DataType.DataType(variable_register.get_data_type().get_token(),
                                                                     variable_register.get_data_type().get_pointer_level() - 1))
             self.builder.get_current_function().add_instruction(

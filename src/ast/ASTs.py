@@ -57,7 +57,7 @@ class ASTLeaf(AST):
         visitor.visit_ast_leaf(self)
 
 
-class ASTVariable(ASTLeaf):
+class ASTIdentifier(ASTLeaf):
     """
     Representation of an L-Value in an Abstract Syntax Tree
     Name which refers to a specific location in memory (l-values, such as variables for example)
@@ -83,7 +83,7 @@ class ASTVariable(ASTLeaf):
         name_with_dereference = f'{dereference_text}{self.variable_name}'
         return name_with_dereference
 
-    def get_var_name(self):
+    def get_name(self):
         return self.get_content()
 
     def accept(self, visitor: IASTVisitor):
@@ -271,13 +271,13 @@ class ASTBinaryExpression(ASTExpression, IHasToken):
 
 class ASTArrayAccessElement(ASTLeaf):
 
-    def __init__(self, variable_accessed: ASTVariable, index_accessed: ASTLiteral):
+    def __init__(self, variable_accessed: ASTIdentifier, index_accessed: ASTLiteral):
         super().__init__(f'{variable_accessed}[{index_accessed}]')
         self.variable_accessed = variable_accessed
         self.index_accessed = index_accessed
 
     def get_variable_accessed(self):
-        assert isinstance(self.variable_accessed, ASTVariable)
+        assert isinstance(self.variable_accessed, ASTIdentifier)
         return self.variable_accessed
 
     def get_index_accessed(self):
@@ -308,7 +308,7 @@ class ASTAssignmentExpression(ASTBinaryExpression):
 
         returns: an instance of ASTVariable (left side of the equation)
         """
-        assert isinstance(self.left, ASTVariable) or isinstance(self.left, ASTArrayAccessElement)
+        assert isinstance(self.left, ASTIdentifier) or isinstance(self.left, ASTArrayAccessElement)
         return super().get_left()
 
 
@@ -448,7 +448,7 @@ class ASTWhileLoop(ASTConditionalStatement):
 
 class ASTVariableDeclaration(AST):
 
-    def __init__(self, data_type_and_attributes: list, name: ASTVariable):
+    def __init__(self, data_type_and_attributes: list, name: ASTIdentifier):
         super().__init__('variable declaration')
         data_type, data_type_and_attributes = self.__divide_type_attributes(data_type_and_attributes)
 
@@ -467,7 +467,7 @@ class ASTVariableDeclaration(AST):
         return self.var_name_ast
 
     def get_var_name(self):
-        return self.get_var_name_ast().get_var_name()
+        return self.get_var_name_ast().get_name()
 
     def is_const(self):
         for attribute in self.type_attributes:
@@ -526,7 +526,7 @@ class ASTVariableDeclaration(AST):
 
 class ASTArrayDeclaration(ASTVariableDeclaration):
 
-    def __init__(self, data_type_and_attributes: list, name: ASTVariable, size: ASTLiteral):
+    def __init__(self, data_type_and_attributes: list, name: ASTIdentifier, size: ASTLiteral):
         super().__init__(data_type_and_attributes, name)
         assert size.get_data_type() == DataType.NORMAL_INT
         self.size = size
@@ -669,7 +669,7 @@ class ASTReturnStatement(AST):
 
 class ASTVariableDeclarationAndInit(ASTVariableDeclaration, ASTExpression):
 
-    def __init__(self, data_type_and_attributes: list, name: ASTVariable, value: AST):
+    def __init__(self, data_type_and_attributes: list, name: ASTIdentifier, value: AST):
         super().__init__(data_type_and_attributes, name)
         self.content += ' and init'
         self.value = value
@@ -681,7 +681,7 @@ class ASTVariableDeclarationAndInit(ASTVariableDeclaration, ASTExpression):
 
 class ASTArrayDeclarationAndInit(ASTVariableDeclarationAndInit):
 
-    def __init__(self, data_type_and_attributes: list, name: ASTVariable, size_ast: ASTLiteral, value: ASTArrayInit):
+    def __init__(self, data_type_and_attributes: list, name: ASTIdentifier, size_ast: ASTLiteral, value: ASTArrayInit):
         super().__init__(data_type_and_attributes, name, value)
         assert size_ast.get_data_type() == DataType.NORMAL_INT
         self.content = f'var declaration and init: array ({size_ast.get_content()})'

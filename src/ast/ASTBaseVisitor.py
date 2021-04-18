@@ -23,8 +23,8 @@ class ASTBaseVisitor(IASTVisitor):
         assert isinstance(ast, ASTTypeAttribute)
         self.visit_ast_leaf(ast)
 
-    def visit_ast_identifier(self, ast: ASTVariable):
-        assert isinstance(ast, ASTVariable)
+    def visit_ast_identifier(self, ast: ASTIdentifier):
+        assert isinstance(ast, ASTIdentifier)
         self.visit_ast_leaf(ast)
 
     def visit_ast_access_element(self, ast: ASTArrayAccessElement):

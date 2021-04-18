@@ -4,7 +4,7 @@ import src.DataType as DataType
 from src.ast.ASTBaseVisitor import ASTBaseVisitor
 from src.ast.ASTs import ASTPrintfInstruction, ASTUnaryExpression, ASTLiteral, ASTControlFlowStatement, \
     ASTFunctionDeclaration, ASTArrayDeclaration, ASTArrayInit, ASTReturnStatement, ASTFunctionCall, \
-    ASTVariableDeclaration, ASTVariable, ASTFunctionDefinition
+    ASTVariableDeclaration, ASTIdentifier, ASTFunctionDefinition
 
 
 class ASTVisitorDot(ASTBaseVisitor):
@@ -25,7 +25,7 @@ class ASTVisitorDot(ASTBaseVisitor):
     def visit_ast_leaf(self, ast):
         self.add_to_dot_node(ast)
 
-    def visit_ast_identifier(self, ast: ASTVariable):
+    def visit_ast_identifier(self, ast: ASTIdentifier):
         self.add_to_dot_node(ast, ast.get_name_with_dereference())
 
     def visit_ast_literal(self, ast: ASTLiteral):
