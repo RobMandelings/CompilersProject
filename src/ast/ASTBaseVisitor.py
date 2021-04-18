@@ -129,6 +129,9 @@ class ASTBaseVisitor(IASTVisitor):
     def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
         for param in ast.get_params():
             param.accept(self)
+
+    def visit_ast_function_definition(self, ast: ASTFunctionDefinition):
+        ast.get_function_declaration().accept(self)
         ast.get_execution_body().accept(self)
 
     def visit_ast_return_statement(self, ast: ASTReturnStatement):

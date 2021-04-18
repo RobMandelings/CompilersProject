@@ -7,7 +7,7 @@ import src.llvm.LLVMBuilder as LLVMBuilder
 import src.llvm.LLVMInstruction as LLVMInstructions
 import src.llvm.LLVMSymbolTable as LLVMSymbolTable
 import src.llvm.LLVMValue as LLVMValue
-from src.ast.ASTs import ASTFunctionDeclaration, ASTReturnStatement, ASTScope, ASTFunctionCall
+from src.ast.ASTs import ASTFunctionDeclaration, ASTReturnStatement, ASTScope, ASTFunctionCall, ASTFunctionDefinition
 from src.llvm.LLVMFunction import LLVMFunction
 
 
@@ -214,29 +214,31 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         self.builder.compute_expression(ast)
 
     def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
+        pass
+
+    def visit_ast_function_definition(self, ast: ASTFunctionDefinition):
         param_registers = list()
 
-        for param in ast.get_params():
+        for param in ast.get_function_declaration().get_params():
             assert isinstance(param, ASTs.ASTVariableDeclaration)
             param_registers.append(LLVMValue.LLVMRegister(param.get_data_type()))
 
-        assert len(param_registers) == len(ast.get_params())
+        assert len(param_registers) == len(ast.get_function_declaration().get_params())
 
-        return_type = ast.get_return_type().get_data_type()
+        return_type = ast.get_function_declaration().get_return_type_ast().get_data_type()
 
-        self.builder.add_function(LLVMFunction(ast.get_name(), return_type, param_registers))
+        self.builder.add_function(LLVMFunction(ast.get_function_declaration().get_name(), return_type, param_registers))
 
         # Now that the function has been created, loop again over each of the parameters
-        for i in range(len(ast.get_params())):
+        for i in range(len(ast.get_function_declaration().get_params())):
             param_register = param_registers[i]
-            param = ast.get_params()[i]
+            param = ast.get_function_declaration().get_params()[i]
             assert isinstance(param, ASTs.ASTVariableDeclaration)
             resulting_reg = self.builder.declare_variable(param)
             self.builder.get_current_function().add_instruction(
                 LLVMInstructions.StoreInstruction(resulting_reg, param_register))
 
         ast.get_execution_body().accept(self)
-        current_function = self.builder.get_current_function()
 
     def visit_ast_array_declaration(self, ast: ASTs.ASTArrayDeclaration):
         self.builder.declare_array(ast)

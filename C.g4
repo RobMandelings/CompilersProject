@@ -5,7 +5,13 @@ program:
     functionDeclaration+
 ;
 
-functionDeclaration: dataType ID '(' ((varDeclaration ',')* varDeclaration)? ')' scope ;
+functionStatement:
+    functionDefinition |
+    functionDeclaration ';'
+    ;
+
+functionDeclaration: dataType ID '(' ((varDeclaration ',')* varDeclaration)? ')';
+functionDefinition: functionDeclaration scope ;
 
 include: '#include <stdio.h>';
 

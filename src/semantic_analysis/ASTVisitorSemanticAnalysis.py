@@ -246,7 +246,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         assert self.current_function is None or isinstance(self.current_function, FunctionSymbol)
         return self.current_function
 
-    def get_resulting_data_type(self, ast: AST):
+    def check_resulting_data_type(self, ast: AST):
         """
         Calculates the resulting data type using a visitor for the AST. This is necessary because some variables
         need to be looked up in a symbol table for it to determine the resulting (richest) data type
@@ -271,7 +271,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         Checks if the result would be narrowed down into another data type (e.g. float to int). If so, warn to the log
         PRE-CONDITION: All variables need to be declared and initialized in order for lookups to work
         """
-        resulting_data_type = self.get_resulting_data_type(ast)
+        resulting_data_type = self.check_resulting_data_type(ast)
 
         # This is the data type that was declared in the input program
 
@@ -420,7 +420,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                 print(
                     f"[SemanticAnalysis] Warning: declaration of '{var_name}'"
                     f" shadows a local variable. You might want to rename it")
-            symbol_table.insert_symbol(var_name, ArraySymbol(var_name, ast.get_data_type(), ast.get_size().get_content()))
+            symbol_table.insert_symbol(var_name,
+                                       ArraySymbol(var_name, ast.get_data_type(), ast.get_size().get_content()))
         else:
             raise SemanticError(
                 f"Array with name '{var_name}' has already been declared in this scope!"
@@ -493,7 +494,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         return_value = ast.get_return_value()
 
-        if self.get_current_function().get_return_type() != self.get_resulting_data_type(return_value):
+        if self.get_current_function().get_return_type() != self.check_resulting_data_type(return_value):
             raise SemanticError(
                 f"The return type of the function '{self.get_current_function().symbol_name}' "
                 f"(data type '{self.get_current_function().get_return_type()}') and "
@@ -520,7 +521,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
     def visit_ast_function_call(self, ast: ASTFunctionCall):
 
-        function_identifier = ast.get_function_called().get_var_name()
+        function_identifier = ast.get_function_called()
 
         param_data_types = list()
 
@@ -537,6 +538,11 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         if function_lookup is None:
             raise SemanticError(f'Function {function_name_for_symbol_table} is not declared! Cannot call this function')
+        else:
+            assert isinstance(function_lookup, FunctionSymbol)
+            if not function_lookup.is_defined():
+                print(
+                    f'warn: Function declaration {function_name_for_symbol_table} found but no definition for this function at the time of calling!')
 
     def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
         """
@@ -551,20 +557,58 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         function_name_for_symbol_table = self.get_function_name_for_symbol_table(function_identifier, param_data_types)
 
-        function_symbol = FunctionSymbol(function_name_for_symbol_table,
-                                         ast.get_params(),
-                                         ast.get_return_type().get_data_type())
+        function_symbol = self.get_last_symbol_table().lookup(function_name_for_symbol_table)
+        if function_symbol is not None:
+
+            assert isinstance(function_symbol, FunctionSymbol)
+
+            if function_symbol.get_return_type() != ast.get_return_type_ast().get_data_type():
+                raise SemanticError(
+                    f'Declaration of function with same name but different return types: {function_symbol.get_return_type()} and {ast.get_return_type_ast()}')
+            else:
+                print(f"Redundant declaration of function {function_name_for_symbol_table}")
+
+        else:
+            function_symbol = FunctionSymbol(function_name_for_symbol_table,
+                                             ast.get_params(),
+                                             ast.get_return_type_ast().get_data_type(), False)
+
+            self.get_last_symbol_table().insert_symbol(
+                function_symbol.get_name(), function_symbol)
+
+        # Skip the on_scope entered thing because it is already done
+
+    def visit_ast_function_definition(self, ast: ASTFunctionDefinition):
+
+        function_identifier = ast.get_function_declaration().get_name()
+        param_data_types = list()
+
+        for param in ast.get_function_declaration().get_params():
+            param_data_types.append(param.get_data_type())
+
+        function_name_for_symbol_table = self.get_function_name_for_symbol_table(function_identifier, param_data_types)
+
+        function_symbol = self.get_last_symbol_table().lookup(function_name_for_symbol_table)
+
         if self.get_last_symbol_table().lookup(
                 function_name_for_symbol_table) is not None:
-            raise SemanticError(
-                f'function {function_name_for_symbol_table} already declared!\n')
+            assert isinstance(function_symbol, FunctionSymbol)
 
-        self.get_last_symbol_table().insert_symbol(
-            function_symbol.get_name(), function_symbol)
+            if not function_symbol.is_defined():
+                function_symbol.defined = True
+            else:
+                raise SemanticError(f'Redefinition of function {function_name_for_symbol_table}!')
+        else:
+            function_symbol = FunctionSymbol(function_name_for_symbol_table,
+                                             ast.get_function_declaration().get_params(),
+                                             ast.get_function_declaration().get_return_type_ast().get_data_type(),
+                                             False)
+            self.get_last_symbol_table().insert_symbol(
+                function_symbol.get_name(), function_symbol)
 
         self.on_function_entered(function_symbol)
         self.on_scope_entered()
-        for param in ast.get_params():
+        for param in ast.get_function_declaration().get_params():
             # A little bit different then with normal variable declarations, which is why we handle it ourselves
             # The variable symbol will be set on initialized in the symbol table as it is a parameter, so values
             # are passed in
