@@ -86,3 +86,6 @@ class IASTVisitor(abc.ABC):
 
     def visit_ast_return_statement(self, ast):
         pass
+
+    def visit_ast_function_definition(self, ast):
+        pass

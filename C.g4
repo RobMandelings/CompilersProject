@@ -1,10 +1,16 @@
 grammar C;
 program:
     // We start with a global scope which may contain statements
-    functionDeclaration+
+    functionStatement+
 ;
 
-functionDeclaration: dataType ID '(' ((varDeclaration ',')* varDeclaration)? ')' scope ;
+functionStatement:
+    functionDefinition |
+    functionDeclaration ';'
+    ;
+
+functionDeclaration: dataType ID '(' ((varDeclaration ',')* varDeclaration)? ')';
+functionDefinition: functionDeclaration scope ;
 
 statement:
     singleLineStatement ';' |

@@ -542,7 +542,7 @@ class ASTArrayDeclaration(ASTVariableDeclaration):
 
 class ASTFunctionDeclaration(AST):
 
-    def __init__(self, function_name: str, params: list, return_type: ASTDataType, execution_body: ASTScope):
+    def __init__(self, function_name: str, params: list, return_type: ASTDataType):
         super().__init__(f'function declaration:\n')
         assert isinstance(function_name, str)
         self.function_name = function_name
@@ -552,8 +552,6 @@ class ASTFunctionDeclaration(AST):
             param.parent = self
         self.return_type = return_type
         self.return_type.parent = self
-        self.execution_body = execution_body
-        self.execution_body.parent = self
         self.content += self.get_full_name(with_return_type=True)
 
     def get_name(self):
@@ -578,16 +576,33 @@ class ASTFunctionDeclaration(AST):
     def get_params(self):
         return self.params
 
-    def get_return_type(self):
+    def get_return_type_ast(self):
         assert isinstance(self.return_type, ASTDataType)
         return self.return_type
+
+    def accept(self, visitor):
+        visitor.visit_ast_function_declaration(self)
+
+
+class ASTFunctionDefinition(AST):
+
+    def __init__(self, function_declaration: ASTFunctionDeclaration, execution_body: ASTScope):
+        super().__init__('function definition')
+        self.function_declaration = function_declaration
+        self.function_declaration.parent = self
+        self.execution_body = execution_body
+        self.execution_body.parent = self
+
+    def get_function_declaration(self):
+        assert isinstance(self.function_declaration, ASTFunctionDeclaration)
+        return self.function_declaration
 
     def get_execution_body(self):
         assert isinstance(self.execution_body, ASTScope)
         return self.execution_body
 
-    def accept(self, visitor):
-        visitor.visit_ast_function_declaration(self)
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_function_definition(self)
 
 
 class ASTArrayInit(AST):

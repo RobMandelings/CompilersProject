@@ -52,7 +52,7 @@ class ArraySymbol(Symbol):
 
 class FunctionSymbol(Symbol):
 
-    def __init__(self, symbol_name: str, params: list, return_type: DataType.DataType):
+    def __init__(self, symbol_name: str, params: list, return_type: DataType.DataType, defined: bool):
         """
         params: list of ast variable declarations which correspond to the paramters of this function
         return type: DataType to indicate what the return type is
@@ -60,6 +60,10 @@ class FunctionSymbol(Symbol):
         super().__init__(symbol_name)
         self.params = params
         self.return_type = return_type
+        self.defined = defined
+
+    def is_defined(self):
+        return self.defined
 
     def get_params(self):
         return self.params

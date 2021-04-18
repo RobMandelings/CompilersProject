@@ -246,7 +246,7 @@ def create_ast_control_flow_statement(cst):
         raise ValueError("Wrong terminal node given")
 
 
-def create_ast_function(cst: CParser.FunctionDeclarationContext):
+def create_ast_function_declaration(cst: CParser.FunctionDeclarationContext):
     # Function declaration always starts with a data type (first child)
     return_type = cst.children[0]
     assert isinstance(return_type, CParser.DataTypeContext)
@@ -256,22 +256,30 @@ def create_ast_function(cst: CParser.FunctionDeclarationContext):
     name = cst.children[1].getSymbol().text
 
     # Parameters are the children in between
-    param_range = range(2, len(cst.children) - 1)
+    param_range = range(2, len(cst.children))
     params = list()
     for i in param_range:
         param = create_ast_from_cst(cst.children[i])
         if param is not None:
             params.append(param)
 
-    # The scope is always the last part of the function declaration
-    execution_body = create_ast_scope(cst.children[len(cst.children) - 1])
+    return ASTFunctionDeclaration(name, params, return_type)
 
-    return ASTFunctionDeclaration(name, params, return_type, execution_body)
+
+def create_ast_function_definition(cst: CParser.FunctionDefinitionContext):
+    function_declaration = create_ast_function_declaration(cst.children[0])
+    execution_body = create_ast_scope(cst.children[1])
+
+    return ASTFunctionDefinition(function_declaration, execution_body)
 
 
 def create_ast_from_cst(cst):
     if isinstance(cst, CParser.FunctionDeclarationContext):
-        return create_ast_function(cst)
+        return create_ast_function_declaration(cst)
+    elif isinstance(cst, CParser.FunctionDefinitionContext):
+        return create_ast_function_definition(cst)
+    elif isinstance(cst, CParser.FunctionStatementContext):
+        return create_ast_from_cst(cst.children[0])
     elif isinstance(cst, CParser.PrintfStatementContext):
         return ASTPrintfInstruction(create_ast_from_cst(cst.children[2]))
     elif isinstance(cst, CParser.AccessArrayElementContext):
