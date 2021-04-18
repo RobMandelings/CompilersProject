@@ -312,9 +312,15 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         instruction = LLVMInstructions.AllocaArrayInstruction(resulting_register, llvm_size)
         self.get_current_function().add_instruction(instruction)
 
+    def declare_and_init_array(self, ast):
+        """
+        Declares and initialises an array using LLVM instructions
+        """
+        pass
+
     def assign_value(self, ast: ASTs.ASTAssignmentExpression):
         """
-        Assigns a value to an existing variable (which has a current register),
+        Assigns a value to an existing variable (which has a current register) or array element,
         generating instructions in the process and adding them to the current basic block
         """
 
@@ -350,14 +356,14 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
                 value_to_store = computed_expression_value
             register_to_store = self.get_current_function().get_new_register(
                 DataType.DataType(array_symbol.get_register().get_data_type().get_token(),
-                                  array_symbol.get_register().get_data_type().get_pointer_level() + 1))
-            instruction_1 = LLVMInstructions.GetElementPtrInstruction(register_to_store,
+                                  array_symbol.get_register().get_data_type().get_pointer_level()))
+            getElementPtr_instruction = LLVMInstructions.GetElementPtrInstruction(register_to_store,
                                                                       left.get_index_accessed().get_content(),
                                                                       array_symbol.get_size(),
                                                                       array_symbol.get_register())
-            self.get_current_function().add_instruction(instruction_1)
-            instruction_2 = LLVMInstructions.StoreInstruction(register_to_store, computed_expression_value)
-            self.get_current_function().add_instruction(instruction_2)
+            self.get_current_function().add_instruction(getElementPtr_instruction)
+            store_instruction = LLVMInstructions.StoreInstruction(register_to_store, computed_expression_value)
+            self.get_current_function().add_instruction(store_instruction)
         else:
             raise NotImplementedError
 
@@ -377,3 +383,5 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             llvm_code += function.to_llvm() + "\n"
 
         return llvm_code
+
+
