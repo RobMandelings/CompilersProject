@@ -1,10 +1,13 @@
 grammar C;
 program:
     // We start with a global scope which may contain statements
+    include*
     functionDeclaration+
 ;
 
 functionDeclaration: dataType ID '(' ((varDeclaration ',')* varDeclaration)? ')' scope ;
+
+include: '#include <stdio.h>';
 
 statement:
     singleLineStatement ';' |

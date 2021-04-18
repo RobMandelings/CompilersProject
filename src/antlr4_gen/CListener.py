@@ -26,6 +26,15 @@ class CListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CParser#include.
+    def enterInclude(self, ctx:CParser.IncludeContext):
+        pass
+
+    # Exit a parse tree produced by CParser#include.
+    def exitInclude(self, ctx:CParser.IncludeContext):
+        pass
+
+
     # Enter a parse tree produced by CParser#statement.
     def enterStatement(self, ctx:CParser.StatementContext):
         pass
