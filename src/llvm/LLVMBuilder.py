@@ -312,10 +312,11 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         instruction = LLVMInstructions.AllocaArrayInstruction(resulting_register, llvm_size)
         self.get_current_function().add_instruction(instruction)
 
-    def declare_and_init_array(self, ast):
+    def declare_and_init_array(self, ast: ASTs.ASTVariableDeclarationAndInit):
         """
         Declares and initialises an array using LLVM instructions
         """
+        c = 3
         pass
 
     def assign_value(self, ast: ASTs.ASTAssignmentExpression):

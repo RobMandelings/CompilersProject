@@ -405,6 +405,24 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
             raise SemanticError(
                 f"Variable with name '{ast.var_name_ast.get_content()}' has already been declared in this scope!")
 
+    def visit_ast_array_declaration(self, ast: ASTArrayDeclaration):
+        symbol_table = self.get_last_symbol_table()
+        var_name = ast.var_name_ast.get_content()
+        if ast.is_const():
+            raise SemanticError(
+                f"Array '{var_name}' declared const must be initialized with its declaration")
+
+        if symbol_table.lookup_local(var_name) is None:
+            if symbol_table.lookup(var_name) is not None:
+                print(
+                    f"[SemanticAnalysis] Warning: declaration of '{var_name}'"
+                    f" shadows a local variable. You might want to rename it")
+            symbol_table.insert_symbol(var_name, ArraySymbol(var_name, ast.get_data_type(), False, ast.is_const(), ast.get_size().get_content()))
+        else:
+            raise SemanticError(
+                f"Array with name '{var_name}' has already been declared in this scope!"
+            )
+
     def visit_ast_variable_declaration_and_init(self, ast: ASTVariableDeclarationAndInit):
         self.visit_ast_variable_declaration(ast)
         variable_symbol = self.get_last_symbol_table().lookup_variable(ast.var_name_ast.get_content())
