@@ -421,8 +421,8 @@ class GetElementPtrInstruction(AssignInstruction):
         self.index = index
         self.size = size
         self.array_register = array_register
-        assert isinstance(size, LLVMValue.LLVMLiteral)
         assert isinstance(index, str)
+        assert isinstance(size, LLVMValue.LLVMLiteral)
         assert isinstance(array_register, LLVMValue.LLVMRegister)
 
     def to_llvm(self):

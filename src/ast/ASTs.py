@@ -285,6 +285,9 @@ class ASTArrayAccessElement(ASTLeaf):
     def get_content(self):
         return self.variable_accessed.get_content()
 
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_access_element(self)
+
 
 class ASTAssignmentExpression(ASTBinaryExpression):
 

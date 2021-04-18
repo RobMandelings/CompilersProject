@@ -211,6 +211,28 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             LLVMInstructions.LoadInstruction(register_to_return, variable_register))
         return register_to_return
 
+    def __compute_array_access_element_into_register(self, ast: ASTs.ASTArrayAccessElement):
+        """
+        Adds the necessary instructions to load the value of an array element into a register
+
+        returns: the register that contains the value of the array element
+        """
+
+        array_element_register = self.get_variable_register(ast.get_content())
+
+        symbol_table = self.get_last_symbol_table()
+        array_symbol = symbol_table.get_array_symbol(ast.get_variable_accessed().get_content())
+        register_with_element_ptr = self.get_current_function().get_new_register(DataType.DataType(array_element_register.get_data_type().get_token(), 1))
+        index = ast.get_index_accessed()
+        instruction = getElementPtr_instruction = LLVMInstructions.GetElementPtrInstruction(register_with_element_ptr,
+                                                                      str(ast.get_index_accessed().get_value()), array_symbol.get_size(),
+                                                                      array_element_register)
+        self.get_current_function().add_instruction(instruction)
+        register_to_return = self.get_current_function().get_new_register(DataType.DataType(array_element_register.get_data_type().get_token(), 0))
+
+        self.get_current_function().add_instruction(LLVMInstructions.LoadInstruction(register_to_return, register_with_element_ptr))
+        return register_to_return
+
     def __compute_function_call(self, ast: ASTs.ASTFunctionCall):
         """
         Creates the instructions to call a function and returns the result as an LLVMRegister.
@@ -244,6 +266,8 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             return self.__compute_variable_value_into_register(ast)
         elif isinstance(ast, ASTs.ASTFunctionCall):
             return self.__compute_function_call(ast)
+        elif isinstance(ast, ASTs.ASTArrayAccessElement):
+            return self.__compute_array_access_element_into_register(ast)
         else:
             raise NotImplementedError
 
@@ -313,11 +337,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         self.get_current_function().add_instruction(instruction)
 
     def declare_and_init_array(self, ast: ASTs.ASTVariableDeclarationAndInit):
-        """
-        Declares and initialises an array using LLVM instructions
-        """
-        c = 3
-        pass
+        raise NotImplementedError
 
     def assign_value(self, ast: ASTs.ASTAssignmentExpression):
         """

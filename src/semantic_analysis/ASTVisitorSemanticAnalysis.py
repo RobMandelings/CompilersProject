@@ -69,6 +69,10 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
         assert variable.is_initialized(), "Variable should be initialized"
         self.update_current_data_type(variable.data_type)
 
+    def visit_ast_access_element(self, ast: ASTArrayAccessElement):
+        access_element = self.last_symbol_table.lookup_variable(ast.get_content())
+        self.update_current_data_type(access_element.data_type)
+
     def visit_ast_pointer_expression(self, ast: ASTPointerExpression):
         # Create another resulting data type visitor to find out what the data type is
         # of the 'value applied to' (can be a lot of things)
@@ -260,6 +264,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         need to be looked up in a symbol table for it to determine the resulting (richest) data type
         """
 
+        last_symbol_table = self.get_last_symbol_table()
         resulting_data_type_visitor = ASTVisitorResultingDataType(self.get_last_symbol_table())
         ast.accept(resulting_data_type_visitor)
         return resulting_data_type_visitor.get_resulting_data_type()
@@ -335,11 +340,11 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         Checks if a variable being assigned a new value is const, and if so, raise a semantic error
         PRE-CONDITION: Variable must exist (check must have gone before)
         """
-
         variable = self.get_last_symbol_table().lookup_variable(bin_expr.left.get_content())
 
-        if variable.const:
-            raise SemanticError(f"Cannot assign value to const variable '{bin_expr.left.get_content()}'")
+        if isinstance(variable, VariableSymbol):
+            if variable.const:
+                raise SemanticError(f"Cannot assign value to const variable '{bin_expr.left.get_content()}'")
 
     def visit_ast_binary_expression(self, ast: ASTBinaryExpression):
         # Do nothing, just some optimization
@@ -364,26 +369,33 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         self.check_undeclared_variable_usage(ast.left)
         self.visit_ast_binary_expression(ast.get_right())
 
-        self.check_const_assignment(ast)
+        symbol = symbol_table.lookup_variable(ast.left.get_content())
 
-        if self.optimize:
-            ast.right = self.optimize_expression(ast.get_right())
+        if isinstance(symbol, VariableSymbol):
+            self.check_const_assignment(ast)
+            if self.optimize:
+                ast.right = self.optimize_expression(ast.get_right())
 
-        variable = symbol_table.lookup_variable(ast.left.get_content())
-        if not variable.is_initialized():
-            variable.initialized = True
-            # Set its reaching definition as it has just been initialized
-            variable.reaching_definition_ast = ast.get_right()
+            if not symbol.is_initialized():
+                symbol.initialized = True
+                # Set its reaching definition as it has just been initialized
+                symbol.reaching_definition_ast = ast.get_right()
 
+            else:
+
+                # Const variables can not be reassigned so the keep their reaching definition,
+                # otherwise there is no reaching definition anymore (intervening assignment has been encountered)
+                if symbol.has_reaching_defintion() and not symbol.is_const():
+                    symbol.reaching_definition_ast = None
+
+            # Warn in case the result will be narrowed down into another data type
+            self.check_for_narrowing_result(symbol.data_type, ast)
+        elif isinstance(symbol, ArraySymbol):
+            if self.optimize:
+                ast.right = self.optimize_expression(ast.get_right())
+            self.check_for_narrowing_result(symbol.data_type, ast)
         else:
-
-            # Const variables can not be reassigned so the keep their reaching definition,
-            # otherwise there is no reaching definition anymore (intervening assignment has been encountered)
-            if variable.has_reaching_defintion() and not variable.is_const():
-                variable.reaching_definition_ast = None
-
-        # Warn in case the result will be narrowed down into another data type
-        self.check_for_narrowing_result(variable.data_type, ast)
+            raise NotImplementedError
 
     def visit_ast_variable_declaration(self, ast: ASTVariableDeclaration):
         symbol_table = self.get_last_symbol_table()
@@ -417,7 +429,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                 print(
                     f"[SemanticAnalysis] Warning: declaration of '{var_name}'"
                     f" shadows a local variable. You might want to rename it")
-            symbol_table.insert_symbol(var_name, ArraySymbol(var_name, ast.get_data_type(), False, ast.is_const(), ast.get_size().get_content()))
+            symbol_table.insert_symbol(var_name, ArraySymbol(var_name, ast.get_data_type(), ast.get_size().get_content()))
         else:
             raise SemanticError(
                 f"Array with name '{var_name}' has already been declared in this scope!"

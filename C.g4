@@ -55,7 +55,7 @@ returnStatement: RETURN (expression);
 
 printfStatement: 'printf' '(' value ')' ;
 varDeclaration: typeDeclaration ID arrayDeclaration? ;
-arrayDeclaration: '[' INT_LITERAL ']' ;
+arrayDeclaration:'[' INT_LITERAL ']' ;
 
 typeDeclaration:
     // TODO instead of 'const int' also support 'int const'?
@@ -71,7 +71,8 @@ accessArrayElement: ID '[' INT_LITERAL ']' ;
 expression:
     varDeclarationAndInit |
     assignment |
-    compareExpression
+    compareExpression |
+    accessArrayElement
     ;
 compareExpression:
     compareExpression '>' addExpression

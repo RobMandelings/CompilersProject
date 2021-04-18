@@ -21,6 +21,9 @@ class IASTVisitor(abc.ABC):
     def visit_ast_identifier(self, ast):
         pass
 
+    def visit_ast_access_element(self, ast):
+        pass
+
     def visit_ast_internal(self, ast):
         pass
 
