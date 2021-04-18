@@ -112,9 +112,11 @@ class ASTVisitorUninitializedVariableUsed(ASTBaseVisitor):
         table_element = self.last_symbol_table.lookup(ast.get_content())
         if table_element:
             assert isinstance(table_element, Symbol)
-            assert isinstance(table_element, VariableSymbol)
-            if not table_element.is_initialized():
-                self.uninitialized_variables_used.append(ast)
+            if isinstance(table_element, VariableSymbol):
+                if not table_element.is_initialized():
+                    self.uninitialized_variables_used.append(ast)
+            elif isinstance(table_element, ArraySymbol):
+                print('Warning: <to be written>')
 
 
 class ASTVisitorOptimizer(ASTBaseVisitor):
@@ -277,7 +279,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
             if declared_data_type.get_pointer_level() == resulting_data_type.get_pointer_level():
 
-                if DataType.DataTypeToken.is_richer_than(resulting_data_type, declared_data_type):
+                if DataType.DataTypeToken.is_richer_than(resulting_data_type.get_token(), declared_data_type.get_token()):
                     raise SemanticError(
                         "The result would be narrowed, and we do not yet support explicit or implicit casting")
             else:
