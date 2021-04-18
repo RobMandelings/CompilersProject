@@ -4,6 +4,8 @@ import src.DataType as DataType
 from src.ast.ASTTokens import *
 from src.ast.IAstVisitor import IASTVisitor
 
+class SemanticError(Exception):
+    pass
 
 class AST:
 

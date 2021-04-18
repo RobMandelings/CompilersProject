@@ -5,8 +5,6 @@ from src.ast.ASTs import *
 from src.semantic_analysis.SymbolTableSemanticAnalyser import *
 
 
-class SemanticError(Exception):
-    pass
 
 
 class ASTVisitorResultingDataType(ASTBaseVisitor):
@@ -121,8 +119,6 @@ class ASTVisitorUninitializedVariableUsed(ASTBaseVisitor):
             if isinstance(table_element, VariableSymbol):
                 if not table_element.is_initialized():
                     self.uninitialized_variables_used.append(ast)
-            elif isinstance(table_element, ArraySymbol):
-                print('Warning: <to be written>')
 
 
 class ASTVisitorOptimizer(ASTBaseVisitor):
@@ -363,6 +359,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
             if isinstance(lookup_left, ArraySymbol) and isinstance(lookup_right, ArraySymbol):
                 print("Warning: array comparison always evaluates to false")
+            elif isinstance(lookup_left, ArraySymbol) or isinstance(lookup_right, ArraySymbol):
+                print(f"Warning: comparison between {lookup_left.get_data_type().get_name()}* and {lookup_right.get_data_type().get_token().get_name()}")
             elif isinstance(lookup_left, VariableSymbol) and isinstance(lookup_right, VariableSymbol):
                 self.check_resulting_data_type(ast)
             else:
@@ -584,21 +582,30 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         for param in ast.get_params():
             param_data_types.append(param.get_data_type())
 
-        function_name_for_symbol_table = self.get_function_name_for_symbol_table(function_identifier, param_data_types)
-
-        function_symbol = self.get_last_symbol_table().lookup(function_name_for_symbol_table)
+        function_symbol = self.get_last_symbol_table().lookup(function_identifier)
         if function_symbol is not None:
 
             assert isinstance(function_symbol, FunctionSymbol)
+
+            if not len(function_symbol.get_params()) == len(ast.get_params()):
+                raise SemanticError(
+                    f'Wrong amount of parameters given for {function_identifier}: {len(function_symbol.get_params())} != {len(ast.get_params())}'
+                )
+
+            for i in range(len(function_symbol.get_params())):
+                if function_symbol.get_params()[i].get_data_type() == ast.get_params()[i].get_data_type():
+                    raise SemanticError(
+                        f'Conflicting types'
+                    )
 
             if function_symbol.get_return_type() != ast.get_return_type_ast().get_data_type():
                 raise SemanticError(
                     f'Declaration of function with same name but different return types: {function_symbol.get_return_type()} and {ast.get_return_type_ast()}')
             else:
-                print(f"Redundant declaration of function {function_name_for_symbol_table}")
+                print(f"Redundant declaration of function {function_identifier}")
 
         else:
-            function_symbol = FunctionSymbol(function_name_for_symbol_table,
+            function_symbol = FunctionSymbol(function_identifier,
                                              ast.get_params(),
                                              ast.get_return_type_ast().get_data_type(), False)
 
@@ -615,20 +622,31 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         for param in ast.get_function_declaration().get_params():
             param_data_types.append(param.get_data_type())
 
-        function_name_for_symbol_table = self.get_function_name_for_symbol_table(function_identifier, param_data_types)
+        function_symbol = self.get_last_symbol_table().lookup(function_identifier)
 
-        function_symbol = self.get_last_symbol_table().lookup(function_name_for_symbol_table)
-
-        if self.get_last_symbol_table().lookup(
-                function_name_for_symbol_table) is not None:
+        if function_symbol is not None:
             assert isinstance(function_symbol, FunctionSymbol)
+
+            if not len(function_symbol.get_params()) == len(ast.get_function_declaration().get_params()):
+                raise SemanticError(
+                    f'Wrong amount of parameters given for {function_identifier}: {len(function_symbol.get_params())} != {len(ast.get_function_declaration().get_params())}'
+                )
+
+            for i in range(len(function_symbol.get_params())):
+                if function_symbol.get_params()[i].get_data_type() == ast.get_function_declaration().get_params()[i].get_data_type():
+                    raise SemanticError(
+                        f'Conflicting types'
+                    )
+
+            if not function_symbol.get_return_type() == ast.get_function_declaration().get_return_type_ast().get_data_type():
+                raise SemanticError(f'conflicting return types for {function_identifier}')
 
             if not function_symbol.is_defined():
                 function_symbol.defined = True
             else:
-                raise SemanticError(f'Redefinition of function {function_name_for_symbol_table}!')
+                raise SemanticError(f'Redefinition of function {function_identifier}!')
         else:
-            function_symbol = FunctionSymbol(function_name_for_symbol_table,
+            function_symbol = FunctionSymbol(function_identifier,
                                              ast.get_function_declaration().get_params(),
                                              ast.get_function_declaration().get_return_type_ast().get_data_type(),
                                              False)
@@ -645,7 +663,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
             var_name = param.get_var_name()
             self.get_last_symbol_table().insert_symbol(var_name,
                                                        VariableSymbol(param.get_var_name_ast().get_content(),
-                                                                      param.get_data_type(),
+                                                                      DataType.DataType(param.get_data_type().get_token(), param.get_data_type().get_pointer_level() + 1),
                                                                       param.is_const(), True))
 
         # Skip the on_scope entered thing because it is already done

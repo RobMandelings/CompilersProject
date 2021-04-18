@@ -122,7 +122,8 @@ def create_ast_expression(cst):
             # In this compiler, the address operator only undo's the implicit
             # derefence, so it must be a dereferenced node
             variable = create_ast_from_cst(cst.children[1])
-            assert isinstance(variable, ASTIdentifier)
+            if not isinstance(variable, ASTIdentifier):
+                raise SemanticError(f'{variable.get_content()} can not be used for references or dereferencing')
 
             if cst.children[0].getSymbol().text == '&':
                 variable.decrease_dereference_count()
