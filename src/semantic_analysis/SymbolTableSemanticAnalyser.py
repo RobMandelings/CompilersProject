@@ -38,6 +38,27 @@ class VariableSymbol(Symbol):
         return self.initialized
 
 
+class ArraySymbol(Symbol):
+
+    def __init__(self, symbol_name: str, data_type: DataType.DataType, initialized, const, size: int):
+        super().__init__(symbol_name)
+        self.data_type = data_type
+        self.initialized = initialized
+        self.const = const
+        self.size = size
+
+    def get_data_type(self):
+        assert isinstance(self.data_type, DataType.DataType)
+        return self.data_type
+
+    def is_const(self):
+        assert isinstance(self.const, bool)
+        return self.const
+
+    def is_initialized(self):
+        return self.initialized
+
+
 class FunctionSymbol(Symbol):
 
     def __init__(self, symbol_name: str, params: list, return_type: DataType.DataType):
