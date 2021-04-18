@@ -244,7 +244,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         assert self.current_function is None or isinstance(self.current_function, FunctionSymbol)
         return self.current_function
 
-    def get_resulting_data_type(self, ast: AST):
+    def check_resulting_data_type(self, ast: AST):
         """
         Calculates the resulting data type using a visitor for the AST. This is necessary because some variables
         need to be looked up in a symbol table for it to determine the resulting (richest) data type
@@ -269,7 +269,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         Checks if the result would be narrowed down into another data type (e.g. float to int). If so, warn to the log
         PRE-CONDITION: All variables need to be declared and initialized in order for lookups to work
         """
-        resulting_data_type = self.get_resulting_data_type(ast)
+        resulting_data_type = self.check_resulting_data_type(ast)
 
         # This is the data type that was declared in the input program
 
@@ -492,7 +492,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         return_value = ast.get_return_value()
 
-        if self.get_current_function().get_return_type() != self.get_resulting_data_type(return_value):
+        if self.get_current_function().get_return_type() != self.check_resulting_data_type(return_value):
             raise SemanticError(
                 f"The return type of the function '{self.get_current_function().symbol_name}' "
                 f"(data type '{self.get_current_function().get_return_type()}') and "
@@ -539,8 +539,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         else:
             assert isinstance(function_lookup, FunctionSymbol)
             if not function_lookup.is_defined():
-                raise SemanticError(
-                    f'Function declaration found but no definition for this function at the time of calling!')
+                print(
+                    f'warn: Function declaration {function_name_for_symbol_table} found but no definition for this function at the time of calling!')
 
     def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
         """
