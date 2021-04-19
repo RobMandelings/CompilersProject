@@ -15,31 +15,38 @@ functionDefinition: functionDeclaration scope ;
 
 includeStdio: '#include <stdio.h>';
 
+
+/**
+ * Statements
+ */
 statement:
     singleLineStatement ';' |
     scopedStatement
     ;
 
+// Single line
 singleLineStatement:
-    functionCall |
     varDeclaration |
+    varDeclarationAndInit |
     controlFlowStatement |
     expression
     ;
 
+controlFlowStatement: BREAK | CONTINUE | returnStatement ;
+returnStatement: RETURN expression;
+
+// Scoped statements
 scopedStatement:
     scope |
     loop |
     ifStatement
     ;
 
-// Everything to do with loops
 loop:
     WHILE enclosedExpression scope |
     FOR '(' expression ';' expression ';' expression ')' scope
     ;
 
-// Handles if, else if and else statement
 ifStatement:
     IF enclosedExpression scope |
     IF enclosedExpression scope elseStatement
@@ -50,19 +57,17 @@ elseStatement:
     ELSE scope
     ;
 
-// Handles scoping
-scope:
-    '{' '}' |
-    '{' statement+ '}';
+scope: '{' statement* '}' ;
 
-functionCall: ID '(' ((expression ',')* expression)? ')' ;
+/**
+ * Declarations and initializations
+ */
 
-// TODO Should be checked semantically that break and continue is only allowed in loops or switch statements
-controlFlowStatement: BREAK | CONTINUE | returnStatement ;
-returnStatement: RETURN (expression);
+varDeclaration:
+    typeDeclaration ID |
+    arrayVarDeclaration ;
 
-varDeclaration: (typeDeclaration ID) | arrayDeclaration ;
-arrayDeclaration: typeDeclaration ID '[' INT_LITERAL ']' ;
+arrayVarDeclaration: typeDeclaration ID '[' INT_LITERAL ']' ;
 
 typeDeclaration:
     // TODO instead of 'const int' also support 'int const'?
@@ -70,32 +75,38 @@ typeDeclaration:
     | dataType
     ;
 
+// Used in combinations with string initialization
 charTypeDeclaration:
     CONST CHAR |
     CHAR
     ;
 
 varDeclarationAndInit:
-    (typeDeclaration ID '=' expression) |
-    arrayDeclarationAndInit
+    typeDeclaration ID '=' expression |
+    arrayVarDeclarationAndInit
 ;
 
-arrayDeclarationAndInit:
-
+arrayVarDeclarationAndInit:
     typeDeclaration ID '[' INT_LITERAL ']' '=' braceInitializer |
     charTypeDeclaration ID '['INT_LITERAL ']' '=' STRING ;
 
 braceInitializer: '{' ((value ',')* value)? '}' ;
 
-assignment: (ID | accessArrayElement) '=' expression ;
-accessArrayElement: ID '[' INT_LITERAL ']' ;
+/**
+ * Expressions
+ */
 
 expression:
-    varDeclarationAndInit |
-    assignment |
+    assignmentExpression |
     compareExpression |
-    accessArrayElement
+    accessArrayVarExpression |
+    functionCallExpression
     ;
+
+functionCallExpression: ID '(' ((expression ',')* expression)? ')' ;
+assignmentExpression: (ID | accessArrayVarExpression) '=' expression ;
+accessArrayVarExpression: ID '[' INT_LITERAL ']' ;
+
 compareExpression:
     compareExpression '>' addExpression
     | compareExpression '<' addExpression
@@ -124,11 +135,20 @@ pointerExpression:
     ;
 
 enclosedExpression: '(' expression ')';
-finalExpression: enclosedExpression | value | functionCall ;
+finalExpression:
+    enclosedExpression |
+    value |
+    functionCallExpression ;
 
+/**
+ * Value wrappers
+ */
 dataType: (CHAR | INT | FLOAT | VOID) ('*')*  ;
 value: ID | CHAR_LITERAL | INT_LITERAL | DOUBLE_LITERAL | STRING;
 
+/**
+ * Lexer rules
+ */
 // Reserved words
 BREAK: 'break';
 CONTINUE: 'continue';

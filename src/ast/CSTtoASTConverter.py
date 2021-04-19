@@ -1,5 +1,3 @@
-from re import split
-
 from antlr4.tree.Tree import TerminalNodeImpl
 
 from src.antlr4_gen.CLexer import CLexer
@@ -33,7 +31,6 @@ def get_rule_context_function(rule_context_index):
         CParser.RULE_statement: ast_from_statement,
 
         CParser.RULE_singleLineStatement: ast_from_single_line_statement,
-        CParser.RULE_functionCall: ast_from_function_call,
 
         CParser.RULE_scopedStatement: ast_from_scoped_statement,
         CParser.RULE_loop: ast_from_loop,
@@ -43,17 +40,177 @@ def get_rule_context_function(rule_context_index):
         CParser.RULE_controlFlowStatement: ast_from_control_flow_statement,
         CParser.RULE_returnStatement: ast_from_return_statement
 
-        CParser.RULE_expression: ast_from_expression,
-        CParser.RULE_enclosedExpression: ast_from_enclosed_expression
-
         CParser.RULE_typeDeclaration: ast_from_type_declaration,
-        CParser.RULE_arrayDeclaration: ast_from_array_declaration,
+        CParser.RULE_charTypeDeclaration: ast_from_char_type_declaration,
+        CParser.RULE_arrayVarDeclaration: ast_from_array_var_declaration,
+
+        CParser.RULE_varDeclarationAndInit: ast_from_var_declaration_and_init,
+        CParser.RULE_arrayVarDeclarationAndInit: ast_from_array_var_declaration_and_init,
+
+        CParser.RULE_braceInitializer: ast_from_brace_initializer,
+        CParser.RULE_assignmentExpression: ast_from_assignment_expression,
+        CParser.RULE_accessArrayVarExpression: ast_from_access_array_var_expression,
+
+        CParser.RULE_expression: ast_from_expression,
+        CParser.RULE_functionCallExpression: ast_from_function_call_expression,
+        CParser.RULE_enclosedExpression: ast_from_enclosed_expression,
+        CParser.RULE_addExpression: ast_from_add_expression,
+        CParser.RULE_finalExpression: ast_from_final_expression,
+        CParser.RULE_multExpression: ast_from_mult_expression,
+        CParser.RULE_compareExpression: ast_from_compare_expression,
+        CParser.RULE_pointerExpression: ast_from_pointer_expression,
+        CParser.RULE_unaryExpression: ast_from_unary_expression,
 
     }
 
 
-def ast_from_includeStdio():
+def ast_from_scoped_statement(cst):
     pass
+
+
+def ast_from_loop(cst):
+    pass
+
+
+def ast_from_if_statement(cst):
+    pass
+
+
+def ast_from_else_statement(cst):
+    pass
+
+
+def ast_from_data_type(cst):
+    pass
+
+
+def ast_from_var_declaration(cst):
+    pass
+
+
+def ast_from_scope(cst):
+    return create_ast_scope(cst)
+
+
+def ast_from_statement(cst):
+    pass
+
+
+def ast_from_single_line_statement(cst):
+    pass
+
+
+def ast_from_function_definition(cst):
+    pass
+
+
+def ast_from_function_declaration(cst):
+    pass
+
+
+def ast_from_assignment_expression(cst):
+    pass
+
+
+def ast_from_access_array_var_expression(cst):
+    return ASTArrayAccessElement(ast_from_terminal_node(cst.children[0]),
+                                 ast_from_terminal_node(cst.children[2]))
+
+
+def ast_from_control_flow_statement(cst):
+    pass
+
+
+def ast_from_return_statement(cst):
+    pass
+
+
+def ast_from_pointer_expression(cst):
+    pass
+
+
+def ast_from_type_declaration(cst):
+    pass
+
+
+def ast_from_var_declaration_and_init(cst):
+    pass
+
+
+def ast_from_array_var_declaration_and_init(cst):
+    pass
+
+
+def ast_from_char_type_declaration(cst):
+    pass
+
+
+def ast_from_array_var_declaration(cst):
+    pass
+
+
+def ast_from_brace_initializer(cst):
+    pass
+
+
+def ast_from_includeStdio(cst):
+    pass
+
+
+def ast_from_function_statement(cst):
+    pass
+
+
+def ast_from_expression(cst):
+    pass
+
+
+def ast_from_function_call_expression(cst):
+    function_called = cst.children[0].getSymbol().text
+    param_range = range(1, len(cst.children) - 1)
+    params = list()
+    for i in param_range:
+        param = create_ast_from_cst(cst.children[i])
+        if param is not None:
+            params.append(param)
+
+    return ASTFunctionCall(function_called, params)
+
+
+def ast_from_enclosed_expression(cst):
+    pass
+
+
+def ast_from_unary_expression(cst):
+    pass
+
+
+def ast_from_compare_expression(cst):
+    pass
+
+
+def ast_from_add_expression(cst):
+    pass
+
+
+def ast_from_final_expression(cst):
+    pass
+
+
+def ast_from_mult_expression(cst):
+    pass
+
+
+def create_ast_scope(cst):
+    ast_scope = ASTScope()
+
+    # Skip the curly braces
+    for child in cst.children:
+        ast_child = create_ast_from_cst(child)
+        if ast_child is not None:
+            ast_scope.add_child(ast_child)
+
+    return ast_scope
 
 
 def create_ast_from_cst(cst):
@@ -63,14 +220,20 @@ def create_ast_from_cst(cst):
         return ast_from_terminal_node(cst)
 
 
-def ast_from_program(cst: CParser.ProgramContext):
+def ast_from_program(cst):
+    """
+    Creates an AST from the CST ProgramContext.
+    Returns the first (global) scope
+    """
+    ast_scope = create_ast_scope(cst)
+    ast_scope.content = 'global scope'
+    return ast_scope
 
 
 def ast_from_rule_context(cst: RuleContext):
     assert isinstance(cst, RuleContext)
 
     if isinstance(cst, CParser.FunctionDeclarationContext):
-        cst.getRuleIndex()
         return create_ast_function_declaration(cst)
     elif isinstance(cst, CParser.FunctionDefinitionContext):
         return create_ast_function_definition(cst)
@@ -78,18 +241,7 @@ def ast_from_rule_context(cst: RuleContext):
         return create_ast_from_cst(cst.children[0])
     elif isinstance(cst, CParser.AccessArrayElementContext):
         # We know the children of the arrayAccessElement are terminal nodes (being the identifier and the size required)
-        return ASTArrayAccessElement(ast_from_terminal_node(cst.children[0]),
-                                     ast_from_terminal_node(cst.children[2]))
     elif isinstance(cst, CParser.FunctionCallContext):
-        function_called = cst.children[0].getSymbol().text
-        param_range = range(1, len(cst.children) - 1)
-        params = list()
-        for i in param_range:
-            param = create_ast_from_cst(cst.children[i])
-            if param is not None:
-                params.append(param)
-
-        return ASTFunctionCall(function_called, params)
     elif isinstance(cst, CParser.VarDeclarationAndInitContext):
         return create_ast_var_declaration_and_init(cst)
     elif isinstance(cst, CParser.VarDeclarationContext) or isinstance(cst, CParser.ArrayDeclarationContext):
@@ -264,23 +416,6 @@ def create_ast_expression(cst):
                 raise NotImplementedError
         else:
             raise NotImplementedError
-
-
-def create_ast_scope(cst):
-    assert isinstance(cst, CParser.ScopeContext) or isinstance(cst, CParser.ProgramContext)
-
-    ast_scope = ASTScope()
-
-    if isinstance(cst, CParser.ProgramContext):
-        ast_scope.content = 'global scope'
-
-    # Skip the curly braces
-    for child in cst.children:
-        ast_child = create_ast_from_cst(child)
-        if ast_child is not None:
-            ast_scope.add_child(ast_child)
-
-    return ast_scope
 
 
 def create_ast_while_loop(cst: CParser.LoopContext):

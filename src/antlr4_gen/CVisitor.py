@@ -44,6 +44,16 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CParser#controlFlowStatement.
+    def visitControlFlowStatement(self, ctx:CParser.ControlFlowStatementContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#returnStatement.
+    def visitReturnStatement(self, ctx:CParser.ReturnStatementContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CParser#scopedStatement.
     def visitScopedStatement(self, ctx:CParser.ScopedStatementContext):
         return self.visitChildren(ctx)
@@ -69,28 +79,13 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#functionCall.
-    def visitFunctionCall(self, ctx:CParser.FunctionCallContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CParser#controlFlowStatement.
-    def visitControlFlowStatement(self, ctx:CParser.ControlFlowStatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CParser#returnStatement.
-    def visitReturnStatement(self, ctx:CParser.ReturnStatementContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CParser#varDeclaration.
     def visitVarDeclaration(self, ctx:CParser.VarDeclarationContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#arrayDeclaration.
-    def visitArrayDeclaration(self, ctx:CParser.ArrayDeclarationContext):
+    # Visit a parse tree produced by CParser#arrayVarDeclaration.
+    def visitArrayVarDeclaration(self, ctx:CParser.ArrayVarDeclarationContext):
         return self.visitChildren(ctx)
 
 
@@ -109,8 +104,8 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#arrayDeclarationAndInit.
-    def visitArrayDeclarationAndInit(self, ctx:CParser.ArrayDeclarationAndInitContext):
+    # Visit a parse tree produced by CParser#arrayVarDeclarationAndInit.
+    def visitArrayVarDeclarationAndInit(self, ctx:CParser.ArrayVarDeclarationAndInitContext):
         return self.visitChildren(ctx)
 
 
@@ -119,18 +114,23 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#assignment.
-    def visitAssignment(self, ctx:CParser.AssignmentContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CParser#accessArrayElement.
-    def visitAccessArrayElement(self, ctx:CParser.AccessArrayElementContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CParser#expression.
     def visitExpression(self, ctx:CParser.ExpressionContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#functionCallExpression.
+    def visitFunctionCallExpression(self, ctx:CParser.FunctionCallExpressionContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#assignmentExpression.
+    def visitAssignmentExpression(self, ctx:CParser.AssignmentExpressionContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#accessArrayVarExpression.
+    def visitAccessArrayVarExpression(self, ctx:CParser.AccessArrayVarExpressionContext):
         return self.visitChildren(ctx)
 
 

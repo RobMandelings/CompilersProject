@@ -71,6 +71,24 @@ class CListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CParser#controlFlowStatement.
+    def enterControlFlowStatement(self, ctx:CParser.ControlFlowStatementContext):
+        pass
+
+    # Exit a parse tree produced by CParser#controlFlowStatement.
+    def exitControlFlowStatement(self, ctx:CParser.ControlFlowStatementContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#returnStatement.
+    def enterReturnStatement(self, ctx:CParser.ReturnStatementContext):
+        pass
+
+    # Exit a parse tree produced by CParser#returnStatement.
+    def exitReturnStatement(self, ctx:CParser.ReturnStatementContext):
+        pass
+
+
     # Enter a parse tree produced by CParser#scopedStatement.
     def enterScopedStatement(self, ctx:CParser.ScopedStatementContext):
         pass
@@ -116,33 +134,6 @@ class CListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CParser#functionCall.
-    def enterFunctionCall(self, ctx:CParser.FunctionCallContext):
-        pass
-
-    # Exit a parse tree produced by CParser#functionCall.
-    def exitFunctionCall(self, ctx:CParser.FunctionCallContext):
-        pass
-
-
-    # Enter a parse tree produced by CParser#controlFlowStatement.
-    def enterControlFlowStatement(self, ctx:CParser.ControlFlowStatementContext):
-        pass
-
-    # Exit a parse tree produced by CParser#controlFlowStatement.
-    def exitControlFlowStatement(self, ctx:CParser.ControlFlowStatementContext):
-        pass
-
-
-    # Enter a parse tree produced by CParser#returnStatement.
-    def enterReturnStatement(self, ctx:CParser.ReturnStatementContext):
-        pass
-
-    # Exit a parse tree produced by CParser#returnStatement.
-    def exitReturnStatement(self, ctx:CParser.ReturnStatementContext):
-        pass
-
-
     # Enter a parse tree produced by CParser#varDeclaration.
     def enterVarDeclaration(self, ctx:CParser.VarDeclarationContext):
         pass
@@ -152,12 +143,12 @@ class CListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CParser#arrayDeclaration.
-    def enterArrayDeclaration(self, ctx:CParser.ArrayDeclarationContext):
+    # Enter a parse tree produced by CParser#arrayVarDeclaration.
+    def enterArrayVarDeclaration(self, ctx:CParser.ArrayVarDeclarationContext):
         pass
 
-    # Exit a parse tree produced by CParser#arrayDeclaration.
-    def exitArrayDeclaration(self, ctx:CParser.ArrayDeclarationContext):
+    # Exit a parse tree produced by CParser#arrayVarDeclaration.
+    def exitArrayVarDeclaration(self, ctx:CParser.ArrayVarDeclarationContext):
         pass
 
 
@@ -188,12 +179,12 @@ class CListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CParser#arrayDeclarationAndInit.
-    def enterArrayDeclarationAndInit(self, ctx:CParser.ArrayDeclarationAndInitContext):
+    # Enter a parse tree produced by CParser#arrayVarDeclarationAndInit.
+    def enterArrayVarDeclarationAndInit(self, ctx:CParser.ArrayVarDeclarationAndInitContext):
         pass
 
-    # Exit a parse tree produced by CParser#arrayDeclarationAndInit.
-    def exitArrayDeclarationAndInit(self, ctx:CParser.ArrayDeclarationAndInitContext):
+    # Exit a parse tree produced by CParser#arrayVarDeclarationAndInit.
+    def exitArrayVarDeclarationAndInit(self, ctx:CParser.ArrayVarDeclarationAndInitContext):
         pass
 
 
@@ -206,30 +197,39 @@ class CListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CParser#assignment.
-    def enterAssignment(self, ctx:CParser.AssignmentContext):
-        pass
-
-    # Exit a parse tree produced by CParser#assignment.
-    def exitAssignment(self, ctx:CParser.AssignmentContext):
-        pass
-
-
-    # Enter a parse tree produced by CParser#accessArrayElement.
-    def enterAccessArrayElement(self, ctx:CParser.AccessArrayElementContext):
-        pass
-
-    # Exit a parse tree produced by CParser#accessArrayElement.
-    def exitAccessArrayElement(self, ctx:CParser.AccessArrayElementContext):
-        pass
-
-
     # Enter a parse tree produced by CParser#expression.
     def enterExpression(self, ctx:CParser.ExpressionContext):
         pass
 
     # Exit a parse tree produced by CParser#expression.
     def exitExpression(self, ctx:CParser.ExpressionContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#functionCallExpression.
+    def enterFunctionCallExpression(self, ctx:CParser.FunctionCallExpressionContext):
+        pass
+
+    # Exit a parse tree produced by CParser#functionCallExpression.
+    def exitFunctionCallExpression(self, ctx:CParser.FunctionCallExpressionContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#assignmentExpression.
+    def enterAssignmentExpression(self, ctx:CParser.AssignmentExpressionContext):
+        pass
+
+    # Exit a parse tree produced by CParser#assignmentExpression.
+    def exitAssignmentExpression(self, ctx:CParser.AssignmentExpressionContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#accessArrayVarExpression.
+    def enterAccessArrayVarExpression(self, ctx:CParser.AccessArrayVarExpressionContext):
+        pass
+
+    # Exit a parse tree produced by CParser#accessArrayVarExpression.
+    def exitAccessArrayVarExpression(self, ctx:CParser.AccessArrayVarExpressionContext):
         pass
 
 
