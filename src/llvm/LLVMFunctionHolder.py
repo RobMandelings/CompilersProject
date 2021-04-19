@@ -9,9 +9,11 @@ class LLVMFunctionHolder(LLVMInterfaces.IToLLVM):
         self.current_function = None
 
     def add_function(self, function: LLVMFunction.LLVMFunction):
+        assert isinstance(function, LLVMFunction.LLVMFunction)
         self.functions[function.get_identifier()] = function
 
     def set_current_function(self, function: LLVMFunction.LLVMDefinedFunction):
+        assert isinstance(function, LLVMFunction.LLVMDefinedFunction)
         self.current_function = function
 
     def get_current_function(self):
@@ -25,8 +27,9 @@ class LLVMFunctionHolder(LLVMInterfaces.IToLLVM):
 
     def to_llvm(self):
         llvm_code = ''
-        for declared_function in self.functions:
-            llvm_code += declared_function.to_llvm() + '\n'
+
+        for function in self.functions.values():
+            llvm_code += function.to_llvm() + "\n"
 
         return llvm_code
 

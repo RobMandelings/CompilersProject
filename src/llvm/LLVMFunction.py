@@ -31,14 +31,23 @@ class LLVMFunction(LLVMInterfaces.IToLLVM, abc.ABC):
                 param_data_types.append(param.get_data_type())
             elif isinstance(param, DataType.DataType):
                 param_data_types.append(param)
+            else:
+                raise ValueError('Param must have a data type or be a data type')
 
         return param_data_types
 
 
 class LLVMDeclaredFunction(LLVMFunction):
 
-    def __init__(self, identifier: str, return_type: DataType.DataType, params: list):
-        super().__init__(identifier, return_type, params)
+    def __init__(self, identifier: str, return_type: DataType.DataType, params_data_types: list):
+        super().__init__(identifier, return_type, params_data_types)
+        self.params_data_types = params_data_types
+
+        for param in self.params_data_types:
+            assert isinstance(param, DataType.DataType)
+
+    def get_param_data_types(self):
+        return self.params_data_types
 
     def to_llvm(self):
         llvm_code = f'declare dso_local {self.return_type.get_llvm_name()} @{self.identifier}('

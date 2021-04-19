@@ -554,7 +554,7 @@ class ASTFunctionDeclaration(AST):
         self.return_type.parent = self
         self.content += self.get_full_name(with_return_type=True)
 
-    def get_name(self):
+    def get_identifier(self):
         """
         Just returns the identifier of the function. E.g: 'main'
         """

@@ -472,7 +472,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         for i in range(0, len(param_data_types)):
             param_data_type = param_data_types[i]
-            name += param_data_type.get_var_name()
+            name += param_data_type.get_name()
             if i != len(param_data_types) - 1:
                 name += ','
 
@@ -547,7 +547,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         Basically takes over the scope thing a little bit because of the parameters
         """
 
-        function_identifier = ast.get_name()
+        function_identifier = ast.get_identifier()
         param_data_types = list()
 
         for param in ast.get_params():
@@ -578,7 +578,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
     def visit_ast_function_definition(self, ast: ASTFunctionDefinition):
 
-        function_identifier = ast.get_function_declaration().get_name()
+        function_identifier = ast.get_function_declaration().get_identifier()
         param_data_types = list()
 
         for param in ast.get_function_declaration().get_params():
