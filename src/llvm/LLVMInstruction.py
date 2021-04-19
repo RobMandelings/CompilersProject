@@ -74,20 +74,15 @@ class AssignInstruction(Instruction):
         return f"{self.resulting_reg.to_llvm()} = "
 
 
-class RawInstruction(Instruction):
+class RawAssignInstruction(AssignInstruction):
 
-    def __init__(self, instruction_parts: list, increases_counter: bool, terminator: bool = False):
-        super().__init__()
+    def __init__(self, resulting_reg, instruction_parts: list, terminator: bool = False):
+        super().__init__(resulting_reg)
         self.instruction_parts = instruction_parts
-        self.increases_counter = increases_counter
         self.terminator = terminator
 
     def is_terminator(self):
         return self.terminator
-
-    def update_numbering(self, counter):
-        if self.increases_counter:
-            counter.increase()
 
     def to_llvm(self):
 

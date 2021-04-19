@@ -222,31 +222,32 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         Creates the instructions to call a function and returns the result as an LLVMRegister.
         """
 
-        function = self.get_function_holder().get_function(ast.get_function_called_id())
-
-        args_llvm_value = list()
-
-        for arg in ast.get_arguments():
-            resulting_llvm_value = self.compute_expression(arg)
-            args_llvm_value.append(resulting_llvm_value)
-
         if ast.get_function_called_id() == 'printf':
 
+            args_llvm_value = list()
+
+            for i in range(1, len(ast.get_arguments())):
+                arg = ast.get_arguments()[i]
+                resulting_llvm_value = self.compute_expression(arg)
+                args_llvm_value.append(resulting_llvm_value)
+
             array_init = ast.get_arguments()[0]
-            size = len(array_init.get_values())
+            size = len(array_init.get_values()) + 1
             string = self.get_string_from_char_array(array_init)
             string += '\\00'
 
-            global_string_created = self.get_global_container().add_global_string(len(array_init.get_values() + 1),
+            global_string_created = self.get_global_container().add_global_string(size,
                                                                                   string)
             self.get_global_container().add_printf_declaration()
 
             instruction_parts = list()
-            instruction_parts.append(LLVMValues.LLVMRegister())
             instruction_parts.append(
-                f'= call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([{size} x i8], [{size} x i8]* {global_string_created}, i64 0, i64 0)')
+                f'call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([{size} x i8], [{size} x i8]* {global_string_created}, i64 0, i64 0)')
 
             for i in range(len(args_llvm_value)):
+
+                if i == 0:
+                    instruction_parts.append(', ')
 
                 arg = args_llvm_value[0]
                 llvm_argument_string = f'{arg.get_data_type().get_llvm_name()} {arg.to_llvm()}'
@@ -258,7 +259,18 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
             instruction_parts.append(')')
 
+            instruction = LLVMInstructions.RawAssignInstruction(LLVMValues.LLVMRegister(), instruction_parts)
+            self.get_current_function().add_instruction(instruction)
+
         else:
+
+            args_llvm_value = list()
+
+            for arg in ast.get_arguments():
+                resulting_llvm_value = self.compute_expression(arg)
+                args_llvm_value.append(resulting_llvm_value)
+
+            function = self.get_function_holder().get_function(ast.get_function_called_id())
 
             call_instruction = LLVMInstructions.CallInstruction(function, args_llvm_value)
 
@@ -357,6 +369,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
     def declare_and_init_array(self, ast: ASTs.ASTArrayDeclarationAndInit):
         allocated_reg = self.declare_array(ast)
         if ast.get_data_type() == DataType.NORMAL_CHAR:
+            # TODO semantic check for more values than capacity
             # TODO semantic check for more values than capacity
             string = self.get_string_from_char_array(ast.get_array_init())
 
