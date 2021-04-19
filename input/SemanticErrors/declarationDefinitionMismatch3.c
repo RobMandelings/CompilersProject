@@ -8,3 +8,5 @@ int f(int a){
 
 int main(){
 }
+
+check semantic

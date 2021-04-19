@@ -6,3 +6,5 @@ int f(float a, int b);
 
 int main(){
 }
+
+check semantic

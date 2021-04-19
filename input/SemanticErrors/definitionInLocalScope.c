@@ -6,3 +6,5 @@ int main(){
         a*b;
     }
 }
+
+check syntactical
