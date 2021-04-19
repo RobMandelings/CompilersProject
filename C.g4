@@ -1,7 +1,7 @@
 grammar C;
 program:
     // We start with a global scope which may contain statements
-    include*
+    includeStdio?
     functionStatement+
 ;
 
@@ -13,7 +13,7 @@ functionStatement:
 functionDeclaration: dataType ID '(' ((varDeclaration ',')* varDeclaration)? ')';
 functionDefinition: functionDeclaration scope ;
 
-include: '#include <stdio.h>';
+includeStdio: '#include <stdio.h>';
 
 statement:
     singleLineStatement ';' |
