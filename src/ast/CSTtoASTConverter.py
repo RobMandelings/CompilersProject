@@ -17,7 +17,114 @@ DATA_TYPES = {CLexer.CHAR: DataType.NORMAL_CHAR,
 TYPE_ATTRIBUTES = {CLexer.CONST: TypeAttributeToken.CONST}
 
 
-# TODO Improve to use a visitor pattern of the cst instead
+def get_rule_context_function(rule_context_index):
+    rule_context_switcher = {
+        CParser.RULE_program: ast_from_program,
+        CParser.RULE_includeStdio: ast_from_includeStdio,
+
+        CParser.RULE_functionStatement: ast_from_function_statement,
+        CParser.RULE_functionDefinition: ast_from_function_definition,
+        CParser.RULE_functionDeclaration: ast_from_function_declaration,
+
+        CParser.RULE_dataType: ast_from_data_type,
+        CParser.RULE_varDeclaration: ast_from_var_declaration,
+        CParser.RULE_scope: ast_from_scope,
+
+        CParser.RULE_statement: ast_from_statement,
+
+        CParser.RULE_singleLineStatement: ast_from_single_line_statement,
+        CParser.RULE_functionCall: ast_from_function_call,
+
+        CParser.RULE_scopedStatement: ast_from_scoped_statement,
+        CParser.RULE_loop: ast_from_loop,
+        CParser.RULE_ifStatement: ast_from_if_statement,
+        CParser.RULE_elseStatement: ast_from_else_statement,
+
+        CParser.RULE_controlFlowStatement: ast_from_control_flow_statement,
+        CParser.RULE_returnStatement: ast_from_return_statement
+
+        CParser.RULE_expression: ast_from_expression,
+        CParser.RULE_enclosedExpression: ast_from_enclosed_expression
+
+        CParser.RULE_typeDeclaration: ast_from_type_declaration,
+        CParser.RULE_arrayDeclaration: ast_from_array_declaration,
+
+    }
+
+
+def ast_from_includeStdio():
+    pass
+
+
+def create_ast_from_cst(cst):
+    if isinstance(cst, RuleContext):
+        return ast_from_rule_context(cst)
+    else:
+        return ast_from_terminal_node(cst)
+
+
+def ast_from_program(cst: CParser.ProgramContext):
+
+
+def ast_from_rule_context(cst: RuleContext):
+    assert isinstance(cst, RuleContext)
+
+    if isinstance(cst, CParser.FunctionDeclarationContext):
+        cst.getRuleIndex()
+        return create_ast_function_declaration(cst)
+    elif isinstance(cst, CParser.FunctionDefinitionContext):
+        return create_ast_function_definition(cst)
+    elif isinstance(cst, CParser.FunctionStatementContext):
+        return create_ast_from_cst(cst.children[0])
+    elif isinstance(cst, CParser.AccessArrayElementContext):
+        # We know the children of the arrayAccessElement are terminal nodes (being the identifier and the size required)
+        return ASTArrayAccessElement(ast_from_terminal_node(cst.children[0]),
+                                     ast_from_terminal_node(cst.children[2]))
+    elif isinstance(cst, CParser.FunctionCallContext):
+        function_called = cst.children[0].getSymbol().text
+        param_range = range(1, len(cst.children) - 1)
+        params = list()
+        for i in param_range:
+            param = create_ast_from_cst(cst.children[i])
+            if param is not None:
+                params.append(param)
+
+        return ASTFunctionCall(function_called, params)
+    elif isinstance(cst, CParser.VarDeclarationAndInitContext):
+        return create_ast_var_declaration_and_init(cst)
+    elif isinstance(cst, CParser.VarDeclarationContext) or isinstance(cst, CParser.ArrayDeclarationContext):
+        return create_ast_var_declaration(cst)
+    elif isinstance(cst, CParser.TypeDeclarationContext):
+        return create_type_asts(cst)
+    elif isinstance(cst, CParser.DataTypeContext):
+        return ASTDataType(get_data_type(cst))
+    elif isinstance(cst, CParser.ScopeContext) or isinstance(cst, CParser.ProgramContext):
+        return create_ast_scope(cst)
+    elif isinstance(cst, CParser.LoopContext):
+        if cst.children[0].getSymbol().type == CLexer.WHILE:
+            return create_ast_while_loop(cst)
+        elif cst.children[0].getSymbol().type == CLexer.FOR:
+            return create_ast_for_loop(cst)
+    elif isinstance(cst, CParser.IfStatementContext) or isinstance(cst, CParser.ElseStatementContext):
+        return create_ast_if_statement(cst)
+    elif isinstance(cst, CParser.StatementContext):
+        if isinstance(cst.children[0], CParser.SingleLineStatementContext):
+            return create_ast_from_cst(cst.children[0])
+        elif isinstance(cst.children[0], CParser.ScopedStatementContext):
+            return create_ast_from_cst(cst.children[0])
+    elif isinstance(cst, CParser.ControlFlowStatementContext):
+        return create_ast_control_flow_statement(cst.children[0])
+    elif isinstance(cst, CParser.EnclosedExpressionContext):
+        return create_ast_from_cst(cst.children[1])
+    elif isinstance(cst, CParser.IncludeStdioContext):
+        return create_ast_include(cst)
+
+    raise NotImplementedError(f"RuleContext Node '{str(type(cst).__name__)}' not supported yet")
+
+
+def create_ast_from_terminal_node(cst: TerminalNodeImpl):
+    assert isinstance(cst, TerminalNodeImpl)
+    pass
 
 
 def create_ast_var_declaration_and_init(cst):
@@ -34,7 +141,7 @@ def create_ast_var_declaration_and_init(cst):
         if isinstance(initializer, TerminalNodeImpl) and \
                 initializer.getSymbol().type == CLexer.STRING:
 
-            array_init = create_ast_from_terminal_node(initializer)
+            array_init = ast_from_terminal_node(initializer)
             assert isinstance(array_init, ASTArrayInit)
 
         elif isinstance(initializer, CParser.BraceInitializerContext):
@@ -86,7 +193,7 @@ def create_type_asts(cst):
     return ast_children
 
 
-def create_ast_from_terminal_node(cst: TerminalNodeImpl):
+def ast_from_terminal_node(cst: TerminalNodeImpl):
     symbol_type = cst.getSymbol().type
     if symbol_type == CLexer.ID:
         return ASTIdentifier(cst.getSymbol().text)
@@ -298,68 +405,6 @@ def create_ast_function_definition(cst: CParser.FunctionDefinitionContext):
 
 def create_ast_include(cst: CParser.IncludeStdioContext):
     return ASTInclude("include")
-
-
-def create_ast_from_cst(cst):
-    if isinstance(cst, CParser.FunctionDeclarationContext):
-        return create_ast_function_declaration(cst)
-    elif isinstance(cst, CParser.FunctionDefinitionContext):
-        return create_ast_function_definition(cst)
-    elif isinstance(cst, CParser.FunctionStatementContext):
-        return create_ast_from_cst(cst.children[0])
-    elif isinstance(cst, CParser.AccessArrayElementContext):
-        # We know the children of the arrayAccessElement are terminal nodes (being the identifier and the size required)
-        return ASTArrayAccessElement(create_ast_from_terminal_node(cst.children[0]),
-                                     create_ast_from_terminal_node(cst.children[2]))
-    elif isinstance(cst, CParser.FunctionCallContext):
-        function_called = cst.children[0].getSymbol().text
-        param_range = range(1, len(cst.children) - 1)
-        params = list()
-        for i in param_range:
-            param = create_ast_from_cst(cst.children[i])
-            if param is not None:
-                params.append(param)
-
-        return ASTFunctionCall(function_called, params)
-    elif isinstance(cst, CParser.VarDeclarationAndInitContext):
-        return create_ast_var_declaration_and_init(cst)
-    elif isinstance(cst, CParser.VarDeclarationContext) or isinstance(cst, CParser.ArrayDeclarationContext):
-        return create_ast_var_declaration(cst)
-    elif isinstance(cst, CParser.TypeDeclarationContext):
-        return create_type_asts(cst)
-    elif isinstance(cst, CParser.DataTypeContext):
-        return ASTDataType(get_data_type(cst))
-    elif isinstance(cst, CParser.ScopeContext) or isinstance(cst, CParser.ProgramContext):
-        return create_ast_scope(cst)
-    elif isinstance(cst, CParser.LoopContext):
-        if cst.children[0].getSymbol().type == CLexer.WHILE:
-            return create_ast_while_loop(cst)
-        elif cst.children[0].getSymbol().type == CLexer.FOR:
-            return create_ast_for_loop(cst)
-    elif isinstance(cst, CParser.IfStatementContext) or isinstance(cst, CParser.ElseStatementContext):
-        return create_ast_if_statement(cst)
-    elif isinstance(cst, CParser.StatementContext):
-        if isinstance(cst.children[0], CParser.SingleLineStatementContext):
-            return create_ast_from_cst(cst.children[0])
-        elif isinstance(cst.children[0], CParser.ScopedStatementContext):
-            return create_ast_from_cst(cst.children[0])
-    elif isinstance(cst, CParser.ControlFlowStatementContext):
-        return create_ast_control_flow_statement(cst.children[0])
-    elif isinstance(cst, CParser.EnclosedExpressionContext):
-        return create_ast_from_cst(cst.children[1])
-    elif isinstance(cst, CParser.IncludeStdioContext):
-        return create_ast_include(cst)
-    elif isinstance(cst, TerminalNodeImpl):
-        return create_ast_from_terminal_node(cst)
-    else:
-
-        if len(cst.children) == 1:
-            # Just pass to the child
-            return create_ast_from_cst(cst.children[0])
-        elif is_unary_expression(cst) or is_binary_expression(cst):
-            return create_ast_expression(cst)
-
-    raise NotImplementedError(f"CST Node '{str(type(cst).__name__)}' not supported yet")
 
 
 def append_child_asts_to_ast(ast: ASTInternal, cst):
