@@ -1,14 +1,13 @@
 import src.DataType as DataType
 import src.ast.ASTTokens as ASTTokens
 import src.ast.ASTs as ASTs
-import src.llvm.LLVMFunction as LLVMFunctions
+import src.llvm.LLVMFunctionHolder as LLVMFunctionHolder
 import src.llvm.LLVMGlobalContainer as LLVMGlobalContainer
 import src.llvm.LLVMInstruction as LLVMInstructions
 import src.llvm.LLVMInterfaces as LLVMInterfaces
 import src.llvm.LLVMSymbolTable as LLVMSymbolTable
 import src.llvm.LLVMUtils as LLVMUtils
 import src.llvm.LLVMValue as LLVMValues
-import src.llvm.LLVMFunctionHolder as LLVMFunctionHolder
 from src.llvm import LLVMValue
 
 
@@ -208,7 +207,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         instruction = getElementPtr_instruction = LLVMInstructions.GetElementPtrInstruction(register_with_element_ptr,
                                                                                             str(
                                                                                                 ast.get_index_accessed().get_value()),
-                                                                                            array_symbol.get_size(),
+                                                                                            array_symbol.get_array_size(),
                                                                                             array_element_register)
         self.get_current_function().add_instruction(instruction)
         register_to_return = self.get_current_function().get_new_register(
@@ -318,13 +317,35 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         """
         resulting_register = LLVMValue.LLVMRegister(
             DataType.DataType(ast.get_data_type().get_token(), ast.get_data_type().get_pointer_level() + 1))
-        llvm_size = LLVMValue.LLVMLiteral(ast.get_size().get_value(), ast.get_size().get_data_type())
+        llvm_size = LLVMValue.LLVMLiteral(ast.get_array_size().get_value(), ast.get_array_size().get_data_type())
         self.get_last_symbol_table().insert_array(ast.get_var_name(), resulting_register, llvm_size)
         instruction = LLVMInstructions.AllocaArrayInstruction(resulting_register, llvm_size)
         self.get_current_function().add_instruction(instruction)
+        return resulting_register
 
-    def declare_and_init_array(self, ast: ASTs.ASTVariableDeclarationAndInit):
-        raise NotImplementedError
+    def declare_and_init_array(self, ast: ASTs.ASTArrayDeclarationAndInit):
+        allocated_reg = self.declare_array(ast)
+        if ast.get_data_type() == DataType.NORMAL_CHAR:
+            string = ""
+            # TODO semantic check for more values than capacity
+            for value in ast.get_array_init().get_values():
+                # These values are all chars
+                string += chr(int(value.get_content()))
+
+            # Fill up with null termination characters if there are less values initialized than the size of the array
+            for i in range(len(ast.get_array_init().get_values()), ast.get_array_size().get_value()):
+                string += '\\00'
+
+            global_var_created = self.get_global_container().add_global_string(ast.get_array_size(), string)
+            bitcast_instruction = LLVMInstructions.BitcastInstruction(allocated_reg, f'[{ast.get_array_size()} x i8]*',
+                                                                      'i8*')
+            self.get_current_function().add_instruction(bitcast_instruction)
+
+            size = ast.get_array_size()
+            self.get_current_function().add_instruction(
+                LLVMInstructions.MemcpyInstruction(bitcast_instruction.get_resulting_register(), size,
+                                                   global_var_created))
+            self.get_global_container().add_memcpy_declaration()
 
     def assign_value(self, ast: ASTs.ASTAssignmentExpression):
         """
@@ -367,7 +388,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
                                   array_symbol.get_register().get_data_type().get_pointer_level()))
             getElementPtr_instruction = LLVMInstructions.GetElementPtrInstruction(register_to_store,
                                                                                   left.get_index_accessed().get_content(),
-                                                                                  array_symbol.get_size(),
+                                                                                  array_symbol.get_array_size(),
                                                                                   array_symbol.get_register())
             self.get_current_function().add_instruction(getElementPtr_instruction)
             store_instruction = LLVMInstructions.StoreInstruction(register_to_store, computed_expression_value)

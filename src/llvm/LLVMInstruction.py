@@ -32,6 +32,25 @@ class Instruction(LLVMInterfaces.IToLLVM, abc.ABC):
         pass
 
 
+class RawInstruction(Instruction):
+
+    def __init__(self, instruction: str, terminator: bool = False, increases_counter: bool = False):
+        super().__init__()
+        self.instruction_str = instruction
+        self.terminator = terminator
+        self.increases_counter = increases_counter
+
+    def update_numbering(self, counter):
+        if self.increases_counter:
+            counter.increase()
+
+    def is_terminator(self):
+        return self.terminator
+
+    def to_llvm(self):
+        return self.instruction_str
+
+
 class ReturnInstruction(Instruction):
 
     def __init__(self, return_value: LLVMValue.LLVMValue):
@@ -484,3 +503,36 @@ class CallInstruction(AssignInstruction):
         llvm_code += ')'
 
         return llvm_code
+
+
+class BitcastInstruction(AssignInstruction):
+
+    def __init__(self, reg_to_convert: LLVMValue.LLVMRegister, from_type: str, to_type: str):
+        super().__init__(LLVMValue.LLVMRegister())
+        self.reg_to_convert = reg_to_convert
+        self.from_type = from_type
+        self.to_type = to_type
+
+    def to_llvm(self):
+        return super().to_llvm() + f'bitcast {self.from_type} {self.reg_to_convert} to {self.to_type}'
+
+
+class MemcpyInstruction(Instruction):
+
+    def __init__(self, copy_into_reg: LLVMValue.LLVMRegister, size: int, from_global_var: str):
+        self.copy_in_reg = copy_into_reg
+        self.size = size
+        self.from_global_var = from_global_var
+        super().__init__()
+
+    def is_terminator(self):
+        return False
+
+    def to_llvm(self):
+        return f'call void @llvm.memcpy.p0i8.p0i8.i64(i8* align 1 {self.copy_in_reg.to_llvm()}, i8* align 1 ' \
+               f'getelementptr inbounds ([{self.size} x i8], [{self.size} x i8]* {self.from_global_var}, i32 0, i32 0), ' \
+               f'i64 {self.size}, i1 false)'
+
+
+def update_numbering(self, counter):
+    super().update_numbering(counter)

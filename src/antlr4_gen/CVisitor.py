@@ -29,8 +29,8 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#include.
-    def visitInclude(self, ctx:CParser.IncludeContext):
+    # Visit a parse tree produced by CParser#includeStdio.
+    def visitIncludeStdio(self, ctx:CParser.IncludeStdioContext):
         return self.visitChildren(ctx)
 
 
@@ -104,18 +104,28 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CParser#charTypeDeclaration.
+    def visitCharTypeDeclaration(self, ctx:CParser.CharTypeDeclarationContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CParser#varDeclarationAndInit.
     def visitVarDeclarationAndInit(self, ctx:CParser.VarDeclarationAndInitContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#assignment.
-    def visitAssignment(self, ctx:CParser.AssignmentContext):
+    # Visit a parse tree produced by CParser#arrayDeclarationAndInit.
+    def visitArrayDeclarationAndInit(self, ctx:CParser.ArrayDeclarationAndInitContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#arrayDeclarationAndInit.
-    def visitArrayDeclarationAndInit(self, ctx:CParser.ArrayDeclarationAndInitContext):
+    # Visit a parse tree produced by CParser#braceInitializer.
+    def visitBraceInitializer(self, ctx:CParser.BraceInitializerContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#assignment.
+    def visitAssignment(self, ctx:CParser.AssignmentContext):
         return self.visitChildren(ctx)
 
 

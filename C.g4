@@ -63,8 +63,8 @@ controlFlowStatement: BREAK | CONTINUE | returnStatement ;
 returnStatement: RETURN (expression);
 
 printfStatement: 'printf' '(' value ')' ;
-varDeclaration: typeDeclaration ID arrayDeclaration? ;
-arrayDeclaration:'[' INT_LITERAL ']' ;
+varDeclaration: (typeDeclaration ID) | arrayDeclaration ;
+arrayDeclaration: typeDeclaration ID '[' INT_LITERAL ']' ;
 
 typeDeclaration:
     // TODO instead of 'const int' also support 'int const'?
@@ -72,9 +72,24 @@ typeDeclaration:
     | dataType
     ;
 
-varDeclarationAndInit: (typeDeclaration ID '=' expression) | arrayDeclarationAndInit ;
+charTypeDeclaration:
+    CONST CHAR |
+    CHAR
+    ;
+
+varDeclarationAndInit:
+    (typeDeclaration ID '=' expression) |
+    arrayDeclarationAndInit
+;
+
+arrayDeclarationAndInit:
+
+    typeDeclaration ID '[' INT_LITERAL ']' '=' braceInitializer |
+    charTypeDeclaration ID '['INT_LITERAL ']' '=' STRING ;
+
+braceInitializer: '{' ((value ',')* value)? '}' ;
+
 assignment: (ID | accessArrayElement) '=' expression ;
-arrayDeclarationAndInit: arrayDeclaration '=' '{' ((value ',')* value)? '}' ;
 accessArrayElement: ID '[' INT_LITERAL ']' ;
 
 expression:
@@ -114,7 +129,7 @@ enclosedExpression: '(' expression ')';
 finalExpression: enclosedExpression | value | functionCall ;
 
 dataType: (CHAR | INT | FLOAT | VOID) ('*')*  ;
-value: ID | CHAR_LITERAL | INT_LITERAL | DOUBLE_LITERAL;
+value: ID | CHAR_LITERAL | INT_LITERAL | DOUBLE_LITERAL | STRING;
 
 // Reserved words
 BREAK: 'break';
@@ -139,6 +154,7 @@ TO_SKIP: '{' | '}' | '(' | ')' | ';' ;
 
 // Literals and identifiers
 ID  :   [a-zA-Z_]+ [0-9_]* ;
+STRING: '"' ( '\\"' | . )*? '"' ;
 CHAR_LITERAL: '\''.'\'' ;
 INT_LITERAL: [0-9]+ ;
 DOUBLE_LITERAL :   [0-9]+'.'[0-9]+ ;

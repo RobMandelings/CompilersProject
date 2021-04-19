@@ -447,7 +447,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                     f"[SemanticAnalysis] Warning: declaration of '{var_name}'"
                     f" shadows a local variable. You might want to rename it")
             symbol_table.insert_symbol(var_name,
-                                       ArraySymbol(var_name, ast.get_data_type(), ast.get_size().get_content()))
+                                       ArraySymbol(var_name, ast.get_data_type(), ast.get_array_size().get_content()))
         else:
             raise SemanticError(
                 f"Array with name '{var_name}' has already been declared in this scope!"

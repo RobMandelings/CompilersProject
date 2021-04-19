@@ -11,10 +11,26 @@ class LLVMGlobalContainer(LLVMInterfaces.IToLLVM):
         pass
 
     def __init__(self):
+        self.global_strings = list()
         self.global_declaration_instructions = list()
         self.global_array_declaration_instructions = list()
         self.__printf_type_strings = dict()
+        self.__memcpy_declaration_added = False
         pass
+
+    def add_memcpy_declaration(self):
+        if not self.__memcpy_declaration_added:
+            self.global_declaration_instructions.append(
+                'declare void @llvm.memcpy.p0i8.p0i8.i64(i8* noalias nocapture writeonly,'
+                ' i8* noalias nocapture readonly, i64, i1 immarg)')
+            self.__memcpy_declaration_added = True
+
+    def add_global_string(self, length, string):
+        string_created = f"@.str.{len(self.global_strings)}"
+        self.global_strings.append(
+            f"{string_created} = "
+            f"private unnamed_addr constant [{length} x i8] c\"{string}\", align 1")
+        return string_created
 
     def has_printf_type_string(self):
         return len(self.__printf_type_strings) > 0
@@ -63,6 +79,8 @@ class LLVMGlobalContainer(LLVMInterfaces.IToLLVM):
 
     def to_llvm(self):
         string_to_return = ''
+        for global_string in self.global_strings:
+            string_to_return += global_string + "\n"
         for global_declaration in self.global_declaration_instructions:
             string_to_return += global_declaration + "\n"
         for array_declaration in self.global_array_declaration_instructions:

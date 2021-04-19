@@ -4,13 +4,23 @@ from src.antlr4_gen.CLexer import CLexer
 from src.antlr4_gen.CParser import *
 from src.ast.ASTs import *
 
+LITERALS = {CLexer.CHAR_LITERAL: DataType.NORMAL_CHAR,
+            CLexer.INT_LITERAL: DataType.NORMAL_INT,
+            CLexer.DOUBLE_LITERAL: DataType.NORMAL_DOUBLE}
+
+DATA_TYPES = {CLexer.CHAR: DataType.NORMAL_CHAR,
+              CLexer.INT: DataType.NORMAL_INT,
+              CLexer.FLOAT: DataType.NORMAL_FLOAT}
+
+TYPE_ATTRIBUTES = {CLexer.CONST: TypeAttributeToken.CONST}
+
 
 # TODO Improve to use a visitor pattern of the cst instead
 
-def create_ast_array_init(cst, list_of_values_range: range):
+def create_ast_array_init(cst, initializer: CParser.BraceInitializerContext):
     list_of_values = list()
-    for i in list_of_values_range:
-        value = create_ast_from_cst(cst.children[i])
+    for child in initializer.children:
+        value = create_ast_from_cst(child)
         if value is not None:
             list_of_values.append(value)
             assert isinstance(value, ASTLiteral)
@@ -21,12 +31,29 @@ def create_ast_array_init(cst, list_of_values_range: range):
 def create_ast_var_declaration_and_init(cst):
     if len(cst.children) == 1 and isinstance(cst.children[0], CParser.ArrayDeclarationAndInitContext):
 
-        cst = cst.children[0]
         array_declaration = cst.children[0]
+
         data_types_and_attributes = create_type_asts(array_declaration.children[0])
         name = create_ast_from_cst(array_declaration.children[1])
         size = create_ast_from_cst(array_declaration.children[3])
-        array_init = create_ast_array_init(cst, range(3, len(cst.children) - 1))
+
+        initializer = array_declaration.children[6]
+
+        if isinstance(initializer, TerminalNodeImpl) and \
+                initializer.getSymbol().type == CLexer.STRING:
+            char_literals = list()
+            string = initializer.getSymbol().text
+            string = string.strip('"')
+
+            for char in string:
+                char_literals.append(ASTLiteral(DataType.NORMAL_CHAR, str(ord(char))))
+
+            array_init = ASTArrayInit(char_literals)
+        elif isinstance(initializer, CParser.BraceInitializerContext):
+            array_init = create_ast_array_init(array_declaration, initializer)
+        else:
+            raise NotImplementedError
+
         array_declaration_and_init = ASTArrayDeclarationAndInit(data_types_and_attributes, name, size, array_init)
         return array_declaration_and_init
 
@@ -63,25 +90,24 @@ def create_ast_var_declaration(cst):
 
 
 def create_type_asts(cst):
-    assert isinstance(cst, CParser.TypeDeclarationContext)
     ast_children = list()
     for child in cst.children:
-        ast_children.append(create_ast_from_cst(child))
+        if child is not None:
+            ast_children.append(create_ast_from_cst(child))
 
     return ast_children
 
 
 def create_ast_from_terminal_node(cst: TerminalNodeImpl):
-    if is_identifier(cst):
+    symbol_type = cst.getSymbol().type
+    if symbol_type == CLexer.ID:
         return ASTIdentifier(cst.getSymbol().text)
-    else:
-
-        type_attribute_token = get_type_attribute_token(cst)
-
-        if is_literal(cst):
-            return ASTLiteral(get_data_type(cst), cst.getSymbol().text)
-        elif type_attribute_token is not None:
-            return ASTTypeAttribute(type_attribute_token)
+    elif symbol_type in DATA_TYPES:
+        return ASTDataType(DATA_TYPES[symbol_type])
+    elif symbol_type in TYPE_ATTRIBUTES:
+        return ASTTypeAttribute(TYPE_ATTRIBUTES[symbol_type])
+    elif symbol_type in LITERALS:
+        return ASTLiteral(LITERALS[symbol_type], cst.getSymbol().text)
 
     print(f"WARN: Skipping CST Terminal Node (returning None) with value '{cst.getSymbol().text}'")
     return None
@@ -364,7 +390,7 @@ def is_literal(cst: TerminalNodeImpl):
     """
     assert isinstance(cst, TerminalNodeImpl)
     symbol_type = cst.getSymbol().type
-    if symbol_type == CLexer.CHAR or symbol_type == CLexer.INT_LITERAL or symbol_type == CLexer.DOUBLE_LITERAL:
+    if symbol_type == CLexer.CHAR_LITERAL or symbol_type == CLexer.INT_LITERAL or symbol_type == CLexer.DOUBLE_LITERAL:
         return True
 
     return False
@@ -396,9 +422,9 @@ def get_data_type(cst):
 
         symbol_type = cst.getSymbol().type
 
-        if symbol_type == CLexer.CHAR_LITERAL:
+        if symbol_type == CLexer.CHAR_LITERAL or symbol_type == CLexer.CHAR:
             return DataType.NORMAL_CHAR
-        elif symbol_type == CLexer.INT_LITERAL:
+        elif symbol_type == CLexer.INT_LITERAL or symbol_type == CLexer.INT:
             return DataType.NORMAL_INT
         elif symbol_type == CLexer.DOUBLE_LITERAL:
             return DataType.NORMAL_DOUBLE

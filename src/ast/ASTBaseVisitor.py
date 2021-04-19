@@ -78,7 +78,7 @@ class ASTBaseVisitor(IASTVisitor):
         ast.var_name_ast.accept(self)
 
     def visit_ast_array_declaration(self, ast: ASTArrayDeclaration):
-        self.visit_ast_variable_declaration(ast)
+        ASTBaseVisitor.visit_ast_variable_declaration(self, ast)
 
     def visit_ast_variable_declaration_and_init(self, ast: ASTVariableDeclarationAndInit):
         assert isinstance(ast, ASTVariableDeclarationAndInit)
@@ -89,7 +89,8 @@ class ASTBaseVisitor(IASTVisitor):
         ast.value.accept(self)
 
     def visit_ast_array_declaration_and_init(self, ast: ASTArrayDeclarationAndInit):
-        self.visit_ast_variable_declaration_and_init(ast)
+        ASTBaseVisitor.visit_ast_array_declaration(self, ast)
+        self.visit_ast_array_init(ast.get_array_init())
 
     def visit_ast_printf_instruction(self, ast: ASTPrintfInstruction):
         pass
