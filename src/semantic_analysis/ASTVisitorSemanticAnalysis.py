@@ -550,7 +550,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
     def visit_ast_function_call(self, ast: ASTFunctionCall):
 
-        function_identifier = ast.get_function_called()
+        function_identifier = ast.get_function_called_id()
 
         param_data_types = list()
 
@@ -578,7 +578,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         Basically takes over the scope thing a little bit because of the parameters
         """
 
-        function_identifier = ast.get_name()
+        function_identifier = ast.get_identifier()
         param_data_types = list()
 
         for param in ast.get_params():
@@ -609,7 +609,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
     def visit_ast_function_definition(self, ast: ASTFunctionDefinition):
 
-        function_identifier = ast.get_function_declaration().get_name()
+        function_identifier = ast.get_function_declaration().get_identifier()
         param_data_types = list()
 
         for param in ast.get_function_declaration().get_params():
@@ -631,7 +631,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
             function_symbol = FunctionSymbol(function_name_for_symbol_table,
                                              ast.get_function_declaration().get_params(),
                                              ast.get_function_declaration().get_return_type_ast().get_data_type(),
-                                             False)
+                                             True)
             self.get_last_symbol_table().insert_symbol(
                 function_symbol.get_name(), function_symbol)
 

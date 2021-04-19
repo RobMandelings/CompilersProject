@@ -461,7 +461,7 @@ class CallInstruction(AssignInstruction):
         from src.llvm.LLVMFunction import LLVMFunction
         """
         Function to call: should be an LLVMFunction.LLVMFunction instance
-        Params: list of llvm values
+        Params: list of LLVMValues
         """
         assert isinstance(function_to_call, LLVMFunction)
         self.function_to_call = function_to_call

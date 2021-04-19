@@ -47,6 +47,7 @@ class LLVMSymbol:
     """
     Wrapper for LLVMSymbolTable dict values
     """
+
     def __init__(self, register: LLVMValue.LLVMRegister):
         self.register = register
         assert isinstance(self.register, LLVMValue.LLVMRegister)
@@ -59,6 +60,7 @@ class LLVMArraySymbol(LLVMSymbol):
     """
     Wrapper for LLVMSymbolTable dict values which refer to array objects
     """
+
     def __init__(self, register: LLVMValue.LLVMRegister, size: LLVMValue.LLVMLiteral):
         super(LLVMArraySymbol, self).__init__(register)
         self.size = size

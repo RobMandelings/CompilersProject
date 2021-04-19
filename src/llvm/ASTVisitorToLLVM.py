@@ -4,11 +4,11 @@ import src.ast.ASTTokens as ASTTokens
 import src.ast.ASTs as ASTs
 import src.llvm.LLVMBasicBlock as LLVMBasicBlock
 import src.llvm.LLVMBuilder as LLVMBuilder
+import src.llvm.LLVMFunction as LLVMFunctions
 import src.llvm.LLVMInstruction as LLVMInstructions
 import src.llvm.LLVMSymbolTable as LLVMSymbolTable
 import src.llvm.LLVMValue as LLVMValue
 from src.ast.ASTs import ASTFunctionDeclaration, ASTReturnStatement, ASTScope, ASTFunctionCall, ASTFunctionDefinition
-from src.llvm.LLVMFunction import LLVMFunction
 
 
 class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
@@ -214,7 +214,15 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         self.builder.compute_expression(ast)
 
     def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
-        pass
+
+        param_data_types = list()
+
+        for param in ast.get_params():
+            param_data_types.append(param.get_data_type())
+
+        self.builder.get_function_holder().add_function(
+            LLVMFunctions.LLVMDeclaredFunction(ast.get_identifier(), ast.get_return_type_ast().get_data_type(),
+                                               param_data_types))
 
     def visit_ast_function_definition(self, ast: ASTFunctionDefinition):
         param_registers = list()
@@ -227,7 +235,11 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
 
         return_type = ast.get_function_declaration().get_return_type_ast().get_data_type()
 
-        self.builder.add_function(LLVMFunction(ast.get_function_declaration().get_name(), return_type, param_registers))
+        self.builder.get_function_holder().add_function(
+            LLVMFunctions.LLVMDefinedFunction(ast.get_function_declaration().get_identifier(), return_type,
+                                              param_registers))
+        self.builder.get_function_holder().set_current_function(
+            self.get_builder().get_function_holder().get_function(ast.get_function_declaration().get_identifier()))
 
         # Now that the function has been created, loop again over each of the parameters
         for i in range(len(ast.get_function_declaration().get_params())):

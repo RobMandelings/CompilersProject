@@ -8,6 +8,7 @@ import src.llvm.LLVMInterfaces as LLVMInterfaces
 import src.llvm.LLVMSymbolTable as LLVMSymbolTable
 import src.llvm.LLVMUtils as LLVMUtils
 import src.llvm.LLVMValue as LLVMValues
+import src.llvm.LLVMFunctionHolder as LLVMFunctionHolder
 from src.llvm import LLVMValue
 
 
@@ -18,13 +19,22 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         variable_holder: holds variables and their corresponding registers
         """
         self.global_container = LLVMGlobalContainer.LLVMGlobalContainer()
-        self.functions = list()
+        # Holds declared and defined functions. If defined, the declared function will be overwritten
+        # And not outputted to LLVM
+        self.function_holder = LLVMFunctionHolder.LLVMFunctionHolder()
         # Not really a symbol table but just to keep track of the registers assigned to the variables for later outputting
         self.symbol_table_stack = list()
         self.symbol_table_stack.append(LLVMSymbolTable.LLVMSymbolTable())
 
     def get_printf_function_declaration(self):
         return 'declare dso_local i32 @printf(i8*, ...)'
+
+    def get_current_function(self):
+        return self.get_function_holder().get_current_function()
+
+    def get_function_holder(self):
+        assert isinstance(self.function_holder, LLVMFunctionHolder.LLVMFunctionHolder)
+        return self.function_holder
 
     def get_last_symbol_table(self):
         last_symbol_table = self.symbol_table_stack[-1]
@@ -39,38 +49,6 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         Does nothing as it only applies to LLVMFunctions and below
         """
         pass
-
-    def find_best_match(self, function_identifier: str, params):
-
-        assert isinstance(function_identifier, str)
-        functions_with_same_nr_params = list()
-
-        for function in self.functions:
-            assert isinstance(function, LLVMFunctions.LLVMFunction)
-
-            if not function.identifier == function_identifier:
-                continue
-
-            if len(function.params) == len(params):
-                functions_with_same_nr_params.append(function)
-
-        if len(functions_with_same_nr_params) > 1:
-            raise NotImplementedError('We currently do not support function which overloaded parameters')
-        else:
-            assert len(functions_with_same_nr_params) != 0
-            return functions_with_same_nr_params[0]
-
-    def add_function(self, function: LLVMFunctions.LLVMFunction):
-        self.functions.append(function)
-
-    def get_current_function(self):
-        """
-        Returns the current function that is being generated in LLVM code. Instructions should be appended to this
-        function's current basic block
-        """
-        function = self.functions[-1]
-        assert isinstance(function, LLVMFunctions.LLVMFunction)
-        return function
 
     def get_global_container(self):
         assert isinstance(self.global_container, LLVMGlobalContainer.LLVMGlobalContainer)
@@ -186,21 +164,6 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
                 resulting_reg = invert_instruction.get_resulting_register()
 
             return resulting_reg
-        elif isinstance(ast, ASTs.ASTDereferencedVariable):
-
-            variable = ast.get_value_applied_to()
-            assert isinstance(variable,
-                              ASTs.ASTIdentifier), "Currently only support for simple pointer expressions with variables"
-
-            variable_reg = self.get_last_symbol_table().get_variable_register(variable.get_name())
-
-            # if ast.get_token() == ASTTokens.PointerExprToken.ADDRESS:
-            #
-            #     return variable_reg
-            #
-            # elif ast.get_token() == ASTTokens.PointerExprToken.DEREFERENCE:
-            # else:
-
         else:
             raise NotImplementedError
 
@@ -239,22 +202,27 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
         symbol_table = self.get_last_symbol_table()
         array_symbol = symbol_table.get_array_symbol(ast.get_variable_accessed().get_content())
-        register_with_element_ptr = self.get_current_function().get_new_register(DataType.DataType(array_element_register.get_data_type().get_token(), 1))
+        register_with_element_ptr = self.get_current_function().get_new_register(
+            DataType.DataType(array_element_register.get_data_type().get_token(), 1))
         index = ast.get_index_accessed()
         instruction = getElementPtr_instruction = LLVMInstructions.GetElementPtrInstruction(register_with_element_ptr,
-                                                                      str(ast.get_index_accessed().get_value()), array_symbol.get_size(),
-                                                                      array_element_register)
+                                                                                            str(
+                                                                                                ast.get_index_accessed().get_value()),
+                                                                                            array_symbol.get_size(),
+                                                                                            array_element_register)
         self.get_current_function().add_instruction(instruction)
-        register_to_return = self.get_current_function().get_new_register(DataType.DataType(array_element_register.get_data_type().get_token(), 0))
+        register_to_return = self.get_current_function().get_new_register(
+            DataType.DataType(array_element_register.get_data_type().get_token(), 0))
 
-        self.get_current_function().add_instruction(LLVMInstructions.LoadInstruction(register_to_return, register_with_element_ptr))
+        self.get_current_function().add_instruction(
+            LLVMInstructions.LoadInstruction(register_to_return, register_with_element_ptr))
         return register_to_return
 
     def __compute_function_call(self, ast: ASTs.ASTFunctionCall):
         """
         Creates the instructions to call a function and returns the result as an LLVMRegister.
         """
-        best_match_function = self.find_best_match(ast.get_function_called(), ast.get_arguments())
+        function = self.get_function_holder().get_function(ast.get_function_called_id())
 
         args_llvm_value = list()
 
@@ -262,7 +230,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             resulting_llvm_value = self.compute_expression(arg)
             args_llvm_value.append(resulting_llvm_value)
 
-        call_instruction = LLVMInstructions.CallInstruction(best_match_function, args_llvm_value)
+        call_instruction = LLVMInstructions.CallInstruction(function, args_llvm_value)
 
         self.get_current_function().add_instruction(call_instruction)
 
@@ -339,8 +307,10 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         # TODO remove from code: don't work with symbol table anymore
         self.get_last_symbol_table().insert_variable(ast.var_name_ast.get_content(), new_register)
 
-        self.get_current_function().add_instruction(LLVMInstructions.AllocaInstruction(new_register))
-        self.get_current_function().add_instruction(LLVMInstructions.StoreInstruction(new_register, value_to_store))
+        self.get_current_function().add_instruction(
+            LLVMInstructions.AllocaInstruction(new_register))
+        self.get_current_function().add_instruction(
+            LLVMInstructions.StoreInstruction(new_register, value_to_store))
 
     def declare_array(self, ast: ASTs.ASTArrayDeclaration):
         """
@@ -396,9 +366,9 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
                 DataType.DataType(array_symbol.get_register().get_data_type().get_token(),
                                   array_symbol.get_register().get_data_type().get_pointer_level()))
             getElementPtr_instruction = LLVMInstructions.GetElementPtrInstruction(register_to_store,
-                                                                      left.get_index_accessed().get_content(),
-                                                                      array_symbol.get_size(),
-                                                                      array_symbol.get_register())
+                                                                                  left.get_index_accessed().get_content(),
+                                                                                  array_symbol.get_size(),
+                                                                                  array_symbol.get_register())
             self.get_current_function().add_instruction(getElementPtr_instruction)
             store_instruction = LLVMInstructions.StoreInstruction(register_to_store, computed_expression_value)
             self.get_current_function().add_instruction(store_instruction)
@@ -417,9 +387,6 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         if self.get_global_container().has_printf_type_string():
             llvm_code += self.get_printf_function_declaration() + "\n\n"
 
-        for function in self.functions:
-            llvm_code += function.to_llvm() + "\n"
+        llvm_code += self.get_function_holder().to_llvm()
 
         return llvm_code
-
-

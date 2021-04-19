@@ -554,7 +554,7 @@ class ASTFunctionDeclaration(AST):
         self.return_type.parent = self
         self.content += self.get_full_name(with_return_type=True)
 
-    def get_name(self):
+    def get_identifier(self):
         """
         Just returns the identifier of the function. E.g: 'main'
         """
@@ -644,9 +644,12 @@ class ASTFunctionCall(ASTExpression):
     def get_arguments(self):
         return self.params
 
-    def get_function_called(self):
+    def get_function_called_id(self):
         assert isinstance(self.function_called, str)
         return self.function_called
+
+    def get_function_called_full_name(self):
+        full_name = f'{self.function_called} '
 
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_function_call(self)
