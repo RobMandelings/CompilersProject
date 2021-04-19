@@ -10,3 +10,5 @@ int f(int c, int d){
 
 int main(){
 }
+
+check semantic

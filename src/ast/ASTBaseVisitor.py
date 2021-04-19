@@ -137,6 +137,9 @@ class ASTBaseVisitor(IASTVisitor):
     def visit_ast_return_statement(self, ast: ASTReturnStatement):
         ast.return_value.accept(self)
 
+    def visit_ast_include(self, ast: ASTInclude):
+        pass
+
     def reset(self):
         """
         Resets the visitor to use it for another tree for example

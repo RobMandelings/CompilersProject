@@ -62,6 +62,11 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
         else:
             raise NotImplementedError(f"Token type '{ast.get_data_type()}' not recognized as literal")
 
+    def visit_ast_function_call(self, ast: ASTFunctionCall):
+        name_function = ast.get_function_called_full_name()
+        function_symbol = self.last_symbol_table.lookup_variable(ast.get_function_called_full_name())
+        i = 3
+
     def visit_ast_identifier(self, ast: ASTIdentifier):
         variable = self.last_symbol_table.lookup_variable(ast.get_content())
 
@@ -340,6 +345,10 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         self.check_undeclared_variable_usage(ast)
         self.check_uninitialized_variable_usage(ast)
         self.check_resulting_data_type(ast)
+        if not self.check_resulting_data_type(ast.left) == self.check_resulting_data_type(ast.right):
+            raise SemanticError(
+                f'Incompatible datatypes: {self.check_resulting_data_type(ast.left).get_name()} and {self.check_resulting_data_type(ast.right).get_name()}'
+            )
 
     def visit_ast_binary_compare_expression(self, ast: ASTRelationalExpression):
 
@@ -403,7 +412,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                     symbol.reaching_definition_ast = None
 
             # Warn in case the result will be narrowed down into another data type
-            self.check_for_narrowing_result(symbol.data_type, ast)
+            self.check_for_narrowing_result(DataType.DataType(symbol.data_type.get_token(), symbol.get_data_type().get_pointer_level()-1), ast)
         elif isinstance(symbol, ArraySymbol):
             if self.optimize:
                 ast.right = self.optimize_expression(ast.get_right())
@@ -547,28 +556,30 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
             raise SemanticError(f'Function {function_identifier} not found! Cannot call this function')
         else:
             assert isinstance(function_lookup, FunctionSymbol)
-            if len(function_lookup.get_params()) != len(ast.get_arguments()):
-                if len(function_lookup.get_params()) < len(ast.get_arguments()):
-                    raise SemanticError(
-                        f'Cannot call function {function_identifier}: not enough arguments provided (is {len(ast.get_arguments())}, must be {len(function_lookup.get_params())}')
-                else:
+
+            if function_identifier != "printf" and function_identifier != "scanf":
+                if len(function_lookup.get_params()) != len(ast.get_arguments()):
                     if len(function_lookup.get_params()) < len(ast.get_arguments()):
                         raise SemanticError(
-                            f'Cannot call function {function_identifier}: too many arguments provided (is {len(ast.get_arguments())}, must be {len(function_lookup.get_params())}')
-            else:
+                            f'Cannot call function {function_identifier}: to many arguments provided (is {len(ast.get_arguments())}, must be {len(function_lookup.get_params())})')
+                    else:
+                        if len(function_lookup.get_params()) > len(ast.get_arguments()):
+                            raise SemanticError(
+                                f'Cannot call function {function_identifier}: not enough arguments provided (is {len(ast.get_arguments())}, must be {len(function_lookup.get_params())})')
+                else:
 
-                for i in range(len(function_lookup.get_params())):
+                    for i in range(len(function_lookup.get_params())):
 
-                    data_type_param = function_lookup.get_params()[i].get_data_type()
-                    data_type_argument = ast.get_arguments()[i].get_data_type()
+                        data_type_param = function_lookup.get_params()[i].get_data_type()
+                        data_type_argument = ast.get_arguments()[i].get_data_type()
 
-                    if data_type_param != data_type_argument:
-                        raise SemanticError(
-                            f"Cannot call function: types don't match. ({data_type_param.get_name()} and {data_type_argument.get_name()})")
+                        if data_type_param != data_type_argument:
+                            raise SemanticError(
+                                f"Cannot call function: types don't match. ({data_type_param.get_name()} and {data_type_argument.get_name()})")
 
-                if not function_lookup.is_defined():
-                    print(
-                        f'warn: Function declaration {function_identifier} found but no definition for this function at the time of calling!')
+                    if not function_lookup.is_defined():
+                        print(
+                            f'warn: Function declaration {function_identifier} found but no definition for this function at the time of calling!')
 
     def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
         """
@@ -577,6 +588,13 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         function_identifier = ast.get_identifier()
         param_data_types = list()
+
+        param_names = list()
+        for p in ast.get_params():
+            if p.get_var_name() not in param_names:
+                param_names.append(p.get_var_name())
+            else:
+                raise SemanticError(f'Multiple parameter declaration in declaration of {function_identifier}')
 
         for param in ast.get_params():
             param_data_types.append(param.get_data_type())
@@ -618,6 +636,14 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         function_identifier = ast.get_function_declaration().get_identifier()
         param_data_types = list()
 
+        param_names = list()
+        function_declaration = ast.get_function_declaration()
+        for p in function_declaration.get_params():
+            if p.get_var_name() not in param_names:
+                param_names.append(p.get_var_name())
+            else:
+                raise SemanticError(f'Multiple parameter declaration in declaration of {function_identifier}')
+
         for param in ast.get_function_declaration().get_params():
             param_data_types.append(param.get_data_type())
 
@@ -632,8 +658,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                 )
 
             for i in range(len(function_symbol.get_params())):
-                if function_symbol.get_params()[i].get_data_type() == ast.get_function_declaration().get_params()[
-                    i].get_data_type():
+                if function_symbol.get_params()[i].get_data_type() != ast.get_function_declaration().get_params()[i].get_data_type():
                     raise SemanticError(
                         f'Conflicting types'
                     )
@@ -672,3 +697,15 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         super().visit_ast_scope(ast.get_execution_body())
         self.on_scope_exit()
         self.on_function_exit()
+
+    def visit_ast_include(self, ast: ASTInclude):
+        printf_params = list()
+        printf_symbol = FunctionSymbol("printf", printf_params, DataType.NORMAL_INT, True)
+        self.get_last_symbol_table().insert_symbol(printf_symbol.get_name(), printf_symbol)
+
+        #TODO Add scanf
+
+        # scanf_params = list()
+        # scanf_symbol = FunctionSymbol("scanf", scanf_params, DataType.NORMAL_INT, True)
+        # self.get_last_symbol_table().insert_symbol(scanf_symbol.get_name(), scanf_params)
+

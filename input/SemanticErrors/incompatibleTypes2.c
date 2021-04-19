@@ -4,3 +4,5 @@ int main(){
     x + c;
     return 1;
 }
+
+check semantic

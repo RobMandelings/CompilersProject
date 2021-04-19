@@ -8,6 +8,8 @@ class SymbolTable(abc.ABC):
         self.symbols = dict()
 
     def lookup_local(self, symbol: str):
+        s = self.symbols.get(symbol)
+        t = self.symbols.get('f')
         if symbol in self.symbols:
             lookup = self.symbols[symbol]
             return lookup

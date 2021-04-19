@@ -44,12 +44,12 @@ class CListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CParser#include.
-    def enterInclude(self, ctx:CParser.IncludeContext):
+    # Enter a parse tree produced by CParser#includeStdio.
+    def enterIncludeStdio(self, ctx:CParser.IncludeStdioContext):
         pass
 
-    # Exit a parse tree produced by CParser#include.
-    def exitInclude(self, ctx:CParser.IncludeContext):
+    # Exit a parse tree produced by CParser#includeStdio.
+    def exitIncludeStdio(self, ctx:CParser.IncludeStdioContext):
         pass
 
 

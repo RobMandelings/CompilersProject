@@ -5,3 +5,5 @@ void f(){
 int main(){
     return 0;
 }
+
+checked semantic

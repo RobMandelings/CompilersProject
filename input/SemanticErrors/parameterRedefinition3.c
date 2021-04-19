@@ -7,3 +7,5 @@ int f(int a, float b, char c, int a, int b){
 int main(){
     return 0;
 }
+
+check semantic

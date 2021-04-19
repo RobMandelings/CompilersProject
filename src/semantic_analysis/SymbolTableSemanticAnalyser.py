@@ -84,7 +84,7 @@ class SymbolTableSemanticAnalyser(SymbolTable.SymbolTable):
         The semantic error checks should be executed before using this
         """
         variable = self.lookup(symbol_name)
-        assert isinstance(variable, VariableSymbol) or isinstance(variable, ArraySymbol)
+        assert isinstance(variable, VariableSymbol) or isinstance(variable, ArraySymbol) or isinstance(variable, FunctionSymbol)
         return variable
 
     def set_parent(self, parent):
