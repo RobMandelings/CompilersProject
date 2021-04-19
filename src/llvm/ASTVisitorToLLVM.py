@@ -259,7 +259,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         raise NotImplementedError
 
     def visit_ast_array_declaration_and_init(self, ast: ASTs.ASTArrayDeclarationAndInit):
-        raise NotImplementedError
+        self.builder.declare_and_init_array(ast)
 
     def visit_ast_return_statement(self, ast: ASTReturnStatement):
 

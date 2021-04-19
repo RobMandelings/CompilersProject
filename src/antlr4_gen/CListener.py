@@ -179,6 +179,15 @@ class CListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CParser#charTypeDeclaration.
+    def enterCharTypeDeclaration(self, ctx:CParser.CharTypeDeclarationContext):
+        pass
+
+    # Exit a parse tree produced by CParser#charTypeDeclaration.
+    def exitCharTypeDeclaration(self, ctx:CParser.CharTypeDeclarationContext):
+        pass
+
+
     # Enter a parse tree produced by CParser#varDeclarationAndInit.
     def enterVarDeclarationAndInit(self, ctx:CParser.VarDeclarationAndInitContext):
         pass
@@ -188,21 +197,30 @@ class CListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CParser#assignment.
-    def enterAssignment(self, ctx:CParser.AssignmentContext):
-        pass
-
-    # Exit a parse tree produced by CParser#assignment.
-    def exitAssignment(self, ctx:CParser.AssignmentContext):
-        pass
-
-
     # Enter a parse tree produced by CParser#arrayDeclarationAndInit.
     def enterArrayDeclarationAndInit(self, ctx:CParser.ArrayDeclarationAndInitContext):
         pass
 
     # Exit a parse tree produced by CParser#arrayDeclarationAndInit.
     def exitArrayDeclarationAndInit(self, ctx:CParser.ArrayDeclarationAndInitContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#braceInitializer.
+    def enterBraceInitializer(self, ctx:CParser.BraceInitializerContext):
+        pass
+
+    # Exit a parse tree produced by CParser#braceInitializer.
+    def exitBraceInitializer(self, ctx:CParser.BraceInitializerContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#assignment.
+    def enterAssignment(self, ctx:CParser.AssignmentContext):
+        pass
+
+    # Exit a parse tree produced by CParser#assignment.
+    def exitAssignment(self, ctx:CParser.AssignmentContext):
         pass
 
 

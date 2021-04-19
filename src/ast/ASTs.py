@@ -4,8 +4,10 @@ import src.DataType as DataType
 from src.ast.ASTTokens import *
 from src.ast.IAstVisitor import IASTVisitor
 
+
 class SemanticError(Exception):
     pass
+
 
 class AST:
 
@@ -526,22 +528,6 @@ class ASTVariableDeclaration(AST):
         return data_type_ast, type_attribute_asts
 
 
-class ASTArrayDeclaration(ASTVariableDeclaration):
-
-    def __init__(self, data_type_and_attributes: list, name: ASTIdentifier, size: ASTLiteral):
-        super().__init__(data_type_and_attributes, name)
-        assert size.get_data_type() == DataType.NORMAL_INT
-        self.size = size
-        self.content = f'variable declaration: array (size_ast: {self.size})'
-
-    def get_size(self):
-        assert isinstance(self.size, ASTLiteral) and self.size.get_data_type() == DataType.NORMAL_INT
-        return self.size
-
-    def accept(self, visitor: IASTVisitor):
-        visitor.visit_ast_array_declaration(self)
-
-
 class ASTFunctionDeclaration(AST):
 
     def __init__(self, function_name: str, params: list, return_type: ASTDataType):
@@ -685,17 +671,32 @@ class ASTVariableDeclarationAndInit(ASTVariableDeclaration, ASTExpression):
         visitor.visit_ast_variable_declaration_and_init(self)
 
 
-class ASTArrayDeclarationAndInit(ASTVariableDeclarationAndInit):
+class ASTArrayDeclaration(ASTVariableDeclaration):
 
-    def __init__(self, data_type_and_attributes: list, name: ASTIdentifier, size_ast: ASTLiteral, value: ASTArrayInit):
-        super().__init__(data_type_and_attributes, name, value)
-        assert size_ast.get_data_type() == DataType.NORMAL_INT
-        self.content = f'var declaration and init: array ({size_ast.get_content()})'
-        self.size_ast = size_ast
+    def __init__(self, data_type_and_attributes: list, name: ASTIdentifier, size: ASTLiteral):
+        super().__init__(data_type_and_attributes, name)
+        assert size.get_data_type() == DataType.NORMAL_INT
+        self.size = size
+        self.content = f'variable declaration: array (size_ast: {self.size})'
 
-    def get_size(self):
-        assert isinstance(self.size_ast, ASTLiteral) and self.size_ast.get_data_type() == DataType.NORMAL_INT
-        return self.size_ast
+    def get_array_size(self):
+        assert isinstance(self.size, ASTLiteral) and self.size.get_data_type() == DataType.NORMAL_INT
+        return self.size
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_array_declaration(self)
+
+
+class ASTArrayDeclarationAndInit(ASTArrayDeclaration, ASTExpression):
+
+    def __init__(self, data_type_and_attributes: list, name: ASTIdentifier, size_ast: ASTLiteral,
+                 array_init: ASTArrayInit):
+        super().__init__(data_type_and_attributes, name, size_ast)
+        self.array_init = array_init
+        self.content = f'array ({size_ast.get_content()})'
+
+    def get_array_init(self):
+        return self.array_init
 
     def accept(self, visitor):
         visitor.visit_ast_array_declaration_and_init(self)
