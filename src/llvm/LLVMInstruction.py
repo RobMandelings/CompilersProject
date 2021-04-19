@@ -32,25 +32,6 @@ class Instruction(LLVMInterfaces.IToLLVM, abc.ABC):
         pass
 
 
-class RawInstruction(Instruction):
-
-    def __init__(self, instruction: str, terminator: bool = False, increases_counter: bool = False):
-        super().__init__()
-        self.instruction_str = instruction
-        self.terminator = terminator
-        self.increases_counter = increases_counter
-
-    def update_numbering(self, counter):
-        if self.increases_counter:
-            counter.increase()
-
-    def is_terminator(self):
-        return self.terminator
-
-    def to_llvm(self):
-        return self.instruction_str
-
-
 class ReturnInstruction(Instruction):
 
     def __init__(self, return_value: LLVMValue.LLVMValue):
@@ -91,6 +72,33 @@ class AssignInstruction(Instruction):
 
     def to_llvm(self):
         return f"{self.resulting_reg.to_llvm()} = "
+
+
+class RawInstruction(Instruction):
+
+    def __init__(self, instruction_parts: list, increases_counter: bool, terminator: bool = False):
+        super().__init__()
+        self.instruction_parts = instruction_parts
+        self.increases_counter = increases_counter
+        self.terminator = terminator
+
+    def is_terminator(self):
+        return self.terminator
+
+    def update_numbering(self, counter):
+        if self.increases_counter:
+            counter.increase()
+
+    def to_llvm(self):
+
+        llvm_code = super().to_llvm()
+        for instruction_part in self.instruction_parts:
+            if isinstance(instruction_part, str):
+                llvm_code += instruction_part
+            elif isinstance(instruction_part, LLVMInterfaces.IToLLVM):
+                llvm_code += instruction_part.to_llvm()
+
+        return llvm_code
 
 
 class AllocaInstruction(AssignInstruction):
@@ -476,7 +484,7 @@ class PrintfInstruction(AssignInstruction):
 
 class CallInstruction(AssignInstruction):
 
-    def __init__(self, function_to_call, args: list):
+    def __init__(self, function_to_call, args: list, infinity_params=False):
         from src.llvm.LLVMFunction import LLVMFunction
         """
         Function to call: should be an LLVMFunction.LLVMFunction instance
@@ -485,6 +493,7 @@ class CallInstruction(AssignInstruction):
         assert isinstance(function_to_call, LLVMFunction)
         self.function_to_call = function_to_call
         self.args = args
+        self.infinity_args = infinity_params
         super().__init__(LLVMValue.LLVMRegister(function_to_call.get_return_type()))
 
     def to_llvm(self):

@@ -143,15 +143,6 @@ class CListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CParser#printfStatement.
-    def enterPrintfStatement(self, ctx:CParser.PrintfStatementContext):
-        pass
-
-    # Exit a parse tree produced by CParser#printfStatement.
-    def exitPrintfStatement(self, ctx:CParser.PrintfStatementContext):
-        pass
-
-
     # Enter a parse tree produced by CParser#varDeclaration.
     def enterVarDeclaration(self, ctx:CParser.VarDeclarationContext):
         pass

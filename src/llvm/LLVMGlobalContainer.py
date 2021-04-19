@@ -16,7 +16,13 @@ class LLVMGlobalContainer(LLVMInterfaces.IToLLVM):
         self.global_array_declaration_instructions = list()
         self.__printf_type_strings = dict()
         self.__memcpy_declaration_added = False
+        self.__printf_declaration_added = False
         pass
+
+    def add_printf_declaration(self):
+        if not self.__printf_declaration_added:
+            self.__printf_declaration_added = True
+            self.global_declaration_instructions.append('declare dso_local i32 @printf(i8*, ...) #2')
 
     def add_memcpy_declaration(self):
         if not self.__memcpy_declaration_added:

@@ -17,16 +17,6 @@ TYPE_ATTRIBUTES = {CLexer.CONST: TypeAttributeToken.CONST}
 
 # TODO Improve to use a visitor pattern of the cst instead
 
-def create_ast_array_init(cst, initializer: CParser.BraceInitializerContext):
-    list_of_values = list()
-    for child in initializer.children:
-        value = create_ast_from_cst(child)
-        if value is not None:
-            list_of_values.append(value)
-            assert isinstance(value, ASTLiteral)
-
-    return ASTArrayInit(list_of_values)
-
 
 def create_ast_var_declaration_and_init(cst):
     if len(cst.children) == 1 and isinstance(cst.children[0], CParser.ArrayDeclarationAndInitContext):
@@ -41,16 +31,12 @@ def create_ast_var_declaration_and_init(cst):
 
         if isinstance(initializer, TerminalNodeImpl) and \
                 initializer.getSymbol().type == CLexer.STRING:
-            char_literals = list()
-            string = initializer.getSymbol().text
-            string = string.strip('"')
 
-            for char in string:
-                char_literals.append(ASTLiteral(DataType.NORMAL_CHAR, str(ord(char))))
+            array_init = create_ast_from_terminal_node(initializer)
+            assert isinstance(array_init, ASTArrayInit)
 
-            array_init = ASTArrayInit(char_literals)
         elif isinstance(initializer, CParser.BraceInitializerContext):
-            array_init = create_ast_array_init(array_declaration, initializer)
+            raise NotImplementedError
         else:
             raise NotImplementedError
 
@@ -108,7 +94,15 @@ def create_ast_from_terminal_node(cst: TerminalNodeImpl):
         return ASTTypeAttribute(TYPE_ATTRIBUTES[symbol_type])
     elif symbol_type in LITERALS:
         return ASTLiteral(LITERALS[symbol_type], cst.getSymbol().text)
+    elif symbol_type == CLexer.STRING:
+        char_literals = list()
+        cst = cst.getSymbol().text
+        cst = cst.strip('"')
 
+        for char in cst:
+            char_literals.append(ASTLiteral(DataType.NORMAL_CHAR, str(ord(char))))
+
+        return ASTArrayInit(char_literals)
     print(f"WARN: Skipping CST Terminal Node (returning None) with value '{cst.getSymbol().text}'")
     return None
 
@@ -307,8 +301,6 @@ def create_ast_from_cst(cst):
         return create_ast_function_definition(cst)
     elif isinstance(cst, CParser.FunctionStatementContext):
         return create_ast_from_cst(cst.children[0])
-    elif isinstance(cst, CParser.PrintfStatementContext):
-        return ASTPrintfInstruction(create_ast_from_cst(cst.children[2]))
     elif isinstance(cst, CParser.AccessArrayElementContext):
         # We know the children of the arrayAccessElement are terminal nodes (being the identifier and the size required)
         return ASTArrayAccessElement(create_ast_from_terminal_node(cst.children[0]),

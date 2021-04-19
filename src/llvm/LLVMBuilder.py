@@ -221,6 +221,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         """
         Creates the instructions to call a function and returns the result as an LLVMRegister.
         """
+
         function = self.get_function_holder().get_function(ast.get_function_called_id())
 
         args_llvm_value = list()
@@ -229,11 +230,41 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             resulting_llvm_value = self.compute_expression(arg)
             args_llvm_value.append(resulting_llvm_value)
 
-        call_instruction = LLVMInstructions.CallInstruction(function, args_llvm_value)
+        if ast.get_function_called_id() == 'printf':
 
-        self.get_current_function().add_instruction(call_instruction)
+            array_init = ast.get_arguments()[0]
+            size = len(array_init.get_values())
+            string = self.get_string_from_char_array(array_init)
+            string += '\\00'
 
-        return call_instruction.get_resulting_register()
+            global_string_created = self.get_global_container().add_global_string(len(array_init.get_values() + 1),
+                                                                                  string)
+            self.get_global_container().add_printf_declaration()
+
+            instruction_parts = list()
+            instruction_parts.append(LLVMValues.LLVMRegister())
+            instruction_parts.append(
+                f'= call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([{size} x i8], [{size} x i8]* {global_string_created}, i64 0, i64 0)')
+
+            for i in range(len(args_llvm_value)):
+
+                arg = args_llvm_value[0]
+                llvm_argument_string = f'{arg.get_data_type().get_llvm_name()} {arg.to_llvm()}'
+
+                if i != len(args_llvm_value) - 1:
+                    llvm_argument_string += ','
+
+                instruction_parts.append(llvm_argument_string)
+
+            instruction_parts.append(')')
+
+        else:
+
+            call_instruction = LLVMInstructions.CallInstruction(function, args_llvm_value)
+
+            self.get_current_function().add_instruction(call_instruction)
+
+            return call_instruction.get_resulting_register()
 
     def compute_expression(self, ast: ASTs.AST):
         """
@@ -326,11 +357,8 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
     def declare_and_init_array(self, ast: ASTs.ASTArrayDeclarationAndInit):
         allocated_reg = self.declare_array(ast)
         if ast.get_data_type() == DataType.NORMAL_CHAR:
-            string = ""
             # TODO semantic check for more values than capacity
-            for value in ast.get_array_init().get_values():
-                # These values are all chars
-                string += chr(int(value.get_content()))
+            string = self.get_string_from_char_array(ast.get_array_init())
 
             # Fill up with null termination characters if there are less values initialized than the size of the array
             for i in range(len(ast.get_array_init().get_values()), ast.get_array_size().get_value()):
@@ -346,6 +374,13 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
                 LLVMInstructions.MemcpyInstruction(bitcast_instruction.get_resulting_register(), size,
                                                    global_var_created))
             self.get_global_container().add_memcpy_declaration()
+
+    def get_string_from_char_array(self, array_init: ASTs.ASTArrayInit):
+        string_to_return = ''
+        for value in array_init.get_values():
+            # These values are all chars
+            string_to_return += chr(int(value.get_content()))
+        return string_to_return
 
     def assign_value(self, ast: ASTs.ASTAssignmentExpression):
         """

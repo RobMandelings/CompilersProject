@@ -24,7 +24,6 @@ singleLineStatement:
     functionCall |
     varDeclaration |
     controlFlowStatement |
-    printfStatement |
     expression
     ;
 
@@ -62,7 +61,6 @@ functionCall: ID '(' ((expression ',')* expression)? ')' ;
 controlFlowStatement: BREAK | CONTINUE | returnStatement ;
 returnStatement: RETURN (expression);
 
-printfStatement: 'printf' '(' value ')' ;
 varDeclaration: (typeDeclaration ID) | arrayDeclaration ;
 arrayDeclaration: typeDeclaration ID '[' INT_LITERAL ']' ;
 

@@ -50,9 +50,6 @@ class CSTVisitorToDot(CVisitor):
     def visitControlFlowStatement(self, ctx: CParser.ControlFlowStatementContext):
         self.visit_node(ctx)
 
-    def visitPrintfStatement(self, ctx: CParser.PrintfStatementContext):
-        self.visit_node(ctx)
-
     def visitVarDeclaration(self, ctx: CParser.VarDeclarationContext):
         self.visit_node(ctx)
 
