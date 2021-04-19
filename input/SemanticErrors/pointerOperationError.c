@@ -6,3 +6,4 @@ int main(){
         return 1;
 }
 
+checked but not on the pointer, unitialized semantic error

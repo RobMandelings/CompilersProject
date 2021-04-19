@@ -638,6 +638,7 @@ class ASTFunctionCall(ASTExpression):
 
     def get_function_called_full_name(self):
         full_name = f'{self.function_called} '
+        return full_name
 
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_function_call(self)
@@ -718,3 +719,12 @@ class ASTPrintfInstruction(AST):
 
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_printf_instruction(self)
+
+
+class ASTInclude(AST):
+
+    def __init__(self, include: str):
+        super().__init__(str(include))
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_include(self)

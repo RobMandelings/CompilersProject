@@ -3,3 +3,5 @@ int main(){
     'a' + *x;
     return 1;
 }
+
+check semantic: x unintialized!

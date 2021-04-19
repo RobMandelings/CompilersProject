@@ -4,3 +4,5 @@ int main(){
     float x;
     return 0;
 }
+
+checked semantic

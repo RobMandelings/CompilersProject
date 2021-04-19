@@ -1,3 +1,5 @@
+from re import split
+
 from antlr4.tree.Tree import TerminalNodeImpl
 
 from src.antlr4_gen.CLexer import CLexer
@@ -294,6 +296,10 @@ def create_ast_function_definition(cst: CParser.FunctionDefinitionContext):
     return ASTFunctionDefinition(function_declaration, execution_body)
 
 
+def create_ast_include(cst: CParser.IncludeStdioContext):
+    return ASTInclude("include")
+
+
 def create_ast_from_cst(cst):
     if isinstance(cst, CParser.FunctionDeclarationContext):
         return create_ast_function_declaration(cst)
@@ -341,6 +347,8 @@ def create_ast_from_cst(cst):
         return create_ast_control_flow_statement(cst.children[0])
     elif isinstance(cst, CParser.EnclosedExpressionContext):
         return create_ast_from_cst(cst.children[1])
+    elif isinstance(cst, CParser.IncludeStdioContext):
+        return create_ast_include(cst)
     elif isinstance(cst, TerminalNodeImpl):
         return create_ast_from_terminal_node(cst)
     else:
@@ -426,6 +434,7 @@ def get_data_type(cst):
 
 def get_type_attribute_token(cst: TerminalNodeImpl):
     assert isinstance(cst, TerminalNodeImpl)
+    test = cst.getSymbol().text
     return TypeAttributeToken.from_str(cst.getSymbol().text)
 
 

@@ -111,6 +111,11 @@ class DataType:
         pointer_level = self.get_pointer_level()
         return self.get_token().get_llvm_name() + ('*' * self.get_pointer_level())
 
+    def dereference(self, amount_of_dereferencing: int):
+        assert isinstance(amount_of_dereferencing, int)
+        resulting_datatype = DataType(self.get_token(), self.get_pointer_level()-amount_of_dereferencing)
+        return resulting_datatype
+
 
 def get_llvm_for_data_type(data_type_token: DataTypeToken, pointer_level):
     """
