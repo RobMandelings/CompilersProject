@@ -327,7 +327,7 @@ def from_pointer_expression(cst):
 
         value_to_apply = create_ast_from_cst(cst.children[1])
 
-        if cst.children[0].getSymbol.text == '&':
+        if cst.children[0].getSymbol().text == '&':
             # Undo the dereference
             assert isinstance(value_to_apply, ASTDereference)
             return value_to_apply.get_value_to_dereference()

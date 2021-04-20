@@ -74,12 +74,25 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
             assert variable.is_initialized(), "Variable should be initialized"
 
             # The resulting data type is the data type you get when you apply the amount of derefencing
-            variable_data_type_with_derefencing = DataType.DataType(variable.get_data_type().get_token(),
-                                                                    variable.get_data_type().get_pointer_level() - ast.get_dereference_count())
-            self.update_current_data_type(variable_data_type_with_derefencing)
+            self.update_current_data_type(variable.get_data_type())
         else:
             raise SemanticError(
                 'Identifier does not correspond to a variable with a data type. Cannot get resulting data type')
+
+    def visit_ast_dereference(self, ast: ASTDereference):
+
+        # Create a sub visitor to get the value of the data type being dereference
+        # Dereference afterwards
+        sub_visitor = ASTVisitorResultingDataType(self.last_symbol_table)
+        ast.get_value_to_dereference().accept(sub_visitor)
+
+        result_data_type = sub_visitor.get_resulting_data_type()
+
+        if not result_data_type.is_pointer():
+            raise SemanticError(f"Indirection requires pointer operand ('{result_data_type.get_name()}' invalid)")
+
+        self.update_current_data_type(
+            DataType.DataType(result_data_type.get_token(), result_data_type.get_pointer_level() - 1))
 
     def visit_ast_access_element(self, ast: ASTAccessArrayVarExpression):
         access_element = self.last_symbol_table.lookup_variable(ast.get_content())
@@ -504,6 +517,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
     def on_function_exit(self):
         self.current_function = None
+
+    def is_lvalue(self):
 
     def visit_ast_return_statement(self, ast: ASTReturnStatement):
 
