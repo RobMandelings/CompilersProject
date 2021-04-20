@@ -64,6 +64,16 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CParser#whileLoop.
+    def visitWhileLoop(self, ctx:CParser.WhileLoopContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#forLoop.
+    def visitForLoop(self, ctx:CParser.ForLoopContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CParser#ifStatement.
     def visitIfStatement(self, ctx:CParser.IfStatementContext):
         return self.visitChildren(ctx)
@@ -84,6 +94,11 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CParser#normalVarDeclaration.
+    def visitNormalVarDeclaration(self, ctx:CParser.NormalVarDeclarationContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CParser#arrayVarDeclaration.
     def visitArrayVarDeclaration(self, ctx:CParser.ArrayVarDeclarationContext):
         return self.visitChildren(ctx)
@@ -101,6 +116,11 @@ class CVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CParser#varDeclarationAndInit.
     def visitVarDeclarationAndInit(self, ctx:CParser.VarDeclarationAndInitContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#normalVarDeclarationAndInit.
+    def visitNormalVarDeclarationAndInit(self, ctx:CParser.NormalVarDeclarationAndInitContext):
         return self.visitChildren(ctx)
 
 
@@ -166,6 +186,11 @@ class CVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CParser#finalExpression.
     def visitFinalExpression(self, ctx:CParser.FinalExpressionContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#typeAttributes.
+    def visitTypeAttributes(self, ctx:CParser.TypeAttributesContext):
         return self.visitChildren(ctx)
 
 

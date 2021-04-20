@@ -43,9 +43,12 @@ scopedStatement:
     ;
 
 loop:
-    WHILE enclosedExpression scope |
-    FOR '(' expression ';' expression ';' expression ')' scope
+    whileLoop |
+    forLoop
     ;
+
+whileLoop: WHILE enclosedExpression scope ;
+forLoop: FOR '(' (expression | varDeclarationAndInit) ';' expression ';' expression ')' scope ;
 
 ifStatement:
     IF enclosedExpression scope |
@@ -64,27 +67,30 @@ scope: '{' statement* '}' ;
  */
 
 varDeclaration:
-    typeDeclaration ID |
+    normalVarDeclaration |
     arrayVarDeclaration ;
 
+normalVarDeclaration: typeDeclaration ID ;
 arrayVarDeclaration: typeDeclaration ID '[' INT_LITERAL ']' ;
 
 typeDeclaration:
     // TODO instead of 'const int' also support 'int const'?
-    CONST dataType
+    typeAttributes dataType
     | dataType
     ;
 
 // Used in combinations with string initialization
 charTypeDeclaration:
-    CONST CHAR |
+    typeAttributes CHAR |
     CHAR
     ;
 
 varDeclarationAndInit:
-    typeDeclaration ID '=' expression |
+    normalVarDeclarationAndInit |
     arrayVarDeclarationAndInit
 ;
+
+normalVarDeclarationAndInit: typeDeclaration ID '=' expression ;
 
 arrayVarDeclarationAndInit:
     typeDeclaration ID '[' INT_LITERAL ']' '=' braceInitializer |
@@ -143,6 +149,7 @@ finalExpression:
 /**
  * Value wrappers
  */
+typeAttributes: CONST ;
 dataType: (CHAR | INT | FLOAT | VOID) ('*')*  ;
 value: ID | CHAR_LITERAL | INT_LITERAL | DOUBLE_LITERAL | STRING;
 

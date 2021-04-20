@@ -81,7 +81,7 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
             raise SemanticError(
                 'Identifier does not correspond to a variable with a data type. Cannot get resulting data type')
 
-    def visit_ast_access_element(self, ast: ASTArrayAccessElement):
+    def visit_ast_access_element(self, ast: ASTAccessArrayVarExpression):
         access_element = self.last_symbol_table.lookup_variable(ast.get_content())
         self.update_current_data_type(access_element.data_type)
 
@@ -390,7 +390,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         # Do some semantic checks. If all checks don't raise any errors, continue on with the new value
         self.check_undeclared_variable_usage(ast.left)
-        self.visit_ast_binary_expression(ast.get_right())
+        ast.get_right().accept(self)
 
         symbol = symbol_table.lookup_variable(ast.left.get_content())
 
@@ -412,7 +412,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                     symbol.reaching_definition_ast = None
 
             # Warn in case the result will be narrowed down into another data type
-            self.check_for_narrowing_result(DataType.DataType(symbol.data_type.get_token(), symbol.get_data_type().get_pointer_level()-1), ast)
+            self.check_for_narrowing_result(
+                DataType.DataType(symbol.data_type.get_token(), symbol.get_data_type().get_pointer_level() - 1), ast)
         elif isinstance(symbol, ArraySymbol):
             if self.optimize:
                 ast.right = self.optimize_expression(ast.get_right())
@@ -443,7 +444,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
             raise SemanticError(
                 f"Variable with name '{ast.var_name_ast.get_content()}' has already been declared in this scope!")
 
-    def visit_ast_array_declaration(self, ast: ASTArrayDeclaration):
+    def visit_ast_array_declaration(self, ast: ASTArrayVarDeclaration):
         symbol_table = self.get_last_symbol_table()
         var_name = ast.var_name_ast.get_content()
         if ast.is_const():
@@ -658,7 +659,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                 )
 
             for i in range(len(function_symbol.get_params())):
-                if function_symbol.get_params()[i].get_data_type() != ast.get_function_declaration().get_params()[i].get_data_type():
+                if function_symbol.get_params()[i].get_data_type() != ast.get_function_declaration().get_params()[
+                    i].get_data_type():
                     raise SemanticError(
                         f'Conflicting types'
                     )
@@ -703,9 +705,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         printf_symbol = FunctionSymbol("printf", printf_params, DataType.NORMAL_INT, True)
         self.get_last_symbol_table().insert_symbol(printf_symbol.get_name(), printf_symbol)
 
-        #TODO Add scanf
+        # TODO Add scanf
 
         # scanf_params = list()
         # scanf_symbol = FunctionSymbol("scanf", scanf_params, DataType.NORMAL_INT, True)
         # self.get_last_symbol_table().insert_symbol(scanf_symbol.get_name(), scanf_params)
-

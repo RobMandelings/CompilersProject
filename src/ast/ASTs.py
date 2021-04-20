@@ -69,23 +69,7 @@ class ASTIdentifier(ASTLeaf):
 
     def __init__(self, variable_name: str):
         self.variable_name = variable_name
-        self._dereference_count = 1
         super().__init__(variable_name)
-
-    def increase_dereference_count(self):
-        self._dereference_count += 1
-
-    def decrease_dereference_count(self):
-        self._dereference_count -= 1
-        assert self._dereference_count >= 0
-
-    def get_dereference_count(self):
-        return self._dereference_count
-
-    def get_name_with_dereference(self):
-        dereference_text = '*' * self._dereference_count
-        name_with_dereference = f'{dereference_text}{self.variable_name}'
-        return name_with_dereference
 
     def get_name(self):
         return self.get_content()
@@ -273,7 +257,7 @@ class ASTBinaryExpression(ASTExpression, IHasToken):
         return self.right
 
 
-class ASTArrayAccessElement(ASTLeaf):
+class ASTAccessArrayVarExpression(ASTLeaf):
 
     def __init__(self, variable_accessed: ASTIdentifier, index_accessed: ASTLiteral):
         super().__init__(f'{variable_accessed}[{index_accessed}]')
@@ -299,8 +283,8 @@ class ASTArrayAccessElement(ASTLeaf):
 class ASTAssignmentExpression(ASTBinaryExpression):
 
     # TODO maybe later on +=, -=, *=, /= and %=
-    def __init__(self, left: ASTLeaf, right: AST):
-        assert isinstance(left, ASTLeaf)
+    def __init__(self, left: AST, right: AST):
+        assert isinstance(left, AST)
         super().__init__('=', left, right)
 
     def accept(self, visitor: IASTVisitor):
@@ -312,7 +296,7 @@ class ASTAssignmentExpression(ASTBinaryExpression):
 
         returns: an instance of ASTVariable (left side of the equation)
         """
-        assert isinstance(self.left, ASTIdentifier) or isinstance(self.left, ASTArrayAccessElement)
+        assert isinstance(self.left, ASTIdentifier) or isinstance(self.left, ASTAccessArrayVarExpression)
         return super().get_left()
 
 
@@ -671,7 +655,7 @@ class ASTVariableDeclarationAndInit(ASTVariableDeclaration, ASTExpression):
         visitor.visit_ast_variable_declaration_and_init(self)
 
 
-class ASTArrayDeclaration(ASTVariableDeclaration):
+class ASTArrayVarDeclaration(ASTVariableDeclaration):
 
     def __init__(self, data_type_and_attributes: list, name: ASTIdentifier, size: ASTLiteral):
         super().__init__(data_type_and_attributes, name)
@@ -687,7 +671,7 @@ class ASTArrayDeclaration(ASTVariableDeclaration):
         visitor.visit_ast_array_declaration(self)
 
 
-class ASTArrayDeclarationAndInit(ASTArrayDeclaration, ASTExpression):
+class ASTArrayVarDeclarationAndInit(ASTArrayVarDeclaration, ASTExpression):
 
     def __init__(self, data_type_and_attributes: list, name: ASTIdentifier, size_ast: ASTLiteral,
                  array_init: ASTArrayInit):
@@ -710,6 +694,20 @@ class ASTControlFlowStatement(AST):
 
     def accept(self, visitor: IASTVisitor):
         visitor.visit_ast_control_flow_statement(self)
+
+
+class ASTDereference(AST):
+
+    def __init__(self, value_to_dereference):
+        super().__init__('deref')
+        self.value_to_dereference = value_to_dereference
+        self.value_to_dereference.parent = self
+
+    def get_value_to_dereference(self):
+        return self.value_to_dereference
+
+    def accept(self, visitor: IASTVisitor):
+        visitor.visit_ast_dereference(self)
 
 
 class ASTPrintfInstruction(AST):

@@ -45,6 +45,9 @@ class IASTVisitor(abc.ABC):
     def visit_ast_assignment_expression(self, ast):
         pass
 
+    def visit_ast_dereference(self, ast):
+        pass
+
     def visit_ast_array_init(self, ast):
         pass
 

@@ -190,7 +190,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
         return resulting_reg
 
-    def __compute_array_access_element_into_register(self, ast: ASTs.ASTArrayAccessElement):
+    def __compute_array_access_element_into_register(self, ast: ASTs.ASTAccessArrayVarExpression):
         """
         Adds the necessary instructions to load the value of an array element into a register
 
@@ -293,7 +293,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             return self.__compute_variable_value_into_register(ast)
         elif isinstance(ast, ASTs.ASTFunctionCall):
             return self.__compute_function_call(ast)
-        elif isinstance(ast, ASTs.ASTArrayAccessElement):
+        elif isinstance(ast, ASTs.ASTAccessArrayVarExpression):
             return self.__compute_array_access_element_into_register(ast)
         else:
             raise NotImplementedError
@@ -354,7 +354,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         self.get_current_function().add_instruction(
             LLVMInstructions.StoreInstruction(new_register, value_to_store))
 
-    def declare_array(self, ast: ASTs.ASTArrayDeclaration):
+    def declare_array(self, ast: ASTs.ASTArrayVarDeclaration):
         """
         Declares an array using LLVM instructions
         """
@@ -366,7 +366,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         self.get_current_function().add_instruction(instruction)
         return resulting_register
 
-    def declare_and_init_array(self, ast: ASTs.ASTArrayDeclarationAndInit):
+    def declare_and_init_array(self, ast: ASTs.ASTArrayVarDeclarationAndInit):
         allocated_reg = self.declare_array(ast)
         if ast.get_data_type() == DataType.NORMAL_CHAR:
             # TODO semantic check for more values than capacity
@@ -417,7 +417,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             self.get_current_function().add_instruction(
                 LLVMInstructions.StoreInstruction(variable_register, value_to_store))
 
-        elif isinstance(left, ASTs.ASTArrayAccessElement):
+        elif isinstance(left, ASTs.ASTAccessArrayVarExpression):
             array_symbol = self.get_last_symbol_table().get_array_symbol(left.get_content())
 
             computed_expression_value = self.compute_expression(right)

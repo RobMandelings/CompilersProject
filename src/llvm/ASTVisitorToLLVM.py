@@ -252,13 +252,13 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
 
         ast.get_execution_body().accept(self)
 
-    def visit_ast_array_declaration(self, ast: ASTs.ASTArrayDeclaration):
+    def visit_ast_array_declaration(self, ast: ASTs.ASTArrayVarDeclaration):
         self.builder.declare_array(ast)
 
     def visit_ast_array_init(self, ast: ASTs.ASTArrayInit):
         raise NotImplementedError
 
-    def visit_ast_array_declaration_and_init(self, ast: ASTs.ASTArrayDeclarationAndInit):
+    def visit_ast_array_declaration_and_init(self, ast: ASTs.ASTArrayVarDeclarationAndInit):
         self.builder.declare_and_init_array(ast)
 
     def visit_ast_return_statement(self, ast: ASTReturnStatement):

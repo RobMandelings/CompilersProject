@@ -107,6 +107,24 @@ class CListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CParser#whileLoop.
+    def enterWhileLoop(self, ctx:CParser.WhileLoopContext):
+        pass
+
+    # Exit a parse tree produced by CParser#whileLoop.
+    def exitWhileLoop(self, ctx:CParser.WhileLoopContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#forLoop.
+    def enterForLoop(self, ctx:CParser.ForLoopContext):
+        pass
+
+    # Exit a parse tree produced by CParser#forLoop.
+    def exitForLoop(self, ctx:CParser.ForLoopContext):
+        pass
+
+
     # Enter a parse tree produced by CParser#ifStatement.
     def enterIfStatement(self, ctx:CParser.IfStatementContext):
         pass
@@ -143,6 +161,15 @@ class CListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CParser#normalVarDeclaration.
+    def enterNormalVarDeclaration(self, ctx:CParser.NormalVarDeclarationContext):
+        pass
+
+    # Exit a parse tree produced by CParser#normalVarDeclaration.
+    def exitNormalVarDeclaration(self, ctx:CParser.NormalVarDeclarationContext):
+        pass
+
+
     # Enter a parse tree produced by CParser#arrayVarDeclaration.
     def enterArrayVarDeclaration(self, ctx:CParser.ArrayVarDeclarationContext):
         pass
@@ -176,6 +203,15 @@ class CListener(ParseTreeListener):
 
     # Exit a parse tree produced by CParser#varDeclarationAndInit.
     def exitVarDeclarationAndInit(self, ctx:CParser.VarDeclarationAndInitContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#normalVarDeclarationAndInit.
+    def enterNormalVarDeclarationAndInit(self, ctx:CParser.NormalVarDeclarationAndInitContext):
+        pass
+
+    # Exit a parse tree produced by CParser#normalVarDeclarationAndInit.
+    def exitNormalVarDeclarationAndInit(self, ctx:CParser.NormalVarDeclarationAndInitContext):
         pass
 
 
@@ -293,6 +329,15 @@ class CListener(ParseTreeListener):
 
     # Exit a parse tree produced by CParser#finalExpression.
     def exitFinalExpression(self, ctx:CParser.FinalExpressionContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#typeAttributes.
+    def enterTypeAttributes(self, ctx:CParser.TypeAttributesContext):
+        pass
+
+    # Exit a parse tree produced by CParser#typeAttributes.
+    def exitTypeAttributes(self, ctx:CParser.TypeAttributesContext):
         pass
 
 

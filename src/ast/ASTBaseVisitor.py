@@ -27,8 +27,8 @@ class ASTBaseVisitor(IASTVisitor):
         assert isinstance(ast, ASTIdentifier)
         self.visit_ast_leaf(ast)
 
-    def visit_ast_access_element(self, ast: ASTArrayAccessElement):
-        assert isinstance(ast, ASTArrayAccessElement)
+    def visit_ast_access_element(self, ast: ASTAccessArrayVarExpression):
+        assert isinstance(ast, ASTAccessArrayVarExpression)
         self.visit_ast_leaf(ast)
 
     def visit_ast_internal(self, ast: ASTInternal):
@@ -77,7 +77,7 @@ class ASTBaseVisitor(IASTVisitor):
             attribute.accept(self)
         ast.var_name_ast.accept(self)
 
-    def visit_ast_array_declaration(self, ast: ASTArrayDeclaration):
+    def visit_ast_array_declaration(self, ast: ASTArrayVarDeclaration):
         ASTBaseVisitor.visit_ast_variable_declaration(self, ast)
 
     def visit_ast_variable_declaration_and_init(self, ast: ASTVariableDeclarationAndInit):
@@ -88,7 +88,7 @@ class ASTBaseVisitor(IASTVisitor):
         ast.var_name_ast.accept(self)
         ast.value.accept(self)
 
-    def visit_ast_array_declaration_and_init(self, ast: ASTArrayDeclarationAndInit):
+    def visit_ast_array_declaration_and_init(self, ast: ASTArrayVarDeclarationAndInit):
         ASTBaseVisitor.visit_ast_array_declaration(self, ast)
         self.visit_ast_array_init(ast.get_array_init())
 
@@ -99,6 +99,9 @@ class ASTBaseVisitor(IASTVisitor):
         assert isinstance(ast, ASTScope)
         for child in ast.children:
             child.accept(self)
+
+    def visit_ast_dereference(self, ast: ASTDereference):
+        ast.get_value_to_dereference().accept(self)
 
     def visit_ast_control_flow_statement(self, ast: ASTControlFlowStatement):
         assert isinstance(ast, ASTControlFlowStatement)
