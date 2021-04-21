@@ -86,7 +86,7 @@ class ASTBaseVisitor(IASTVisitor):
         ast.initial_value.accept(self)
 
     def visit_ast_array_declaration_and_init(self, ast: ASTArrayVarDeclarationAndInit):
-        ASTBaseVisitor.visit_ast_array_declaration(self, ast)
+        ast.get_array_declaration_ast().accept(self)
         self.visit_ast_array_init(ast.get_array_init())
 
     def visit_ast_printf_instruction(self, ast: ASTPrintfInstruction):

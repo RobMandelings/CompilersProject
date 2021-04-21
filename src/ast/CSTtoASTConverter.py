@@ -16,6 +16,8 @@ DATA_TYPES = {CLexer.CHAR: DataType.DataTypeToken.CHAR,
 TYPE_ATTRIBUTES = {CLexer.CONST: TypeAttributeToken.CONST}
 
 
+# TODO fix option to auto dereference
+
 def get_rule_context_function(rule_context_index):
     rule_context_switcher = {
         CParser.RULE_program: __from_program,
@@ -309,14 +311,10 @@ def from_var_declaration_and_init(cst):
 
 
 def from_array_var_declaration_and_init(cst):
-    data_types_and_attributes = create_ast_from_cst(cst.children[0])
-
-    identifier = create_ast_from_cst(cst.children[1])
-    size = create_ast_from_cst(cst.children[3])
-
+    array_var_declaration = create_ast_from_cst(cst.children[0])
     value = create_ast_from_cst(cst.children[6])
 
-    return ASTArrayVarDeclarationAndInit(data_types_and_attributes, identifier, size, value)
+    return ASTArrayVarDeclarationAndInit(array_var_declaration, value)
 
 
 def from_char_type_declaration(cst):
@@ -331,6 +329,10 @@ def from_char_type_declaration(cst):
 def from_array_var_declaration(cst):
     data_types_and_attributes = create_ast_from_cst(cst.children[0])
     identifier = create_ast_from_cst(cst.children[1])
+    # Currently all identifiers are dereferenced by default, change this
+    assert isinstance(identifier, ASTDereference)
+    identifier = identifier.get_value_to_dereference()
+
     size = create_ast_from_cst(cst.children[3])
 
     return ASTArrayVarDeclaration(data_types_and_attributes, identifier, size)

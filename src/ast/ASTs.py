@@ -684,13 +684,29 @@ class ASTArrayVarDeclaration(ASTVarDeclaration):
         visitor.visit_ast_array_declaration(self)
 
 
-class ASTArrayVarDeclarationAndInit(ASTArrayVarDeclaration, ASTExpression):
+class ASTArrayVarDeclarationAndInit(AST):
 
-    def __init__(self, data_type_and_attributes: list, name: ASTIdentifier, size_ast: ASTLiteral,
+    def __init__(self, array_declaration_ast: ASTArrayVarDeclaration,
                  array_init: ASTArrayInit):
-        super().__init__(data_type_and_attributes, name, size_ast)
+        super().__init__(f'array var declaration and init (size: {array_declaration_ast.get_array_size()})')
+        self.array_declaration_ast = array_declaration_ast
         self.array_init = array_init
-        self.content = f'array ({size_ast.get_content()})'
+
+    def get_array_size(self):
+        self.get_array_declaration_ast().get_array_size()
+
+    def get_data_type(self):
+        self.get_array_declaration_ast().get_data_type()
+
+    def get_var_name(self):
+        return self.get_array_declaration_ast().get_var_name()
+
+    def is_const(self):
+        return self.get_array_declaration_ast().is_const()
+
+    def get_array_declaration_ast(self):
+        assert isinstance(self.array_declaration_ast, ASTArrayVarDeclaration)
+        return self.array_declaration_ast
 
     def get_array_init(self):
         return self.array_init
