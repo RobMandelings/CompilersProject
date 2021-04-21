@@ -415,46 +415,6 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         store_instruction = LLVMInstructions.StoreInstruction(store_in_reg, value_to_store)
         self.get_current_function().add_instruction(store_instruction)
 
-        # if isinstance(store_in_reg, ASTs.ASTIdentifier):
-        #     variable_register = self.get_variable_register(store_in_reg.get_content())
-        #
-        #     computed_expression_value = self.compute_expression(value_to_store)
-        #
-        #     if computed_expression_value.get_data_type().is_pointer():
-        #         raise NotImplementedError
-        #     else:
-        #         value_to_store = computed_expression_value
-        #
-        #     self.get_current_function().add_instruction(
-        #         LLVMInstructions.StoreInstruction(variable_register, value_to_store))
-        #
-        # elif isinstance(store_in_reg, ASTs.ASTAccessArrayVarExpression):
-        #     array_symbol = self.get_last_symbol_table().get_array_symbol(store_in_reg.get_content())
-        #
-        #     computed_expression_value = self.compute_expression(value_to_store)
-        #
-        #     # Gewoon overgenomen van hierboven, moet nog misschien nog aangepast worden?
-        #     if computed_expression_value.get_data_type().is_pointer():
-        #         # TODO: This must be done using a derefence operator
-        #         # TODO: This register is used to load from pointer type into an actual value of that data type (sure?)
-        #         value_to_store = self.get_current_function().get_new_register()
-        #         self.get_current_function().add_instruction(
-        #             LLVMInstructions.LoadInstruction(value_to_store, computed_expression_value))
-        #     else:
-        #         value_to_store = computed_expression_value
-        #     register_to_store = self.get_current_function().get_new_register(
-        #         DataType.DataType(array_symbol.get_register().get_data_type().get_token(),
-        #                           array_symbol.get_register().get_data_type().get_pointer_level()))
-        #     getElementPtr_instruction = LLVMInstructions.GetElementPtrInstruction(register_to_store,
-        #                                                                           store_in_reg.get_index_accessed().get_content(),
-        #                                                                           array_symbol.get_array_size(),
-        #                                                                           array_symbol.get_register())
-        #     self.get_current_function().add_instruction(getElementPtr_instruction)
-        #     store_instruction = LLVMInstructions.StoreInstruction(register_to_store, computed_expression_value)
-        #     self.get_current_function().add_instruction(store_instruction)
-        # else:
-        #     raise NotImplementedError
-
     def to_file(self, filename: str):
         f = open(filename, "w+")
         f.write(self.to_llvm())
