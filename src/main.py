@@ -64,7 +64,7 @@ def benchmark_file(file, filename):
 
 
 def main(argv):
-    benchmark = True
+    benchmark = False
 
     if benchmark:
         directory = "input/SemanticErrors"

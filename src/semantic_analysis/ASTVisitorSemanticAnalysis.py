@@ -403,6 +403,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         # Do some semantic checks. If all checks don't raise any errors, continue on with the new value
         self.check_undeclared_variable_usage(ast.left)
+        ast.get_left().accept(self)
         ast.get_right().accept(self)
 
         # A single dereference to a variable means that you just need to put the value into that variable
@@ -732,3 +733,11 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         # scanf_params = list()
         # scanf_symbol = FunctionSymbol("scanf", scanf_params, DataType.NORMAL_INT, True)
         # self.get_last_symbol_table().insert_symbol(scanf_symbol.get_name(), scanf_params)
+
+    def visit_ast_access_element(self, ast: ASTAccessArrayVarExpression):
+
+        variable_accessed = ast.get_variable_accessed().get_name()
+        lookup = self.get_last_symbol_table().lookup(variable_accessed)
+
+        if not isinstance(lookup, ArraySymbol):
+            raise SemanticError(f'Type mismatch: variable {variable_accessed} trying to access is not an array!')

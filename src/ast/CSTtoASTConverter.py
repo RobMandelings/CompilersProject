@@ -278,7 +278,11 @@ def from_assignment_expression(cst):
 
 def from_access_array_var_expression(cst):
     var_accessed = create_ast_from_cst(cst.children[0])
-    size = create_ast_from_cst(cst.children[0])
+    assert isinstance(var_accessed, ASTDereference)
+
+    var_accessed = var_accessed.get_value_to_dereference()
+
+    size = create_ast_from_cst(cst.children[2])
     return ASTAccessArrayVarExpression(var_accessed, size)
 
 
