@@ -60,8 +60,8 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         register = LLVMValues.LLVMRegister(data_type)
         return register
 
-    def compute_compare_expression(self, operation: ASTTokens.RelationalExprToken, operand1: LLVMValues.LLVMValue,
-                                   operand2: LLVMValues.LLVMValue):
+    def __compute_compare_expression(self, operation: ASTTokens.RelationalExprToken, operand1: LLVMValues.LLVMValue,
+                                     operand2: LLVMValues.LLVMValue):
 
         # TODO remove duplicate code
         if operand1.get_data_type() != operand2.get_data_type():
@@ -139,7 +139,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             register_to_return = instruction.get_resulting_register()
         elif isinstance(operation, ASTTokens.RelationalExprToken):
 
-            return self.compute_compare_expression(operation, operand1, operand2)
+            return self.__compute_compare_expression(operation, operand1, operand2)
         else:
             raise NotImplementedError("This type of instructions are not yet supported")
 
@@ -282,27 +282,34 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
             return call_instruction.get_resulting_register()
 
-    def compute_expression(self, ast: ASTs.AST):
+    def compute_expression(self, ast: ASTs.AST, force_boolean_result: bool = False):
         """
         Generates the instructions to compute anything that can be computed
         """
 
         if isinstance(ast, ASTs.ASTBinaryExpression):
-            return self.__compute_binary_expression(ast)
+            result = self.__compute_binary_expression(ast)
         elif isinstance(ast, ASTs.ASTUnaryExpression):
-            return self.__compute_unary_expression(ast)
+            result = self.__compute_unary_expression(ast)
         elif isinstance(ast, ASTs.ASTLiteral):
-            return LLVMValues.LLVMLiteral(ast.get_value(), ast.get_data_type())
+            result = LLVMValues.LLVMLiteral(ast.get_value(), ast.get_data_type())
         elif isinstance(ast, ASTs.ASTIdentifier):
-            return self.__compute_variable_value_into_register(ast)
+            result = self.__compute_variable_value_into_register(ast)
         elif isinstance(ast, ASTs.ASTFunctionCall):
-            return self.__compute_function_call(ast)
+            result = self.__compute_function_call(ast)
         elif isinstance(ast, ASTs.ASTDereference):
-            return self.__compute_dereferenced_value(ast)
+            result = self.__compute_dereferenced_value(ast)
         elif isinstance(ast, ASTs.ASTAccessArrayVarExpression):
-            return self.__compute_array_access_element_into_register(ast)
+            result = self.__compute_array_access_element_into_register(ast)
         else:
             raise NotImplementedError
+
+        if force_boolean_result:
+            if result.get_data_type() != DataType.NORMAL_BOOL:
+                result = self.__compute_compare_expression(ASTTokens.RelationalExprToken.NOT_EQUALS, result,
+                                                           LLVMValue.LLVMLiteral('0', DataType.NORMAL_INT))
+
+        return result
 
     # TODO also be able to print literals
     def print_variable(self, variable_name):

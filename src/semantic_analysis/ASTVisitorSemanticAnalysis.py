@@ -504,9 +504,9 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         self.check_for_narrowing_result(ast.get_data_type(), ast.initial_value)
 
-    def on_scope_entered(self):
+    def on_scope_entered(self, scope_type: ScopeType):
 
-        new_symbol_table = SymbolTableSemanticAnalyser()
+        new_symbol_table = SymbolTableSemanticAnalyser(scope_type)
         if len(self.symbol_table_stack) > 0:
             new_symbol_table.set_parent(self.get_last_symbol_table())
 
@@ -516,7 +516,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         self.symbol_table_stack.pop()
 
     def visit_ast_scope(self, ast: ASTScope):
-        self.on_scope_entered()
+        # Only the global scope will directly visit ast scope
+        self.on_scope_entered(ScopeType.GLOBAL)
         super().visit_ast_scope(ast)
         self.on_scope_exit()
 
@@ -544,19 +545,16 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
     def visit_conditional_statement(self, ast: ASTConditionalStatement):
         condition_ast = ast.get_condition()
 
-        boolean_result = False
+        if not isinstance(condition_ast, ASTRelationalExpression):
 
-        if isinstance(condition_ast, ASTLiteral):
-            if condition_ast.get_data_type() == DataType.NORMAL_BOOL:
-                boolean_result = True
-        elif isinstance(condition_ast, ASTIdentifier):
-            variable_symbol = self.get_last_symbol_table().lookup_variable(condition_ast.get_content())
+            condition_resulting_data_type = self.check_resulting_data_type(condition_ast)
+            if condition_resulting_data_type != DataType.NORMAL_BOOL:
+                print("WARN: the result of an expression does not return boolean type")
 
-            if variable_symbol.get_data_type() == DataType.NORMAL_BOOL:
-                boolean_result = True
-
-        if not boolean_result:
-            print("WARN: the result of an expression does not return boolean type")
+        # Skip the visit AST scope as we need to pass in a custom ScopeType
+        self.on_scope_entered(ScopeType.CONDITIONAL)
+        super().visit_ast_scope(ast.get_execution_body())
+        self.on_scope_exit()
 
     def check_printf_function_call(self, ast: ASTFunctionCall):
 
@@ -786,7 +784,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                 function_symbol.get_name(), function_symbol)
 
         self.on_function_entered(function_symbol)
-        self.on_scope_entered()
+        self.on_scope_entered(ScopeType.FUNCTION)
         for param in ast.get_function_declaration().get_params():
             # A little bit different then with normal variable declarations, which is why we handle it ourselves
             # The variable symbol will be set on initialized in the symbol table as it is a parameter, so values

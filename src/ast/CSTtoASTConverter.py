@@ -152,7 +152,7 @@ def from_normal_var_declaration(cst):
 
 
 def from_scoped_statement(cst):
-    return create_ast_from_cst(cst)
+    return create_ast_from_cst(cst.children[0])
 
 
 def from_loop(cst):

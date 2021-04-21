@@ -115,7 +115,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         self.get_current_function().add_basic_block(new_basic_block)
 
         # Calculates the expression as a condition, which either returns (TODO: True or False)
-        resulting_reg = self.builder.compute_expression(conditional_ast.get_condition())
+        resulting_reg = self.builder.compute_expression(conditional_ast.get_condition(), force_boolean_result=True)
 
         return new_basic_block, resulting_reg
 

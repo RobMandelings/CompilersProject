@@ -1,5 +1,12 @@
 import src.DataType as DataType
 import src.SymbolTable as SymbolTable
+import enum
+
+
+class ScopeType(enum.Enum):
+    GLOBAL = enum.auto()
+    FUNCTION = enum.auto()
+    CONDITIONAL = enum.auto()
 
 
 class Symbol:
@@ -74,8 +81,9 @@ class FunctionSymbol(Symbol):
 
 class SymbolTableSemanticAnalyser(SymbolTable.SymbolTable):
 
-    def __init__(self):
+    def __init__(self, scope_type: ScopeType):
         super().__init__()
+        self.scope_type = scope_type
 
     def lookup_variable(self, symbol_name: str):
         """
@@ -92,3 +100,7 @@ class SymbolTableSemanticAnalyser(SymbolTable.SymbolTable):
         """
         assert isinstance(parent, SymbolTableSemanticAnalyser) and not id(self) == id(parent)
         self.parent = parent
+
+    def get_scope_type(self):
+        assert isinstance(self.scope_type, ScopeType)
+        return self.scope_type
