@@ -620,7 +620,7 @@ class ASTFunctionCall(ASTExpression):
         return self.function_called
 
     def get_function_called_full_name(self):
-        full_name = f'{self.function_called} '
+        full_name = f'{self.function_called}'
         return full_name
 
     def accept(self, visitor: IASTVisitor):
