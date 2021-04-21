@@ -63,9 +63,9 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
             raise NotImplementedError(f"Token type '{ast.get_data_type()}' not recognized as literal")
 
     def visit_ast_function_call(self, ast: ASTFunctionCall):
-        name_function = ast.get_function_called_full_name()
-        function_symbol = self.last_symbol_table.lookup_variable(ast.get_function_called_full_name())
-        i = 3
+        function_symbol = self.last_symbol_table.lookup(ast.get_function_called_id())
+        assert isinstance(function_symbol, FunctionSymbol)
+        self.update_current_data_type(function_symbol.get_return_type())
 
     def visit_ast_identifier(self, ast: ASTIdentifier):
         variable = self.last_symbol_table.lookup_variable(ast.get_content())
