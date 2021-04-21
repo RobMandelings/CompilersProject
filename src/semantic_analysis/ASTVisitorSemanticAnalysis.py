@@ -504,10 +504,6 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         self.check_for_narrowing_result(ast.get_data_type(), ast.initial_value)
 
-    # TODO implement this!
-    def visit_ast_printf_instruction(self, ast: ASTPrintfInstruction):
-        super().visit_ast_printf_instruction(ast)
-
     def on_scope_entered(self):
 
         new_symbol_table = SymbolTableSemanticAnalyser()
@@ -562,6 +558,79 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         if not boolean_result:
             print("WARN: the result of an expression does not return boolean type")
 
+    def check_printf_function_call(self, ast: ASTFunctionCall):
+
+        if ast.get_function_called_id() == 'printf':
+            if len(ast.get_arguments()) == 0:
+                raise SemanticError('Not enough arguments provided for printf function')
+
+            format_argument = ast.get_arguments()[0]
+            format_array = None
+            is_array_format = False
+            if isinstance(format_argument, ASTArrayInit):
+                is_array_format = True
+                format_array = format_argument
+            else:
+                if isinstance(format_argument, ASTIdentifier):
+                    lookup = self.get_last_symbol_table().lookup(format_argument.get_name())
+
+                    if isinstance(lookup, ArraySymbol):
+                        print('WARN: only inline printf format strings are currently checked for proper format.')
+                        is_array_format = True
+
+            if not is_array_format:
+                raise SemanticError('Printf function call: first argument must be an array')
+
+            # Printf contains formats such as '%i'. These are parsed and checked in the arguments
+            symbol_type_specifications = list()
+            if isinstance(format_array, ASTArrayInit):
+
+                for i in range(len(format_array.get_values())):
+                    literal = format_array.get_values()[i]
+                    if i == len(format_array.get_values()) - 1:
+                        next_literal = format_array.get_values()[i]
+                    else:
+                        next_literal = format_array.get_values()[i + 1]
+
+                    if not isinstance(literal, ASTLiteral) or not isinstance(next_literal, ASTLiteral):
+                        raise SemanticError('Printf, Element of format array is not a literal')
+                    elif literal.get_data_type() != DataType.NORMAL_CHAR or \
+                            next_literal.get_data_type() != DataType.NORMAL_CHAR:
+                        raise SemanticError('Printf, Format array: found literal not of type char')
+
+                    char = chr(int(literal.get_content()))
+
+                    if char == '%':
+                        type_specification = chr(int(next_literal.get_content()))
+
+                        if type_specification == 'i':
+                            symbol_type_specifications.append(DataType.NORMAL_INT)
+                        elif type_specification == 'd':
+                            symbol_type_specifications.append(DataType.NORMAL_DOUBLE)
+                        elif type_specification == 'c':
+                            symbol_type_specifications.append(DataType.NORMAL_CHAR)
+                        elif type_specification == 'f':
+                            symbol_type_specifications.append(DataType.NORMAL_FLOAT)
+                        elif type_specification == 's':
+                            raise SemanticError('Printf String format not supported yet')
+                        else:
+                            raise SemanticError('Could not deduce format')
+
+                if len(symbol_type_specifications) != len(ast.get_arguments()) - 1:
+                    raise SemanticError(
+                        f'Number of symbol type specifications ({len(symbol_type_specifications)}) '
+                        f'does not match the number of arguments after the format ({len(ast.get_arguments()) - 1})')
+
+                for i in range(len(symbol_type_specifications)):
+                    symbol_type_specification = symbol_type_specifications[i]
+                    resulting_data_type = self.check_resulting_data_type(ast.get_arguments()[i])
+
+                    if symbol_type_specification != resulting_data_type:
+                        raise SemanticError('Printf Type specification does match the data type of the argument given')
+
+            else:
+                print("WARN: format array could not be deduced immediately, not checking the format")
+
     def visit_ast_function_call(self, ast: ASTFunctionCall):
 
         function_identifier = ast.get_function_called_id()
@@ -569,12 +638,15 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         param_data_types = list()
 
         for param in ast.get_arguments():
+            param.accept(self)
             self.check_undeclared_variable_usage(param)
             self.check_uninitialized_variable_usage(param)
 
             resulting_data_type_visitor = ASTVisitorResultingDataType(self.get_last_symbol_table())
             param.accept(resulting_data_type_visitor)
             param_data_types.append(resulting_data_type_visitor.get_resulting_data_type())
+
+        self.check_printf_function_call(ast)
 
         function_lookup = self.get_last_symbol_table().lookup(function_identifier)
 
