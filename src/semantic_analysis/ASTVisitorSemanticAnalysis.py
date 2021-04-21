@@ -621,12 +621,20 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                         f'Number of symbol type specifications ({len(symbol_type_specifications)}) '
                         f'does not match the number of arguments after the format ({len(ast.get_arguments()) - 1})')
 
-                for i in range(len(symbol_type_specifications)):
-                    symbol_type_specification = symbol_type_specifications[i]
+                for i in range(1, len(symbol_type_specifications) + 1):
+                    symbol_type_specification = symbol_type_specifications[i - 1]
                     resulting_data_type = self.check_resulting_data_type(ast.get_arguments()[i])
 
                     if symbol_type_specification != resulting_data_type:
-                        raise SemanticError('Printf Type specification does match the data type of the argument given')
+                        if symbol_type_specification == DataType.NORMAL_DOUBLE and resulting_data_type == DataType.NORMAL_FLOAT \
+                                or symbol_type_specification == DataType.NORMAL_FLOAT and resulting_data_type == DataType.NORMAL_DOUBLE:
+                            print(
+                                f"Symbol type specification and given argument "
+                                f"datatypes are {symbol_type_specification.get_name()} and {resulting_data_type.get_name()} "
+                                f"respectively. They are treated in the same way, which might not be wanted")
+                        else:
+                            raise SemanticError(
+                                'Printf Type specification does match the data type of the argument given')
 
             else:
                 print("WARN: format array could not be deduced immediately, not checking the format")
