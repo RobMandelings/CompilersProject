@@ -13,6 +13,11 @@ DATA_TYPES = {CLexer.CHAR: DataType.DataTypeToken.CHAR,
               CLexer.FLOAT: DataType.DataTypeToken.FLOAT,
               CLexer.VOID: DataType.DataTypeToken.VOID}
 
+CONTROL_FLOW_STATEMENTS = {
+    CLexer.CONTINUE: ControlFlowToken.CONTINUE,
+    CLexer.BREAK: ControlFlowToken.BREAK
+}
+
 TYPE_ATTRIBUTES = {CLexer.CONST: TypeAttributeToken.CONST}
 
 
@@ -101,6 +106,8 @@ def from_terminal_node(cst: TerminalNodeImpl):
         return ASTTypeAttribute(TYPE_ATTRIBUTES.get(symbol_type))
     elif symbol_type == CLexer.ID:
         return ASTDereference(ASTIdentifier(symbol_content))
+    elif symbol_type in CONTROL_FLOW_STATEMENTS:
+        return ASTControlFlowStatement(CONTROL_FLOW_STATEMENTS.get(symbol_type))
     elif symbol_type in DATA_TYPES:
         raise NotImplementedError("Data types should be caught elsewhere to support pointers")
     elif symbol_type == CLexer.STRING:

@@ -8,7 +8,8 @@ import src.llvm.LLVMFunction as LLVMFunctions
 import src.llvm.LLVMInstruction as LLVMInstructions
 import src.llvm.LLVMSymbolTable as LLVMSymbolTable
 import src.llvm.LLVMValue as LLVMValue
-from src.ast.ASTs import ASTFunctionDeclaration, ASTReturnStatement, ASTScope, ASTFunctionCall, ASTFunctionDefinition
+from src.ast.ASTs import ASTFunctionDeclaration, ASTReturnStatement, ASTScope, ASTFunctionCall, ASTFunctionDefinition, \
+    ASTControlFlowStatement
 
 
 class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):

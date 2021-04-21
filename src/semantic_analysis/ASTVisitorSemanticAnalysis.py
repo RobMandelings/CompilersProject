@@ -824,3 +824,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
     def visit_ast_dereference(self, ast: ASTDereference):
         self.check_resulting_data_type(ast)
+
+    def visit_ast_control_flow_statement(self, ast: ASTControlFlowStatement):
+        if not self.get_last_symbol_table().get_scope_type() == ScopeType.CONDITIONAL:
+            raise SemanticError(
+                f"Control flow statement '{ast.get_content()}' not placed within conditional scope (currently {self.get_last_symbol_table().get_scope_type().name.lower()} scope)")
