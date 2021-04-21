@@ -70,23 +70,20 @@ class ASTBaseVisitor(IASTVisitor):
         for value in ast.get_values():
             value.accept(self)
 
-    def visit_ast_variable_declaration(self, ast: ASTVariableDeclaration):
-        assert isinstance(ast, ASTVariableDeclaration)
+    def visit_ast_var_declaration(self, ast: ASTVarDeclaration):
+        assert isinstance(ast, ASTVarDeclaration)
         ast.data_type_ast.accept(self)
         for attribute in ast.type_attributes:
             attribute.accept(self)
         ast.var_name_ast.accept(self)
 
     def visit_ast_array_declaration(self, ast: ASTArrayVarDeclaration):
-        ASTBaseVisitor.visit_ast_variable_declaration(self, ast)
+        ASTBaseVisitor.visit_ast_var_declaration(self, ast)
 
-    def visit_ast_variable_declaration_and_init(self, ast: ASTVariableDeclarationAndInit):
-        assert isinstance(ast, ASTVariableDeclarationAndInit)
-        ast.data_type_ast.accept(self)
-        for attribute in ast.type_attributes:
-            attribute.accept(self)
-        ast.var_name_ast.accept(self)
-        ast.value.accept(self)
+    def visit_ast_var_declaration_and_init(self, ast: ASTVarDeclarationAndInit):
+        assert isinstance(ast, ASTVarDeclarationAndInit)
+        ast.get_var_declaration().accept(self)
+        ast.initial_value.accept(self)
 
     def visit_ast_array_declaration_and_init(self, ast: ASTArrayVarDeclarationAndInit):
         ASTBaseVisitor.visit_ast_array_declaration(self, ast)

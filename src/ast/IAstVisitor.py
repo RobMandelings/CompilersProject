@@ -51,13 +51,13 @@ class IASTVisitor(abc.ABC):
     def visit_ast_array_init(self, ast):
         pass
 
-    def visit_ast_variable_declaration(self, ast):
+    def visit_ast_var_declaration(self, ast):
         pass
 
     def visit_ast_array_declaration(self, ast):
         pass
 
-    def visit_ast_variable_declaration_and_init(self, ast):
+    def visit_ast_var_declaration_and_init(self, ast):
         pass
 
     def visit_ast_array_declaration_and_init(self, ast):

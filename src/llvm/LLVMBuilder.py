@@ -178,15 +178,20 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
         # We're assuming the variable register is always of pointer type,
         # so first load the variable value into a register and return it
+        return variable_register
 
-        load_from_reg = variable_register
-        resulting_reg = load_from_reg
-        for i in range(1, ast.get_dereference_count() + 1):
-            resulting_reg = LLVMValue.LLVMRegister(DataType.DataType(variable_register.get_data_type().get_token(),
-                                                                     variable_register.get_data_type().get_pointer_level() - i))
-            self.get_current_function().add_instruction(
-                LLVMInstructions.LoadInstruction(resulting_reg, load_from_reg))
-            load_from_reg = resulting_reg
+    def __compute_dereferenced_value(self, ast_deref: ASTs.ASTDereference):
+
+        load_from_reg = self.compute_expression(ast_deref.get_value_to_dereference())
+        assert isinstance(load_from_reg, LLVMValue.LLVMRegister) and \
+               load_from_reg.get_data_type().is_pointer(), \
+            "This should be managed by the semantic analysis already"
+
+        resulting_reg = LLVMValue.LLVMRegister(DataType.DataType(load_from_reg.get_data_type().get_token(),
+                                                                 load_from_reg.get_data_type().get_pointer_level() - 1))
+
+        self.get_current_function().add_instruction(
+            LLVMInstructions.LoadInstruction(resulting_reg, load_from_reg))
 
         return resulting_reg
 
@@ -249,13 +254,12 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
                 if i == 0:
                     instruction_parts.append(', ')
 
-                arg = args_llvm_value[0]
-                llvm_argument_string = f'{arg.get_data_type().get_llvm_name()} {arg.to_llvm()}'
+                arg_llvm_value = args_llvm_value[i]
+                instruction_parts.append(f'{arg_llvm_value.get_data_type().get_llvm_name()} ')
+                instruction_parts.append(arg_llvm_value)
 
                 if i != len(args_llvm_value) - 1:
-                    llvm_argument_string += ','
-
-                instruction_parts.append(llvm_argument_string)
+                    instruction_parts.append(', ')
 
             instruction_parts.append(')')
 
@@ -293,6 +297,8 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             return self.__compute_variable_value_into_register(ast)
         elif isinstance(ast, ASTs.ASTFunctionCall):
             return self.__compute_function_call(ast)
+        elif isinstance(ast, ASTs.ASTDereference):
+            return self.__compute_dereferenced_value(ast)
         elif isinstance(ast, ASTs.ASTAccessArrayVarExpression):
             return self.__compute_array_access_element_into_register(ast)
         else:
@@ -322,7 +328,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
         return resulting_register
 
-    def declare_variable(self, ast: ASTs.ASTVariableDeclaration):
+    def declare_variable(self, ast: ASTs.ASTVarDeclaration):
         """
         Declares a variable in LLVM using an Alloca instruction
 
@@ -336,18 +342,19 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         self.get_current_function().add_instruction(instruction)
         return resulting_register
 
-    def declare_and_init_variable(self, ast: ASTs.ASTVariableDeclarationAndInit):
+    def declare_and_init_variable(self, ast: ASTs.ASTVarDeclarationAndInit):
         """
         Declares and initializes a variable using LLVM instructions. Computes expressions if necessary
         Adds the corresponding instructions to the current basic block
         """
-        value_to_store = self.compute_expression(ast.value)
+        value_to_store = self.compute_expression(ast.initial_value)
 
         new_register = self.get_current_function().get_new_register(
             DataType.DataType(ast.get_data_type().get_token(), ast.get_data_type().get_pointer_level() + 1))
 
         # TODO remove from code: don't work with symbol table anymore
-        self.get_last_symbol_table().insert_variable(ast.var_name_ast.get_content(), new_register)
+        self.get_last_symbol_table().insert_variable(ast.get_var_declaration().get_var_name_ast().get_content(),
+                                                     new_register)
 
         self.get_current_function().add_instruction(
             LLVMInstructions.AllocaInstruction(new_register))
@@ -402,47 +409,51 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         """
 
         # TODO Type conversions are not supported yet
-        right = ast.get_right()
-        left = ast.get_left()
-        if isinstance(left, ASTs.ASTIdentifier):
-            variable_register = self.get_variable_register(left.get_content())
+        store_in_reg = self.compute_expression(ast.left)
+        value_to_store = self.compute_expression(ast.right)
 
-            computed_expression_value = self.compute_expression(right)
+        store_instruction = LLVMInstructions.StoreInstruction(store_in_reg, value_to_store)
+        self.get_current_function().add_instruction(store_instruction)
 
-            if computed_expression_value.get_data_type().is_pointer():
-                raise NotImplementedError
-            else:
-                value_to_store = computed_expression_value
-
-            self.get_current_function().add_instruction(
-                LLVMInstructions.StoreInstruction(variable_register, value_to_store))
-
-        elif isinstance(left, ASTs.ASTAccessArrayVarExpression):
-            array_symbol = self.get_last_symbol_table().get_array_symbol(left.get_content())
-
-            computed_expression_value = self.compute_expression(right)
-
-            # Gewoon overgenomen van hierboven, moet nog misschien nog aangepast worden?
-            if computed_expression_value.get_data_type().is_pointer():
-                # TODO: This must be done using a derefence operator
-                # TODO: This register is used to load from pointer type into an actual value of that data type (sure?)
-                value_to_store = self.get_current_function().get_new_register()
-                self.get_current_function().add_instruction(
-                    LLVMInstructions.LoadInstruction(value_to_store, computed_expression_value))
-            else:
-                value_to_store = computed_expression_value
-            register_to_store = self.get_current_function().get_new_register(
-                DataType.DataType(array_symbol.get_register().get_data_type().get_token(),
-                                  array_symbol.get_register().get_data_type().get_pointer_level()))
-            getElementPtr_instruction = LLVMInstructions.GetElementPtrInstruction(register_to_store,
-                                                                                  left.get_index_accessed().get_content(),
-                                                                                  array_symbol.get_array_size(),
-                                                                                  array_symbol.get_register())
-            self.get_current_function().add_instruction(getElementPtr_instruction)
-            store_instruction = LLVMInstructions.StoreInstruction(register_to_store, computed_expression_value)
-            self.get_current_function().add_instruction(store_instruction)
-        else:
-            raise NotImplementedError
+        # if isinstance(store_in_reg, ASTs.ASTIdentifier):
+        #     variable_register = self.get_variable_register(store_in_reg.get_content())
+        #
+        #     computed_expression_value = self.compute_expression(value_to_store)
+        #
+        #     if computed_expression_value.get_data_type().is_pointer():
+        #         raise NotImplementedError
+        #     else:
+        #         value_to_store = computed_expression_value
+        #
+        #     self.get_current_function().add_instruction(
+        #         LLVMInstructions.StoreInstruction(variable_register, value_to_store))
+        #
+        # elif isinstance(store_in_reg, ASTs.ASTAccessArrayVarExpression):
+        #     array_symbol = self.get_last_symbol_table().get_array_symbol(store_in_reg.get_content())
+        #
+        #     computed_expression_value = self.compute_expression(value_to_store)
+        #
+        #     # Gewoon overgenomen van hierboven, moet nog misschien nog aangepast worden?
+        #     if computed_expression_value.get_data_type().is_pointer():
+        #         # TODO: This must be done using a derefence operator
+        #         # TODO: This register is used to load from pointer type into an actual value of that data type (sure?)
+        #         value_to_store = self.get_current_function().get_new_register()
+        #         self.get_current_function().add_instruction(
+        #             LLVMInstructions.LoadInstruction(value_to_store, computed_expression_value))
+        #     else:
+        #         value_to_store = computed_expression_value
+        #     register_to_store = self.get_current_function().get_new_register(
+        #         DataType.DataType(array_symbol.get_register().get_data_type().get_token(),
+        #                           array_symbol.get_register().get_data_type().get_pointer_level()))
+        #     getElementPtr_instruction = LLVMInstructions.GetElementPtrInstruction(register_to_store,
+        #                                                                           store_in_reg.get_index_accessed().get_content(),
+        #                                                                           array_symbol.get_array_size(),
+        #                                                                           array_symbol.get_register())
+        #     self.get_current_function().add_instruction(getElementPtr_instruction)
+        #     store_instruction = LLVMInstructions.StoreInstruction(register_to_store, computed_expression_value)
+        #     self.get_current_function().add_instruction(store_instruction)
+        # else:
+        #     raise NotImplementedError
 
     def to_file(self, filename: str):
         f = open(filename, "w+")

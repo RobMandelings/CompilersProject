@@ -188,10 +188,10 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
     def visit_ast_assignment_expression(self, ast: ASTs.ASTAssignmentExpression):
         self.builder.assign_value(ast)
 
-    def visit_ast_variable_declaration_and_init(self, ast: ASTs.ASTVariableDeclarationAndInit):
+    def visit_ast_var_declaration_and_init(self, ast: ASTs.ASTVarDeclarationAndInit):
         self.builder.declare_and_init_variable(ast)
 
-    def visit_ast_variable_declaration(self, ast: ASTs.ASTVariableDeclaration):
+    def visit_ast_var_declaration(self, ast: ASTs.ASTVarDeclaration):
         self.builder.declare_variable(ast)
 
     def visit_ast_printf_instruction(self, ast: ASTs.ASTPrintfInstruction):
@@ -228,7 +228,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         param_registers = list()
 
         for param in ast.get_function_declaration().get_params():
-            assert isinstance(param, ASTs.ASTVariableDeclaration)
+            assert isinstance(param, ASTs.ASTVarDeclaration)
             param_registers.append(LLVMValue.LLVMRegister(param.get_data_type()))
 
         assert len(param_registers) == len(ast.get_function_declaration().get_params())
@@ -245,7 +245,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         for i in range(len(ast.get_function_declaration().get_params())):
             param_register = param_registers[i]
             param = ast.get_function_declaration().get_params()[i]
-            assert isinstance(param, ASTs.ASTVariableDeclaration)
+            assert isinstance(param, ASTs.ASTVarDeclaration)
             resulting_reg = self.builder.declare_variable(param)
             self.builder.get_current_function().add_instruction(
                 LLVMInstructions.StoreInstruction(resulting_reg, param_register))

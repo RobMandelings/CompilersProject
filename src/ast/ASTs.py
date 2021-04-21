@@ -296,7 +296,6 @@ class ASTAssignmentExpression(ASTBinaryExpression):
 
         returns: an instance of ASTVariable (left side of the equation)
         """
-        assert isinstance(self.left, ASTIdentifier) or isinstance(self.left, ASTAccessArrayVarExpression)
         return super().get_left()
 
 
@@ -434,7 +433,7 @@ class ASTWhileLoop(ASTConditionalStatement):
         visitor.visit_ast_while_loop(self)
 
 
-class ASTVariableDeclaration(AST):
+class ASTVarDeclaration(AST):
 
     def __init__(self, data_type_and_attributes: list, name: ASTIdentifier):
         super().__init__('variable declaration')
@@ -472,7 +471,7 @@ class ASTVariableDeclaration(AST):
         return self.data_type_ast.get_data_type()
 
     def accept(self, visitor: IASTVisitor):
-        visitor.visit_ast_variable_declaration(self)
+        visitor.visit_ast_var_declaration(self)
 
     def __remove_attributes_recursion(self, type_attributes: list, new_type_attributes: list):
         """
@@ -520,7 +519,7 @@ class ASTFunctionDeclaration(AST):
         self.function_name = function_name
         self.params = params
         for param in self.params:
-            assert isinstance(param, ASTVariableDeclaration)
+            assert isinstance(param, ASTVarDeclaration)
             param.parent = self
         self.return_type = return_type
         self.return_type.parent = self
@@ -539,7 +538,7 @@ class ASTFunctionDeclaration(AST):
 
         full_name += f'{self.function_name}('
         for param in self.params:
-            assert isinstance(param, ASTVariableDeclaration)
+            assert isinstance(param, ASTVarDeclaration)
             full_name += f'{param.get_data_type().get_name()} {param.get_var_name()}'
         full_name += ')'
 
@@ -643,19 +642,33 @@ class ASTReturnStatement(AST):
         visitor.visit_ast_return_statement(self)
 
 
-class ASTVariableDeclarationAndInit(ASTVariableDeclaration, ASTExpression):
+class ASTVarDeclarationAndInit(AST):
 
-    def __init__(self, data_type_and_attributes: list, name: ASTIdentifier, value: AST):
-        super().__init__(data_type_and_attributes, name)
-        self.content += ' and init'
-        self.value = value
-        self.value.parent = self
+    def __init__(self, var_declaration: ASTVarDeclaration, initial_value: AST):
+        super().__init__('var declaration and init')
+        self.var_declaration = var_declaration
+        self.var_declaration.parent = self
+        self.initial_value = initial_value
+        self.initial_value.parent = self
+
+    def is_const(self):
+        return self.get_var_declaration().is_const()
+
+    def get_data_type(self):
+        return self.get_var_declaration().get_data_type()
+
+    def get_var_name(self):
+        return self.get_var_declaration().get_var_name()
+
+    def get_var_declaration(self):
+        assert isinstance(self.var_declaration, ASTVarDeclaration)
+        return self.var_declaration
 
     def accept(self, visitor):
-        visitor.visit_ast_variable_declaration_and_init(self)
+        visitor.visit_ast_var_declaration_and_init(self)
 
 
-class ASTArrayVarDeclaration(ASTVariableDeclaration):
+class ASTArrayVarDeclaration(ASTVarDeclaration):
 
     def __init__(self, data_type_and_attributes: list, name: ASTIdentifier, size: ASTLiteral):
         super().__init__(data_type_and_attributes, name)

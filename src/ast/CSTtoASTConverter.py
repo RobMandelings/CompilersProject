@@ -90,13 +90,28 @@ def from_terminal_node(cst: TerminalNodeImpl):
     symbol_content = cst.getSymbol().text
 
     if symbol_type in LITERALS:
-        return ASTLiteral(LITERALS.get(symbol_type), symbol_content)
+
+        if symbol_type == CLexer.CHAR_LITERAL:
+            return ASTLiteral(LITERALS.get(symbol_type), str(ord(symbol_content.strip('\''))))
+        else:
+            return ASTLiteral(LITERALS.get(symbol_type), symbol_content)
     elif symbol_type in TYPE_ATTRIBUTES:
         return ASTTypeAttribute(TYPE_ATTRIBUTES.get(symbol_type))
     elif symbol_type == CLexer.ID:
         return ASTDereference(ASTIdentifier(symbol_content))
     elif symbol_type in DATA_TYPES:
         raise NotImplementedError("Data types should be caught elsewhere to support pointers")
+    elif symbol_type == CLexer.STRING:
+
+        stripped_string = symbol_content.strip('"')
+
+        values = list()
+        for c in stripped_string:
+            values.append(ASTLiteral(DataType.NORMAL_CHAR, str(ord(c))))
+
+        array_init_ast = ASTArrayInit(values)
+        return array_init_ast
+
     else:
         print(f"[CST TO AST] Skipping terminal node with content {symbol_content}")
 
@@ -117,20 +132,21 @@ def from_value(cst):
 
 
 def from_normal_var_declaration_and_init(cst):
-    data_type_and_attributes = create_ast_from_cst(cst.children[0])
-    assert isinstance(data_type_and_attributes, list)
+    variable_declaration = from_normal_var_declaration(cst)
 
-    identifier = create_ast_from_cst(cst.children[1])
     initialized_value = create_ast_from_cst(cst.children[3])
-    return ASTVariableDeclarationAndInit(data_type_and_attributes, identifier, initialized_value)
+    return ASTVarDeclarationAndInit(variable_declaration, initialized_value)
 
 
 def from_normal_var_declaration(cst):
     data_type_and_attributes = create_ast_from_cst(cst.children[0])
     assert isinstance(data_type_and_attributes, list)
 
-    identifier = create_ast_from_cst(cst.children[1])
-    return ASTVariableDeclaration(data_type_and_attributes, identifier)
+    dereferenced_identifier = create_ast_from_cst(cst.children[1])
+    assert isinstance(dereferenced_identifier, ASTDereference)
+    identifier = dereferenced_identifier.get_value_to_dereference()
+
+    return ASTVarDeclaration(data_type_and_attributes, identifier)
 
 
 def from_scoped_statement(cst):
@@ -248,6 +264,14 @@ def from_assignment_expression(cst):
     lhs = create_ast_from_cst(cst.children[0])
     rhs = create_ast_from_cst(cst.children[2])
     assert isinstance(lhs, AST) and isinstance(rhs, AST)
+
+    # If the lhs dereferences a variable, this means that you just want to put the right hand side into
+    # The variable. You don't need to dereference for that as a variable will be internally stored as 1 pointer lever
+    # More (for example: int a; a = 5 -> a will be stored as a pointer, and when you want to STORE
+    # value 5 into a, you want to store the literal 'int' value into the variable of type int*
+
+    if isinstance(lhs, ASTDereference) and isinstance(lhs.get_value_to_dereference(), ASTIdentifier):
+        lhs = lhs.get_value_to_dereference()
 
     return ASTAssignmentExpression(lhs, rhs)
 

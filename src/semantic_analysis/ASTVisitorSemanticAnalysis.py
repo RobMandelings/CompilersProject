@@ -284,12 +284,12 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         assert isinstance(symbol_table, SymbolTableSemanticAnalyser)
         return symbol_table
 
-    def check_for_narrowing_result(self, declared_data_type: DataType.DataType, ast: AST):
+    def check_for_narrowing_result(self, declared_data_type: DataType.DataType, rhs: AST):
         """
         Checks if the result would be narrowed down into another data type (e.g. float to int). If so, warn to the log
         PRE-CONDITION: All variables need to be declared and initialized in order for lookups to work
         """
-        resulting_data_type = self.check_resulting_data_type(ast)
+        resulting_data_type = self.check_resulting_data_type(rhs)
 
         # This is the data type that was declared in the input program
 
@@ -405,36 +405,42 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         self.check_undeclared_variable_usage(ast.left)
         ast.get_right().accept(self)
 
-        symbol = symbol_table.lookup_variable(ast.left.get_content())
+        # A single dereference to a variable means that you just need to put the value into that variable
+        if isinstance(ast.get_left(), ASTIdentifier):
+            symbol = symbol_table.lookup_variable(ast.get_left().get_content())
 
-        if isinstance(symbol, VariableSymbol):
-            self.check_const_assignment(ast)
-            if self.optimize:
-                ast.right = self.optimize_expression(ast.get_right())
+            if isinstance(symbol, VariableSymbol):
+                self.check_const_assignment(ast)
+                if self.optimize:
+                    ast.right = self.optimize_expression(ast.get_right())
 
-            if not symbol.is_initialized():
-                symbol.initialized = True
-                # Set its reaching definition as it has just been initialized
-                symbol.reaching_definition_ast = ast.get_right()
+                if not symbol.is_initialized():
+                    symbol.initialized = True
+                    # Set its reaching definition as it has just been initialized
+                    symbol.reaching_definition_ast = ast.get_right()
 
-            else:
+                else:
 
-                # Const variables can not be reassigned so the keep their reaching definition,
-                # otherwise there is no reaching definition anymore (intervening assignment has been encountered)
-                if symbol.has_reaching_defintion() and not symbol.is_const():
-                    symbol.reaching_definition_ast = None
+                    # Const variables can not be reassigned so the keep their reaching definition,
+                    # otherwise there is no reaching definition anymore
+                    # (intervening assignment has been encountered)
+                    if symbol.has_reaching_defintion() and not symbol.is_const():
+                        symbol.reaching_definition_ast = None
 
-            # Warn in case the result will be narrowed down into another data type
+                # Warn in case the result will be narrowed down into another data type
+            elif isinstance(symbol, ArraySymbol):
+                if self.optimize:
+                    ast.right = self.optimize_expression(ast.get_right())
+
             self.check_for_narrowing_result(
-                DataType.DataType(symbol.data_type.get_token(), symbol.get_data_type().get_pointer_level() - 1), ast)
-        elif isinstance(symbol, ArraySymbol):
-            if self.optimize:
-                ast.right = self.optimize_expression(ast.get_right())
-            self.check_for_narrowing_result(symbol.data_type, ast)
+                DataType.DataType(symbol.data_type.get_token(), symbol.get_data_type().get_pointer_level() - 1),
+                ast.get_right())
+
         else:
             raise NotImplementedError
 
-    def visit_ast_variable_declaration(self, ast: ASTVariableDeclaration):
+    def visit_ast_var_declaration(self, ast: ASTVarDeclaration):
+        assert isinstance(ast, ASTVarDeclaration)
         symbol_table = self.get_last_symbol_table()
 
         if ast.is_const():
@@ -447,7 +453,9 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                     f"[SemanticAnalysis] Warning: declaration of '{ast.var_name_ast.get_content()}'"
                     f" shadows a local variable. You might want to rename it")
             var_name = ast.var_name_ast.get_content()
-            # The variables are automatically stored as pointers. You need to dereference in order to the the underlying data type.
+            # The variables are automatically stored as pointers.
+            # This is because values 'assigned' to it are STORED in the variable, the symbol always points to the
+            # underlying data type
             symbol_table.insert_symbol(var_name,
                                        VariableSymbol(ast.var_name_ast.get_content(),
                                                       DataType.DataType(ast.get_data_type().get_token(),
@@ -476,21 +484,22 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                 f"Array with name '{var_name}' has already been declared in this scope!"
             )
 
-    def visit_ast_variable_declaration_and_init(self, ast: ASTVariableDeclarationAndInit):
-        self.visit_ast_variable_declaration(ast)
-        variable_symbol = self.get_last_symbol_table().lookup_variable(ast.var_name_ast.get_content())
+    def visit_ast_var_declaration_and_init(self, ast: ASTVarDeclarationAndInit):
+        self.visit_ast_var_declaration(ast.get_var_declaration())
+        variable_symbol = self.get_last_symbol_table().lookup_variable(
+            ast.get_var_declaration().get_var_name_ast().get_content())
 
         # Do some semantic checks
-        self.check_undeclared_variable_usage(ast.value)
-        self.check_uninitialized_variable_usage(ast.value)
+        self.check_undeclared_variable_usage(ast.initial_value)
+        self.check_uninitialized_variable_usage(ast.initial_value)
 
         variable_symbol.initialized = True
 
         if self.optimize:
-            ast.value = self.optimize_expression(ast.value)
-        variable_symbol.reaching_definition_ast = ast.value
+            ast.initial_value = self.optimize_expression(ast.initial_value)
+        variable_symbol.reaching_definition_ast = ast.initial_value
 
-        self.check_for_narrowing_result(ast.get_data_type(), ast.value)
+        self.check_for_narrowing_result(ast.get_data_type(), ast.initial_value)
 
     # TODO implement this!
     def visit_ast_printf_instruction(self, ast: ASTPrintfInstruction):
@@ -517,8 +526,6 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
     def on_function_exit(self):
         self.current_function = None
-
-    def is_lvalue(self):
 
     def visit_ast_return_statement(self, ast: ASTReturnStatement):
 
@@ -701,7 +708,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
             # A little bit different then with normal variable declarations, which is why we handle it ourselves
             # The variable symbol will be set on initialized in the symbol table as it is a parameter, so values
             # are passed in
-            assert isinstance(param, ASTVariableDeclaration)
+            assert isinstance(param, ASTVarDeclaration)
             var_name = param.get_var_name()
             self.get_last_symbol_table().insert_symbol(var_name,
                                                        VariableSymbol(param.get_var_name_ast().get_content(),

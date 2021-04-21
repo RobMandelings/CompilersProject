@@ -4,7 +4,7 @@ import src.DataType as DataType
 from src.ast.ASTBaseVisitor import ASTBaseVisitor
 from src.ast.ASTs import ASTPrintfInstruction, ASTUnaryExpression, ASTLiteral, ASTControlFlowStatement, \
     ASTFunctionDeclaration, ASTArrayVarDeclaration, ASTArrayInit, ASTReturnStatement, ASTFunctionCall, \
-    ASTVariableDeclaration, ASTIdentifier, ASTFunctionDefinition, ASTArrayVarDeclarationAndInit, ASTDereference
+    ASTVarDeclaration, ASTIdentifier, ASTFunctionDefinition, ASTArrayVarDeclarationAndInit, ASTDereference
 
 
 class ASTVisitorDot(ASTBaseVisitor):
@@ -52,16 +52,16 @@ class ASTVisitorDot(ASTBaseVisitor):
         super().visit_ast_array_init(ast)
         self.add_to_dot_node(ast)
 
-    def visit_ast_variable_declaration(self, ast: ASTVariableDeclaration):
-        super().visit_ast_variable_declaration(ast)
+    def visit_ast_var_declaration(self, ast: ASTVarDeclaration):
+        super().visit_ast_var_declaration(ast)
         self.add_to_dot_node(ast)
 
     def visit_ast_array_declaration(self, ast: ASTArrayVarDeclaration):
         super().visit_ast_array_declaration(ast)
         self.add_to_dot_node(ast)
 
-    def visit_ast_variable_declaration_and_init(self, ast):
-        super().visit_ast_variable_declaration_and_init(ast)
+    def visit_ast_var_declaration_and_init(self, ast):
+        super().visit_ast_var_declaration_and_init(ast)
         self.add_to_dot_node(ast)
 
     def visit_ast_dereference(self, ast: ASTDereference):
