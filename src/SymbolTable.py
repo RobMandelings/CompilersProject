@@ -10,6 +10,7 @@ class SymbolTable(abc.ABC):
     def lookup_local(self, symbol: str):
         s = self.symbols.get(symbol)
         t = self.symbols.get('f')
+        r = 'f'
         if symbol in self.symbols:
             lookup = self.symbols[symbol]
             return lookup
