@@ -741,3 +741,6 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         if not isinstance(lookup, ArraySymbol):
             raise SemanticError(f'Type mismatch: variable {variable_accessed} trying to access is not an array!')
+
+    def visit_ast_dereference(self, ast: ASTDereference):
+        self.check_resulting_data_type(ast)
