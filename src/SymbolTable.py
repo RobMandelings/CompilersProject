@@ -1,11 +1,20 @@
 import abc
 
+import enum
+
+
+class ScopeType(enum.Enum):
+    GLOBAL = enum.auto()
+    FUNCTION = enum.auto()
+    CONDITIONAL = enum.auto()
+
 
 class SymbolTable(abc.ABC):
 
-    def __init__(self):
+    def __init__(self, scope_type: ScopeType):
         self.parent = None
         self.symbols = dict()
+        self.scope_type = scope_type
 
     def lookup_local(self, symbol: str):
         s = self.symbols.get(symbol)
@@ -38,3 +47,7 @@ class SymbolTable(abc.ABC):
         assert self.lookup_local(symbol_name) is None
         self.symbols[symbol_name] = symbol
         assert self.lookup_local(symbol_name) is not None
+
+    def get_scope_type(self):
+        assert isinstance(self.scope_type, ScopeType)
+        return self.scope_type

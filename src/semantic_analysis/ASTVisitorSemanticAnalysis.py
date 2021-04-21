@@ -3,6 +3,7 @@ import copy
 from src.ast.ASTBaseVisitor import ASTBaseVisitor
 from src.ast.ASTs import *
 from src.semantic_analysis.SymbolTableSemanticAnalyser import *
+import src.SymbolTable as SymbolTable
 
 
 class ASTVisitorResultingDataType(ASTBaseVisitor):
@@ -504,7 +505,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         self.check_for_narrowing_result(ast.get_data_type(), ast.initial_value)
 
-    def on_scope_entered(self, scope_type: ScopeType):
+    def on_scope_entered(self, scope_type: SymbolTable.ScopeType):
 
         new_symbol_table = SymbolTableSemanticAnalyser(scope_type)
         if len(self.symbol_table_stack) > 0:
@@ -517,7 +518,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
     def visit_ast_scope(self, ast: ASTScope):
         # Only the global scope will directly visit ast scope
-        self.on_scope_entered(ScopeType.GLOBAL)
+        self.on_scope_entered(SymbolTable.ScopeType.GLOBAL)
         super().visit_ast_scope(ast)
         self.on_scope_exit()
 
@@ -551,8 +552,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
             if condition_resulting_data_type != DataType.NORMAL_BOOL:
                 print("WARN: the result of an expression does not return boolean type")
 
-        # Skip the visit AST scope as we need to pass in a custom ScopeType
-        self.on_scope_entered(ScopeType.CONDITIONAL)
+        # Skip the visit AST scope as we need to pass in a custom SymbolTable.ScopeType
+        self.on_scope_entered(SymbolTable.ScopeType.CONDITIONAL)
         super().visit_ast_scope(ast.get_execution_body())
         self.on_scope_exit()
 
@@ -690,7 +691,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         Basically takes over the scope thing a little bit because of the parameters
         """
 
-        if self.get_last_symbol_table().get_scope_type() != ScopeType.GLOBAL:
+        if self.get_last_symbol_table().get_scope_type() != SymbolTable.ScopeType.GLOBAL:
             raise SemanticError(
                 f'Function declaration cannot be placed within scope {self.get_last_symbol_table().get_scope_type().name}')
 
@@ -741,7 +742,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
     def visit_ast_function_definition(self, ast: ASTFunctionDefinition):
 
-        if self.get_last_symbol_table().get_scope_type() != ScopeType.GLOBAL:
+        if self.get_last_symbol_table().get_scope_type() != SymbolTable.ScopeType.GLOBAL:
             raise SemanticError(
                 f'Function definition cannot be placed within scope {self.get_last_symbol_table().get_scope_type().name}')
         function_identifier = ast.get_function_declaration().get_identifier()
@@ -791,7 +792,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                 function_symbol.get_name(), function_symbol)
 
         self.on_function_entered(function_symbol)
-        self.on_scope_entered(ScopeType.FUNCTION)
+        self.on_scope_entered(SymbolTable.ScopeType.FUNCTION)
         for param in ast.get_function_declaration().get_params():
             # A little bit different then with normal variable declarations, which is why we handle it ourselves
             # The variable symbol will be set on initialized in the symbol table as it is a parameter, so values
@@ -833,6 +834,6 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         self.check_resulting_data_type(ast)
 
     def visit_ast_control_flow_statement(self, ast: ASTControlFlowStatement):
-        if not self.get_last_symbol_table().get_scope_type() == ScopeType.CONDITIONAL:
+        if not self.get_last_symbol_table().get_scope_type() == SymbolTable.ScopeType.CONDITIONAL:
             raise SemanticError(
                 f"Control flow statement '{ast.get_content()}' not placed within conditional scope (currently {self.get_last_symbol_table().get_scope_type().name.lower()} scope)")
