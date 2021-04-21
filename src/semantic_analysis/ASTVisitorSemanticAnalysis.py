@@ -71,7 +71,9 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
         variable = self.last_symbol_table.lookup_variable(ast.get_content())
 
         if isinstance(variable, VariableSymbol):
-            assert variable.is_initialized(), "Variable should be initialized"
+
+            if not variable.is_initialized():
+                raise SemanticError(f"Variable '{variable.get_name()}' not initialized")
 
             # The resulting data type is the data type you get when you apply the amount of derefencing
             self.update_current_data_type(variable.get_data_type())
