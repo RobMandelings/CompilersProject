@@ -2,13 +2,8 @@ grammar C;
 program:
     // We start with a global scope which may contain statements
     includeStdio?
-    functionStatement+
+    statement*
 ;
-
-functionStatement:
-    functionDefinition |
-    functionDeclaration ';'
-    ;
 
 functionDeclaration: dataType ID '(' ((varDeclaration ',')* varDeclaration)? ')';
 functionDefinition: functionDeclaration scope ;
@@ -26,6 +21,7 @@ statement:
 
 // Single line
 singleLineStatement:
+    functionDeclaration |
     varDeclaration |
     varDeclarationAndInit |
     controlFlowStatement |
@@ -37,9 +33,10 @@ returnStatement: RETURN expression;
 
 // Scoped statements
 scopedStatement:
-    scope |
+    functionDefinition |
     loop |
-    ifStatement
+    ifStatement |
+    scope
     ;
 
 loop:

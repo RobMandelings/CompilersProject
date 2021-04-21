@@ -17,15 +17,6 @@ class CListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CParser#functionStatement.
-    def enterFunctionStatement(self, ctx:CParser.FunctionStatementContext):
-        pass
-
-    # Exit a parse tree produced by CParser#functionStatement.
-    def exitFunctionStatement(self, ctx:CParser.FunctionStatementContext):
-        pass
-
-
     # Enter a parse tree produced by CParser#functionDeclaration.
     def enterFunctionDeclaration(self, ctx:CParser.FunctionDeclarationContext):
         pass

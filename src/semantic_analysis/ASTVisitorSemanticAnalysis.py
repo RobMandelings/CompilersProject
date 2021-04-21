@@ -690,6 +690,10 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         Basically takes over the scope thing a little bit because of the parameters
         """
 
+        if self.get_last_symbol_table().get_scope_type() != ScopeType.GLOBAL:
+            raise SemanticError(
+                f'Function declaration cannot be placed within scope {self.get_last_symbol_table().get_scope_type().name}')
+
         function_identifier = ast.get_identifier()
         param_data_types = list()
 
@@ -737,6 +741,9 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
     def visit_ast_function_definition(self, ast: ASTFunctionDefinition):
 
+        if self.get_last_symbol_table().get_scope_type() != ScopeType.GLOBAL:
+            raise SemanticError(
+                f'Function definition cannot be placed within scope {self.get_last_symbol_table().get_scope_type().name}')
         function_identifier = ast.get_function_declaration().get_identifier()
         param_data_types = list()
 

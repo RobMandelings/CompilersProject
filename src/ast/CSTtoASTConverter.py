@@ -28,7 +28,6 @@ def get_rule_context_function(rule_context_index):
         CParser.RULE_program: __from_program,
         CParser.RULE_includeStdio: from_include_stdio,
 
-        CParser.RULE_functionStatement: from_function_statement,
         CParser.RULE_functionDefinition: from_function_definition,
         CParser.RULE_functionDeclaration: from_function_declaration,
 
