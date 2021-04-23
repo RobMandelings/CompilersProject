@@ -12,7 +12,7 @@ class LLVMSymbolTable(SymbolTable.SymbolTable):
         """
         variable_mapper: maps variables to LLVMRegisters
         """
-        super().__init__()
+        super().__init__(SymbolTable.ScopeType.GLOBAL)
 
     def get_variable_register(self, variable_name):
         lookup = self.lookup(variable_name)

@@ -42,6 +42,9 @@ def get_rule_context_function(rule_context_index):
 
         CParser.RULE_scopedStatement: from_scoped_statement,
         CParser.RULE_loop: from_loop,
+        CParser.RULE_forLoop: from_for_loop,
+        CParser.RULE_whileLoop: from_while_loop,
+
         CParser.RULE_ifStatement: from_if_statement,
         CParser.RULE_elseStatement: from_if_statement,
 
@@ -162,10 +165,15 @@ def from_scoped_statement(cst):
 
 
 def from_loop(cst):
-    if cst.children[0].getSymbol().type == CLexer.FOR:
-        return __create_ast_for_loop(cst)
-    else:
-        return __create_ast_while_loop(cst)
+    return create_ast_from_cst(cst.children[0])
+
+
+def from_for_loop(cst):
+    return __create_ast_for_loop(cst)
+
+
+def from_while_loop(cst):
+    return __create_ast_while_loop(cst)
 
 
 def from_if_statement(cst):
