@@ -120,7 +120,7 @@ def from_terminal_node(cst: TerminalNodeImpl):
         for c in stripped_string:
             values.append(ASTLiteral(DataType.NORMAL_CHAR, str(ord(c))))
 
-        array_init_ast = ASTArrayInit(values)
+        array_init_ast = ASTArrayInit(values, DataType.DataType(DataType.DataTypeToken.CHAR, 0, array=True))
         return array_init_ast
 
     else:

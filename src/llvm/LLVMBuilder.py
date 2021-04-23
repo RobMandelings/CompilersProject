@@ -310,7 +310,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         elif isinstance(ast, ASTs.ASTAccessArrayVarExpression):
             result = self.__compute_array_access_element_into_register(ast)
         else:
-            raise NotImplementedError
+            raise NotImplementedError("The given expression cannot be computed in LLVM yet")
 
         if force_boolean_result:
             if result.get_data_type() != DataType.NORMAL_BOOL:

@@ -572,7 +572,7 @@ class ASTFunctionDefinition(AST):
 
 class ASTArrayInit(AST):
 
-    def __init__(self, values: list):
+    def __init__(self, values: list, data_type: DataType.DataType):
         array_init_string = '{'
         for i in range(len(values)):
             value = values[i]
@@ -585,9 +585,13 @@ class ASTArrayInit(AST):
         array_init_string += '}'
         super().__init__(array_init_string)
         self.values = values
+        self.data_type = data_type
 
     def get_values(self):
         return self.values
+
+    def get_data_type(self):
+        return self.data_type
 
     def is_root(self):
         return False

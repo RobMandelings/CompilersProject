@@ -51,6 +51,9 @@ class DataTypeToken(enum_utils.NamedEnum):
         assert isinstance(data_type1, DataTypeToken) and isinstance(data_type2, DataTypeToken)
         return data_type1.value > data_type2.value
 
+    def __gt__(self, other):
+        return self.value > other.value
+
 
 class DataType:
     """
@@ -120,7 +123,10 @@ class DataType:
         """
         Returns the name of the data type, taking in account the pointer level as well (e.g. bool**)
         """
-        return self.__data_type_token.get_name() + ('*' * self.__pointer_level)
+        array_str = ''
+        if self.is_array():
+            array_str = '[]'
+        return self.__data_type_token.get_name() + ('*' * self.__pointer_level) + array_str
 
     def get_pointer_level(self):
         assert self.__pointer_level >= 0, "Pointer level must be at least 0"
@@ -133,6 +139,7 @@ class DataType:
         return self.__array
 
     def get_llvm_name(self):
+        assert not self.is_array(), "Not yet supported"
         pointer_level = self.get_pointer_level()
         return self.get_token().get_llvm_name() + ('*' * self.get_pointer_level())
 
