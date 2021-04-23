@@ -335,11 +335,11 @@ class DataTypeConvertInstruction(UnaryAssignInstruction):
         assert not self.get_operand().get_data_type() == self.get_resulting_register().get_data_type(), "Converting to the same data type has no point"
 
         # TODO What to do with bool conversion and such? Is it a signed integer conversion or no?
-        if (self.get_operand().get_data_type().is_integral_type() and
-                self.get_resulting_register().get_data_type().is_floating_point_type()):
+        if (self.get_operand().get_data_type().is_integral() and
+                self.get_resulting_register().get_data_type().is_floating_point()):
             return 'sitofp', f'to {self.get_resulting_register().get_data_type().get_llvm_name()}'
-        elif (self.get_operand().get_data_type().is_floating_point_type() and
-              self.get_resulting_register().get_data_type().is_integral_type()):
+        elif (self.get_operand().get_data_type().is_floating_point() and
+              self.get_resulting_register().get_data_type().is_integral()):
             return 'fptosi', f'to {self.get_resulting_register().get_data_type().get_llvm_name()}'
         else:
             raise NotImplementedError

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 
+import src.DataType
 import src.DataType as DataType
 import src.ast.ASTs as ASTs
 import src.llvm.LLVMInterfaces as LLVMInterfaces
@@ -11,7 +12,7 @@ class LLVMValueToken(Enum):
     REGISTER = auto()
 
 
-class LLVMValue(LLVMInterfaces.IToLLVM, ASTs.IHasDataType, ABC):
+class LLVMValue(LLVMInterfaces.IToLLVM, src.DataType.IHasDataType, ABC):
 
     def __init__(self, value, data_type):
         self.data_type = data_type

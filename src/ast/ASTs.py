@@ -1,6 +1,7 @@
 from abc import abstractmethod
 
 import src.DataType as DataType
+from src.DataType import IHasDataType
 from src.ast.ASTTokens import *
 from src.ast.IAstVisitor import IASTVisitor
 
@@ -32,13 +33,6 @@ class AST:
     def get_content(self):
         assert isinstance(self.content, str)
         return self.content
-
-
-class IHasDataType:
-
-    @abstractmethod
-    def get_data_type(self):
-        pass
 
 
 class IHasToken:
@@ -108,10 +102,10 @@ class ASTLiteral(ASTLeaf, IHasDataType):
         """
         Same as get_content but used to return the actual value of corresponding type (such as int or double), instead of string
         """
-        if self.get_data_type_token().is_integral_type():
+        if self.get_data_type_token().is_integral():
             # Char and ints are both numerical so return this
             return int(self.get_content())
-        elif self.get_data_type_token().is_floating_point_type():
+        elif self.get_data_type_token().is_floating_point():
             return float(self.get_content())
         else:
             raise NotImplementedError

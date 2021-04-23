@@ -1,6 +1,7 @@
 import abc
 import collections
 
+import src.DataType
 import src.DataType as DataType
 import src.llvm.LLVMBasicBlock as LLVMBasicBlock
 import src.llvm.LLVMInstruction as LLVMInstruction
@@ -27,7 +28,7 @@ class LLVMFunction(LLVMInterfaces.IToLLVM, abc.ABC):
     def get_param_data_types(self):
         param_data_types = list()
         for param in self.params:
-            if isinstance(param, ASTs.IHasDataType):
+            if isinstance(param, src.DataType.IHasDataType):
                 param_data_types.append(param.get_data_type())
             elif isinstance(param, DataType.DataType):
                 param_data_types.append(param)

@@ -11,7 +11,7 @@ class Symbol:
         return self.symbol_name
 
 
-class VariableSymbol(Symbol):
+class VariableSymbol(Symbol, DataType.IHasDataType):
 
     def __init__(self, symbol_name: str, data_type: DataType.DataType, const, initialized):
         super().__init__(symbol_name)
@@ -38,10 +38,11 @@ class VariableSymbol(Symbol):
         return self.initialized
 
 
-class ArraySymbol(Symbol):
+class ArraySymbol(Symbol, DataType.IHasDataType):
 
     def __init__(self, symbol_name: str, data_type: DataType.DataType, size: int):
         super().__init__(symbol_name)
+        assert data_type.is_array()
         self.data_type = data_type
         self.size = size
 

@@ -33,9 +33,9 @@ def get_llvm_for_literal(literal: LLVMValue.LLVMLiteral, as_data_type: DataType.
     assert literal.get_data_type_token() == as_data_type or DataType.DataTypeToken.is_richer_than(as_data_type,
                                                                                                   literal.get_data_type_token())
 
-    if as_data_type.is_integral_type():
+    if as_data_type.is_integral():
         return str(literal.get_value())
-    elif as_data_type.is_floating_point_type():
+    elif as_data_type.is_floating_point():
         # Put the number into scientific notation
         return "{:e}".format(literal.get_value())
     else:

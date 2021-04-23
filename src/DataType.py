@@ -1,3 +1,5 @@
+from abc import abstractmethod
+
 import src.enum_utils as enum_utils
 
 
@@ -17,10 +19,10 @@ class DataTypeToken(enum_utils.NamedEnum):
         super().__init__(token_name)
         self.llvm_name = llvm_name
 
-    def is_integral_type(self):
+    def is_integral(self):
         return self == DataTypeToken.BOOL or self == DataTypeToken.CHAR or self == DataTypeToken.INT
 
-    def is_floating_point_type(self):
+    def is_floating_point(self):
         return self == DataTypeToken.FLOAT or self == DataTypeToken.DOUBLE
 
     def get_name(self):
@@ -55,12 +57,14 @@ class DataType:
     Uses the DataTypeToken enum under the hood, but also takes into account the pointer levels
     """
 
-    def __init__(self, data_type_token: DataTypeToken, pointer_level: int):
+    def __init__(self, data_type_token: DataTypeToken, pointer_level: int, array: bool = False):
         """
         These are private variables and should not be adjusted once the instance is created
+        array: true if its an array of the data type
         """
         self.__data_type_token = data_type_token
         self.__pointer_level = pointer_level
+        self.__array = array
         assert self.__pointer_level >= 0, "The pointer level should be at least 0."
         assert isinstance(self.__data_type_token, DataTypeToken)
 
@@ -81,7 +85,25 @@ class DataType:
             return data_type2
 
     def __eq__(self, other):
-        return self.get_token() == other.get_token() and self.get_pointer_level() == other.get_pointer_level()
+        return self.get_token() == other.get_token() and self.get_pointer_level() == other.get_pointer_level() \
+               and self.is_array() == other.is_array()
+
+    def __gt__(self, other):
+        """
+        Checks which data type is the richest, returns None if the two data types are incompatible
+        """
+        # You can't compare array with anything else
+        if self.is_array() or other.is_array():
+            return None
+
+        if self.get_pointer_level() == other.get_pointer_level():
+
+            if self.get_pointer_level() == 0:
+                #
+                return self.get_token() > other.get_token()
+            else:
+                # Both pointers, can't deduce which one is the richest in this case
+                return None
 
     def equals(self, other):
         assert isinstance(other, DataType)
@@ -107,13 +129,16 @@ class DataType:
     def is_pointer(self):
         return self.get_pointer_level() > 0
 
+    def is_array(self):
+        return self.__array
+
     def get_llvm_name(self):
         pointer_level = self.get_pointer_level()
         return self.get_token().get_llvm_name() + ('*' * self.get_pointer_level())
 
     def dereference(self, amount_of_dereferencing: int):
         assert isinstance(amount_of_dereferencing, int)
-        resulting_datatype = DataType(self.get_token(), self.get_pointer_level()-amount_of_dereferencing)
+        resulting_datatype = DataType(self.get_token(), self.get_pointer_level() - amount_of_dereferencing)
         return resulting_datatype
 
 
@@ -123,10 +148,16 @@ def get_llvm_for_data_type(data_type_token: DataTypeToken, pointer_level):
     Use this function if you don't have an instance of the specific DataType to get the llvm name for.
     (look at alloca instruction)
     """
+
     return DataTypeToken.get_llvm_name(data_type_token) + ('*' * pointer_level)
 
 
-# Final
+class IHasDataType:
+
+    @abstractmethod
+    def get_data_type(self):
+        pass
+
 
 NORMAL_BOOL = DataType(DataTypeToken.BOOL, 0)
 NORMAL_CHAR = DataType(DataTypeToken.CHAR, 0)

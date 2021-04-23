@@ -227,7 +227,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         Creates the instructions to call a function and returns the result as an LLVMRegister.
         """
 
-        if ast.get_function_called_id() == 'printf':
+        if ast.get_function_called_id() == 'printf' or ast.get_function_called_id() == 'scanf':
 
             args_llvm_value = list()
 
@@ -243,11 +243,19 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
             global_string_created = self.get_global_container().add_global_string(size,
                                                                                   string)
-            self.get_global_container().add_printf_declaration()
 
             instruction_parts = list()
+
+            if ast.get_function_called_id() == 'printf':
+                called_io_function = 'printf'
+                self.get_global_container().add_printf_declaration()
+            else:
+                called_io_function = '__isoc99_scanf'
+                self.get_global_container().add_scanf_declaration()
+
             instruction_parts.append(
-                f'call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([{size} x i8], [{size} x i8]* {global_string_created}, i64 0, i64 0)')
+                f'call i32 (i8*, ...) @{called_io_function}(i8* getelementptr inbounds '
+                f'([{size} x i8], [{size} x i8]* {global_string_created}, i64 0, i64 0)')
 
             for i in range(len(args_llvm_value)):
 

@@ -3,7 +3,6 @@ import copy
 from src.ast.ASTBaseVisitor import ASTBaseVisitor
 from src.ast.ASTs import *
 from src.semantic_analysis.SymbolTableSemanticAnalyser import *
-import src.SymbolTable as SymbolTable
 
 
 class ASTVisitorResultingDataType(ASTBaseVisitor):
@@ -28,7 +27,8 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
 
     def update_current_data_type(self, other_data_type):
         """
-        Checks if the other data type given is richer than the current type and replaces it, otherwise do nothing
+        Checks if the other data type given is richer than the current type
+        and replaces it if this is the case, otherwise do nothing
         """
 
         assert isinstance(other_data_type, DataType.DataType)
@@ -39,15 +39,14 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
             self.resulting_data_type = other_data_type
         else:
 
-            # Doesn't matter which one you pick, the pointer levels are the same
-            if self.resulting_data_type.get_pointer_level() == other_data_type.get_pointer_level() == 0:
-                if DataType.DataTypeToken.is_richer_than(other_data_type.get_token(),
-                                                         self.get_resulting_data_type().get_token()):
-                    self.resulting_data_type = other_data_type
+            other_richer = other_data_type > self.resulting_data_type
+
+            if other_richer:
+                self.resulting_data_type = other_data_type
             else:
-                if self.resulting_data_type != other_data_type:
+                if other_richer is None:
                     raise SemanticError(
-                        f'Cannot get resulting data type: pointer types '
+                        f'Cannot get resulting data type: data types '
                         f'{self.resulting_data_type.get_name()} and '
                         f'{other_data_type.get_name()} are incompatible')
 
@@ -71,12 +70,7 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
     def visit_ast_identifier(self, ast: ASTIdentifier):
         variable = self.last_symbol_table.lookup_variable(ast.get_content())
 
-        if isinstance(variable, VariableSymbol):
-
-            if not variable.is_initialized():
-                raise SemanticError(f"Variable '{variable.get_name()}' not initialized")
-
-            # The resulting data type is the data type you get when you apply the amount of derefencing
+        if isinstance(variable, IHasDataType):
             self.update_current_data_type(variable.get_data_type())
         else:
             raise SemanticError(
@@ -273,7 +267,6 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         need to be looked up in a symbol table for it to determine the resulting (richest) data type
         """
 
-        last_symbol_table = self.get_last_symbol_table()
         resulting_data_type_visitor = ASTVisitorResultingDataType(self.get_last_symbol_table())
         ast.accept(resulting_data_type_visitor)
         return resulting_data_type_visitor.get_resulting_data_type()
@@ -557,283 +550,310 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         super().visit_ast_scope(ast.get_execution_body())
         self.on_scope_exit()
 
-    def check_printf_function_call(self, ast: ASTFunctionCall):
+    def check_function_call_with_format_arg(self, function_call_ast: ASTFunctionCall):
+        """
+        Checks the array which represents the format for functions like scanf and printf
+        returns the symbol type specifications collected
+        """
 
-        if ast.get_function_called_id() == 'printf':
-            if len(ast.get_arguments()) == 0:
-                raise SemanticError('Not enough arguments provided for printf function')
+        format_argument = function_call_ast.get_arguments()[0]
+        format_array = None
+        is_array_format = False
+        if isinstance(format_argument, ASTArrayInit):
+            is_array_format = True
+            format_array = format_argument
+        else:
+            if isinstance(format_argument, ASTIdentifier):
+                lookup = self.get_last_symbol_table().lookup(format_argument.get_name())
 
-            format_argument = ast.get_arguments()[0]
-            format_array = None
-            is_array_format = False
-            if isinstance(format_argument, ASTArrayInit):
-                is_array_format = True
-                format_array = format_argument
-            else:
-                if isinstance(format_argument, ASTIdentifier):
-                    lookup = self.get_last_symbol_table().lookup(format_argument.get_name())
+                if isinstance(lookup, ArraySymbol):
+                    print('WARN: only inline printf format strings are currently checked for proper format.')
+                    is_array_format = True
 
-                    if isinstance(lookup, ArraySymbol):
-                        print('WARN: only inline printf format strings are currently checked for proper format.')
-                        is_array_format = True
+        if not is_array_format:
+            raise SemanticError('Printf function call: first argument must be an array')
 
-            if not is_array_format:
-                raise SemanticError('Printf function call: first argument must be an array')
+        if isinstance(format_argument, ASTArrayInit):
 
-            # Printf contains formats such as '%i'. These are parsed and checked in the arguments
             symbol_type_specifications = list()
-            if isinstance(format_array, ASTArrayInit):
 
-                for i in range(len(format_array.get_values())):
-                    literal = format_array.get_values()[i]
-                    if i == len(format_array.get_values()) - 1:
-                        next_literal = format_array.get_values()[i]
+            for i in range(len(format_argument.get_values())):
+                literal = format_argument.get_values()[i]
+                if i == len(format_argument.get_values()) - 1:
+                    next_literal = format_argument.get_values()[i]
+                else:
+                    next_literal = format_argument.get_values()[i + 1]
+
+                if not isinstance(literal, ASTLiteral) or not isinstance(next_literal, ASTLiteral):
+                    raise SemanticError('Printf, Element of format array is not a literal')
+                elif literal.get_data_type() != DataType.NORMAL_CHAR or \
+                        next_literal.get_data_type() != DataType.NORMAL_CHAR:
+                    raise SemanticError('Printf, Format array: found literal not of type char')
+
+                char = chr(int(literal.get_content()))
+
+                if char == '%':
+                    type_specification = chr(int(next_literal.get_content()))
+
+                    if function_call_ast.get_function_called_id() == 'printf':
+                        pointer_level = 0
+                    elif function_call_ast.get_function_called_id() == 'scanf':
+                        pointer_level = 1
                     else:
-                        next_literal = format_array.get_values()[i + 1]
+                        raise NotImplementedError(
+                            f"Function {function_call_ast.get_function_called_id()} not recognized for format checking")
 
-                    if not isinstance(literal, ASTLiteral) or not isinstance(next_literal, ASTLiteral):
-                        raise SemanticError('Printf, Element of format array is not a literal')
-                    elif literal.get_data_type() != DataType.NORMAL_CHAR or \
-                            next_literal.get_data_type() != DataType.NORMAL_CHAR:
-                        raise SemanticError('Printf, Format array: found literal not of type char')
+                    if type_specification == 'd':
+                        symbol_type_specifications.append(DataType.DataType(DataType.DataTypeToken.INT, pointer_level))
+                    elif type_specification == 'c':
+                        symbol_type_specifications.append(DataType.DataType(DataType.DataTypeToken.CHAR, pointer_level))
+                    elif type_specification == 's':
+                        symbol_type_specifications.append(DataType.DataType(DataType.DataTypeToken.CHAR, 0, array=True))
+                    elif type_specification == 'f':
+                        symbol_type_specifications.append(
+                            DataType.DataType(DataType.DataTypeToken.FLOAT, pointer_level))
+                    else:
+                        raise SemanticError(f'Could not deduce format %{type_specification}')
 
-                    char = chr(int(literal.get_content()))
+            # The first argument is the format argument, which doesn't code as a given parameter
+            if len(symbol_type_specifications) != len(function_call_ast.get_arguments()) - 1:
+                raise SemanticError(
+                    f'Number of symbol type specifications ({len(symbol_type_specifications)}) '
+                    f'does not match the number of arguments after the format ({len(function_call_ast.get_arguments()) - 1})')
 
-                    if char == '%':
-                        type_specification = chr(int(next_literal.get_content()))
+            return symbol_type_specifications
 
-                        if type_specification == 'i':
-                            symbol_type_specifications.append(DataType.NORMAL_INT)
-                        elif type_specification == 'd':
-                            symbol_type_specifications.append(DataType.NORMAL_DOUBLE)
-                        elif type_specification == 'c':
-                            symbol_type_specifications.append(DataType.NORMAL_CHAR)
-                        elif type_specification == 'f':
-                            symbol_type_specifications.append(DataType.NORMAL_FLOAT)
-                        elif type_specification == 's':
-                            raise SemanticError('Printf String format not supported yet')
-                        else:
-                            raise SemanticError('Could not deduce format')
+    def check_io_function_call(self, ast: ASTFunctionCall):
+        """
+        Semantically checks the printf and scanf functions
+        """
 
-                if len(symbol_type_specifications) != len(ast.get_arguments()) - 1:
-                    raise SemanticError(
-                        f'Number of symbol type specifications ({len(symbol_type_specifications)}) '
-                        f'does not match the number of arguments after the format ({len(ast.get_arguments()) - 1})')
+        if ast.get_function_called_id() == 'printf' or ast.get_function_called_id() == 'scanf':
+            if len(ast.get_arguments()) == 0:
+                raise SemanticError(f'No arguments provided for {ast.get_function_called_id()} function')
 
+            symbol_type_specifications = self.check_function_call_with_format_arg(ast)
+
+            if symbol_type_specifications is not None:
+
+                # Printf contains formats such as '%d'. These are parsed and with the other arguments
                 for i in range(1, len(symbol_type_specifications) + 1):
                     symbol_type_specification = symbol_type_specifications[i - 1]
                     resulting_data_type = self.check_resulting_data_type(ast.get_arguments()[i])
 
                     if symbol_type_specification != resulting_data_type:
-                        if symbol_type_specification == DataType.NORMAL_DOUBLE and resulting_data_type == DataType.NORMAL_FLOAT \
-                                or symbol_type_specification == DataType.NORMAL_FLOAT and resulting_data_type == DataType.NORMAL_DOUBLE:
-                            print(
-                                f"Symbol type specification and given argument "
-                                f"datatypes are {symbol_type_specification.get_name()} and {resulting_data_type.get_name()} "
-                                f"respectively. They are treated in the same way, which might not be wanted")
-                        else:
-                            raise SemanticError(
-                                'Printf Type specification does match the data type of the argument given')
 
-            else:
-                print("WARN: format array could not be deduced immediately, not checking the format")
+                        if (symbol_type_specification.get_token().is_floating_point() and
+                                resulting_data_type.get_token().is_floating_point()):
+                            # If both types are floating point, its okay
+                            continue
 
-    def visit_ast_function_call(self, ast: ASTFunctionCall):
-
-        function_identifier = ast.get_function_called_id()
-
-        param_data_types = list()
-
-        for param in ast.get_arguments():
-            param.accept(self)
-            self.check_undeclared_variable_usage(param)
-            self.check_uninitialized_variable_usage(param)
-
-            resulting_data_type_visitor = ASTVisitorResultingDataType(self.get_last_symbol_table())
-            param.accept(resulting_data_type_visitor)
-            param_data_types.append(resulting_data_type_visitor.get_resulting_data_type())
-
-        self.check_printf_function_call(ast)
-
-        function_lookup = self.get_last_symbol_table().lookup(function_identifier)
-
-        if function_lookup is None:
-            raise SemanticError(f'Function {function_identifier} not found! Cannot call this function')
-        else:
-            assert isinstance(function_lookup, FunctionSymbol)
-
-            if function_identifier != "printf" and function_identifier != "scanf":
-                if len(function_lookup.get_params()) != len(ast.get_arguments()):
-                    if len(function_lookup.get_params()) < len(ast.get_arguments()):
                         raise SemanticError(
-                            f'Cannot call function {function_identifier}: to many arguments provided (is {len(ast.get_arguments())}, must be {len(function_lookup.get_params())})')
-                    else:
-                        if len(function_lookup.get_params()) > len(ast.get_arguments()):
-                            raise SemanticError(
-                                f'Cannot call function {function_identifier}: not enough arguments provided (is {len(ast.get_arguments())}, must be {len(function_lookup.get_params())})')
+                            'Printf Type specification does match the data type of the argument given')
+
+            else:
+                print("WARN: format array cannot be deduced at compile time, not checking the format")
+
+
+def visit_ast_function_call(self, ast: ASTFunctionCall):
+    function_identifier = ast.get_function_called_id()
+
+    param_data_types = list()
+
+    for param in ast.get_arguments():
+        param.accept(self)
+        self.check_undeclared_variable_usage(param)
+        self.check_uninitialized_variable_usage(param)
+
+        resulting_data_type_visitor = ASTVisitorResultingDataType(self.get_last_symbol_table())
+        param.accept(resulting_data_type_visitor)
+        param_data_types.append(resulting_data_type_visitor.get_resulting_data_type())
+
+    self.check_io_function_call(ast)
+
+    function_lookup = self.get_last_symbol_table().lookup(function_identifier)
+
+    if function_lookup is None:
+        raise SemanticError(f'Function {function_identifier} not found! Cannot call this function')
+    else:
+        assert isinstance(function_lookup, FunctionSymbol)
+
+        if function_identifier != "printf" and function_identifier != "scanf":
+            if len(function_lookup.get_params()) != len(ast.get_arguments()):
+                if len(function_lookup.get_params()) < len(ast.get_arguments()):
+                    raise SemanticError(
+                        f'Cannot call function {function_identifier}: to many arguments provided (is {len(ast.get_arguments())}, must be {len(function_lookup.get_params())})')
                 else:
-
-                    for i in range(len(function_lookup.get_params())):
-
-                        data_type_param = function_lookup.get_params()[i].get_data_type()
-                        data_type_argument = ast.get_arguments()[i].get_data_type()
-
-                        if data_type_param != data_type_argument:
-                            raise SemanticError(
-                                f"Cannot call function: types don't match. ({data_type_param.get_name()} and {data_type_argument.get_name()})")
-
-                    if not function_lookup.is_defined():
-                        print(
-                            f'warn: Function declaration {function_identifier} found but no definition for this function at the time of calling!')
-
-    def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
-        """
-        Basically takes over the scope thing a little bit because of the parameters
-        """
-
-        if self.get_last_symbol_table().get_scope_type() != SymbolTable.ScopeType.GLOBAL:
-            raise SemanticError(
-                f'Function declaration cannot be placed within scope {self.get_last_symbol_table().get_scope_type().name}')
-
-        function_identifier = ast.get_identifier()
-        param_data_types = list()
-
-        param_names = list()
-        for p in ast.get_params():
-            if p.get_var_name() not in param_names:
-                param_names.append(p.get_var_name())
+                    if len(function_lookup.get_params()) > len(ast.get_arguments()):
+                        raise SemanticError(
+                            f'Cannot call function {function_identifier}: not enough arguments provided (is {len(ast.get_arguments())}, must be {len(function_lookup.get_params())})')
             else:
-                raise SemanticError(f'Multiple parameter declaration in declaration of {function_identifier}')
 
-        for param in ast.get_params():
-            param_data_types.append(param.get_data_type())
+                for i in range(len(function_lookup.get_params())):
 
-        function_symbol = self.get_last_symbol_table().lookup(function_identifier)
-        if function_symbol is not None:
+                    data_type_param = function_lookup.get_params()[i].get_data_type()
+                    data_type_argument = ast.get_arguments()[i].get_data_type()
 
-            assert isinstance(function_symbol, FunctionSymbol)
+                    if data_type_param != data_type_argument:
+                        raise SemanticError(
+                            f"Cannot call function: types don't match. ({data_type_param.get_name()} and {data_type_argument.get_name()})")
 
-            if not len(function_symbol.get_params()) == len(ast.get_params()):
+                if not function_lookup.is_defined():
+                    print(
+                        f'warn: Function declaration {function_identifier} found but no definition for this function at the time of calling!')
+
+
+def visit_ast_function_declaration(self, ast: ASTFunctionDeclaration):
+    """
+    Basically takes over the scope thing a little bit because of the parameters
+    """
+
+    if self.get_last_symbol_table().get_scope_type() != SymbolTable.ScopeType.GLOBAL:
+        raise SemanticError(
+            f'Function declaration cannot be placed within scope {self.get_last_symbol_table().get_scope_type().name}')
+
+    function_identifier = ast.get_identifier()
+    param_data_types = list()
+
+    param_names = list()
+    for p in ast.get_params():
+        if p.get_var_name() not in param_names:
+            param_names.append(p.get_var_name())
+        else:
+            raise SemanticError(f'Multiple parameter declaration in declaration of {function_identifier}')
+
+    for param in ast.get_params():
+        param_data_types.append(param.get_data_type())
+
+    function_symbol = self.get_last_symbol_table().lookup(function_identifier)
+    if function_symbol is not None:
+
+        assert isinstance(function_symbol, FunctionSymbol)
+
+        if not len(function_symbol.get_params()) == len(ast.get_params()):
+            raise SemanticError(
+                f'Wrong amount of parameters given for {function_identifier}: {len(function_symbol.get_params())} != {len(ast.get_params())}'
+            )
+
+        for i in range(len(function_symbol.get_params())):
+            if function_symbol.get_params()[i].get_data_type() == ast.get_params()[i].get_data_type():
                 raise SemanticError(
-                    f'Wrong amount of parameters given for {function_identifier}: {len(function_symbol.get_params())} != {len(ast.get_params())}'
+                    f'Conflicting types'
                 )
 
-            for i in range(len(function_symbol.get_params())):
-                if function_symbol.get_params()[i].get_data_type() == ast.get_params()[i].get_data_type():
-                    raise SemanticError(
-                        f'Conflicting types'
-                    )
-
-            if function_symbol.get_return_type() != ast.get_return_type_ast().get_data_type():
-                raise SemanticError(
-                    f'Declaration of function with same name but different return types: {function_symbol.get_return_type()} and {ast.get_return_type_ast()}')
-            else:
-                print(f"Redundant declaration of function {function_identifier}")
-
-        else:
-            function_symbol = FunctionSymbol(function_identifier,
-                                             ast.get_params(),
-                                             ast.get_return_type_ast().get_data_type(), False)
-
-            self.get_last_symbol_table().insert_symbol(
-                function_symbol.get_name(), function_symbol)
-
-        # Skip the on_scope entered thing because it is already done
-
-    def visit_ast_function_definition(self, ast: ASTFunctionDefinition):
-
-        if self.get_last_symbol_table().get_scope_type() != SymbolTable.ScopeType.GLOBAL:
+        if function_symbol.get_return_type() != ast.get_return_type_ast().get_data_type():
             raise SemanticError(
-                f'Function definition cannot be placed within scope {self.get_last_symbol_table().get_scope_type().name}')
-        function_identifier = ast.get_function_declaration().get_identifier()
-        param_data_types = list()
+                f'Declaration of function with same name but different return types: {function_symbol.get_return_type()} and {ast.get_return_type_ast()}')
+        else:
+            print(f"Redundant declaration of function {function_identifier}")
 
-        param_names = list()
-        function_declaration = ast.get_function_declaration()
-        for p in function_declaration.get_params():
-            if p.get_var_name() not in param_names:
-                param_names.append(p.get_var_name())
-            else:
-                raise SemanticError(f'Multiple parameter declaration in declaration of {function_identifier}')
+    else:
+        function_symbol = FunctionSymbol(function_identifier,
+                                         ast.get_params(),
+                                         ast.get_return_type_ast().get_data_type(), False)
 
-        for param in ast.get_function_declaration().get_params():
-            param_data_types.append(param.get_data_type())
+        self.get_last_symbol_table().insert_symbol(
+            function_symbol.get_name(), function_symbol)
 
-        function_symbol = self.get_last_symbol_table().lookup(function_identifier)
+    # Skip the on_scope entered thing because it is already done
 
-        if function_symbol is not None:
-            assert isinstance(function_symbol, FunctionSymbol)
 
-            if not len(function_symbol.get_params()) == len(ast.get_function_declaration().get_params()):
+def visit_ast_function_definition(self, ast: ASTFunctionDefinition):
+    if self.get_last_symbol_table().get_scope_type() != SymbolTable.ScopeType.GLOBAL:
+        raise SemanticError(
+            f'Function definition cannot be placed within scope {self.get_last_symbol_table().get_scope_type().name}')
+    function_identifier = ast.get_function_declaration().get_identifier()
+    param_data_types = list()
+
+    param_names = list()
+    function_declaration = ast.get_function_declaration()
+    for p in function_declaration.get_params():
+        if p.get_var_name() not in param_names:
+            param_names.append(p.get_var_name())
+        else:
+            raise SemanticError(f'Multiple parameter declaration in declaration of {function_identifier}')
+
+    for param in ast.get_function_declaration().get_params():
+        param_data_types.append(param.get_data_type())
+
+    function_symbol = self.get_last_symbol_table().lookup(function_identifier)
+
+    if function_symbol is not None:
+        assert isinstance(function_symbol, FunctionSymbol)
+
+        if not len(function_symbol.get_params()) == len(ast.get_function_declaration().get_params()):
+            raise SemanticError(
+                f'Wrong amount of parameters given for {function_identifier}: {len(function_symbol.get_params())} != {len(ast.get_function_declaration().get_params())}'
+            )
+
+        for i in range(len(function_symbol.get_params())):
+            if function_symbol.get_params()[i].get_data_type() != ast.get_function_declaration().get_params()[
+                i].get_data_type():
                 raise SemanticError(
-                    f'Wrong amount of parameters given for {function_identifier}: {len(function_symbol.get_params())} != {len(ast.get_function_declaration().get_params())}'
+                    f'Conflicting types'
                 )
 
-            for i in range(len(function_symbol.get_params())):
-                if function_symbol.get_params()[i].get_data_type() != ast.get_function_declaration().get_params()[
-                    i].get_data_type():
-                    raise SemanticError(
-                        f'Conflicting types'
-                    )
+        if not function_symbol.get_return_type() == ast.get_function_declaration().get_return_type_ast().get_data_type():
+            raise SemanticError(f'conflicting return types for {function_identifier}')
 
-            if not function_symbol.get_return_type() == ast.get_function_declaration().get_return_type_ast().get_data_type():
-                raise SemanticError(f'conflicting return types for {function_identifier}')
-
-            if not function_symbol.is_defined():
-                function_symbol.defined = True
-            else:
-                raise SemanticError(f'Redefinition of function {function_identifier}!')
+        if not function_symbol.is_defined():
+            function_symbol.defined = True
         else:
-            function_symbol = FunctionSymbol(function_identifier,
-                                             ast.get_function_declaration().get_params(),
-                                             ast.get_function_declaration().get_return_type_ast().get_data_type(),
-                                             True)
-            self.get_last_symbol_table().insert_symbol(
-                function_symbol.get_name(), function_symbol)
+            raise SemanticError(f'Redefinition of function {function_identifier}!')
+    else:
+        function_symbol = FunctionSymbol(function_identifier,
+                                         ast.get_function_declaration().get_params(),
+                                         ast.get_function_declaration().get_return_type_ast().get_data_type(),
+                                         True)
+        self.get_last_symbol_table().insert_symbol(
+            function_symbol.get_name(), function_symbol)
 
-        self.on_function_entered(function_symbol)
-        self.on_scope_entered(SymbolTable.ScopeType.FUNCTION)
-        for param in ast.get_function_declaration().get_params():
-            # A little bit different then with normal variable declarations, which is why we handle it ourselves
-            # The variable symbol will be set on initialized in the symbol table as it is a parameter, so values
-            # are passed in
-            assert isinstance(param, ASTVarDeclaration)
-            var_name = param.get_var_name()
-            self.get_last_symbol_table().insert_symbol(var_name,
-                                                       VariableSymbol(param.get_var_name_ast().get_content(),
-                                                                      DataType.DataType(
-                                                                          param.get_data_type().get_token(),
-                                                                          param.get_data_type().get_pointer_level() + 1),
-                                                                      param.is_const(), True))
+    self.on_function_entered(function_symbol)
+    self.on_scope_entered(SymbolTable.ScopeType.FUNCTION)
+    for param in ast.get_function_declaration().get_params():
+        # A little bit different then with normal variable declarations, which is why we handle it ourselves
+        # The variable symbol will be set on initialized in the symbol table as it is a parameter, so values
+        # are passed in
+        assert isinstance(param, ASTVarDeclaration)
+        var_name = param.get_var_name()
+        self.get_last_symbol_table().insert_symbol(var_name,
+                                                   VariableSymbol(param.get_var_name_ast().get_content(),
+                                                                  DataType.DataType(
+                                                                      param.get_data_type().get_token(),
+                                                                      param.get_data_type().get_pointer_level() + 1),
+                                                                  param.is_const(), True))
 
-        # Skip the on_scope entered thing because it is already done
-        super().visit_ast_scope(ast.get_execution_body())
-        self.on_scope_exit()
-        self.on_function_exit()
+    # Skip the on_scope entered thing because it is already done
+    super().visit_ast_scope(ast.get_execution_body())
+    self.on_scope_exit()
+    self.on_function_exit()
 
-    def visit_ast_include(self, ast: ASTInclude):
-        printf_params = list()
-        printf_symbol = FunctionSymbol("printf", printf_params, DataType.NORMAL_INT, True)
-        self.get_last_symbol_table().insert_symbol(printf_symbol.get_name(), printf_symbol)
 
-        # TODO Add scanf
+def visit_ast_include(self, ast: ASTInclude):
+    printf_params = list()
+    printf_symbol = FunctionSymbol("printf", printf_params, DataType.NORMAL_INT, True)
+    self.get_last_symbol_table().insert_symbol(printf_symbol.get_name(), printf_symbol)
 
-        # scanf_params = list()
-        # scanf_symbol = FunctionSymbol("scanf", scanf_params, DataType.NORMAL_INT, True)
-        # self.get_last_symbol_table().insert_symbol(scanf_symbol.get_name(), scanf_params)
+    # TODO Add scanf
 
-    def visit_ast_access_element(self, ast: ASTAccessArrayVarExpression):
+    # scanf_params = list()
+    # scanf_symbol = FunctionSymbol("scanf", scanf_params, DataType.NORMAL_INT, True)
+    # self.get_last_symbol_table().insert_symbol(scanf_symbol.get_name(), scanf_params)
 
-        variable_accessed = ast.get_variable_accessed().get_name()
-        lookup = self.get_last_symbol_table().lookup(variable_accessed)
 
-        if not isinstance(lookup, ArraySymbol):
-            raise SemanticError(f'Type mismatch: variable {variable_accessed} trying to access is not an array!')
+def visit_ast_access_element(self, ast: ASTAccessArrayVarExpression):
+    variable_accessed = ast.get_variable_accessed().get_name()
+    lookup = self.get_last_symbol_table().lookup(variable_accessed)
 
-    def visit_ast_dereference(self, ast: ASTDereference):
-        self.check_resulting_data_type(ast)
+    if not isinstance(lookup, ArraySymbol):
+        raise SemanticError(f'Type mismatch: variable {variable_accessed} trying to access is not an array!')
 
-    def visit_ast_control_flow_statement(self, ast: ASTControlFlowStatement):
-        if not self.get_last_symbol_table().get_scope_type() == SymbolTable.ScopeType.CONDITIONAL:
-            raise SemanticError(
-                f"Control flow statement '{ast.get_content()}' not placed within conditional scope (currently {self.get_last_symbol_table().get_scope_type().name.lower()} scope)")
+
+def visit_ast_dereference(self, ast: ASTDereference):
+    self.check_resulting_data_type(ast)
+
+
+def visit_ast_control_flow_statement(self, ast: ASTControlFlowStatement):
+    if not self.get_last_symbol_table().get_scope_type() == SymbolTable.ScopeType.CONDITIONAL:
+        raise SemanticError(
+            f"Control flow statement '{ast.get_content()}' not placed within conditional scope (currently {self.get_last_symbol_table().get_scope_type().name.lower()} scope)")
