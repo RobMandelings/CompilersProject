@@ -5,6 +5,9 @@ import src.llvm.LLVMUtils as LLVMUtils
 
 class LLVMBasicBlock(LLVMInterfaces.IToLLVM):
 
+    # TODO Mapper for registers and locations (lecture 10) for good code generation into mips
+    # You only need to keep track of this within each basic block
+
     def __init__(self):
         self.instructions = list()
         self._number = None
