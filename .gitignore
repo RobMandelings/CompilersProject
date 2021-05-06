@@ -5,6 +5,7 @@ testinput/*
 output/*
 test.ll
 input.ll
+*.jar
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/pycharm
