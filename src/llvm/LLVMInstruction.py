@@ -537,6 +537,5 @@ class MemcpyInstruction(Instruction):
                f'getelementptr inbounds ([{self.size} x i8], [{self.size} x i8]* {self.from_global_var}, i32 0, i32 0), ' \
                f'i64 {self.size}, i1 false)'
 
-
-def update_numbering(self, counter):
-    super().update_numbering(counter)
+    def update_numbering(self, counter):
+        super().update_numbering(counter)
