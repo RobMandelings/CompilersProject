@@ -16,17 +16,24 @@ Misschien handig om registers op te vragen voor de juiste zaken (bvb $v0, $a, $s
 
 STACK POINTER FRAME POINTER
 
-### Zullen we ook werken met apparte MIPSInstruction classes?
+## MIPS Function class
+
+Inladen van een variable -> in $s registers geplaatst. Expressie uitrekenen die daarna gewoon gebruikt wordt -> $t
+registers
+
+### Zullen we ook werken met aparte MIPSInstruction classes?
 
 ### Steps
 
-#### Symbol table opbouwen
+#### 1. Symbol table opbouwen
 
 Symbol table bestaat uit informatie van functions (ids) met daarin basic blocks (ids)
 die instructies (ids) bijhouden met liveness en usage information van variables (algoritme uit slides)
 
 Per functie kun je de gebruikte $s registers opvragen zodat je deze kan opslaan in het geheugen en terug restoren als
-het niet meer nodig is
+het niet meer nodig is. Elke functie begint zonder enige $s registers te gebruiken, maar alle $s worden wel bezien als
+vrij in het begin. Nadat de instructies zijn omgezet weten we welke $s registers gebruikt worden, dus kunnen we aan de
+initializatie van een mips functie ook deze registers storen wat automatisch kan gebeuren.
 
 #### Register and Address descriptors
 
