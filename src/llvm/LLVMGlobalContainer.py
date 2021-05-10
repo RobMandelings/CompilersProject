@@ -1,5 +1,6 @@
 import src.DataType as DataType
 import src.llvm.LLVMInterfaces as LLVMInterfaces
+import src.interfaces.IVisitable as IVisitable
 
 
 class LLVMGlobalContainer(LLVMInterfaces.IToLLVM):

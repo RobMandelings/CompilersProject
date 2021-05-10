@@ -9,6 +9,7 @@ import src.llvm.LLVMInterfaces as LLVMInterfaces
 import src.llvm.LLVMUtils as LLVMUtils
 import src.llvm.LLVMValue as LLVMValue
 import src.ast.ASTs as ASTs
+import src.interfaces.IVisitable as IVisitable
 
 
 class LLVMFunction(LLVMInterfaces.IToLLVM, abc.ABC):

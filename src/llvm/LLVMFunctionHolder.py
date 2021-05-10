@@ -1,5 +1,6 @@
 import src.llvm.LLVMFunction as LLVMFunction
 import src.llvm.LLVMInterfaces as LLVMInterfaces
+import src.interfaces.IVisitable as IVisitable
 
 
 class LLVMFunctionHolder(LLVMInterfaces.IToLLVM):

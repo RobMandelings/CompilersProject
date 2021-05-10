@@ -6,6 +6,7 @@ import src.llvm.LLVMBasicBlock as LLVMBasicBlock
 import src.llvm.LLVMInterfaces as LLVMInterfaces
 import src.llvm.LLVMUtils as LLVMUtils
 import src.llvm.LLVMValue as LLVMValue
+import src.interfaces.IVisitable as IVisitable
 
 
 def isConstant(operand: str):

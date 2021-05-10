@@ -1,9 +1,10 @@
 import src.llvm.LLVMInstruction as LLVMInstruction
 import src.llvm.LLVMInterfaces as LLVMInterfaces
 import src.llvm.LLVMUtils as LLVMUtils
+import src.interfaces.IVisitable as IVisitable
 
 
-class LLVMBasicBlock(LLVMInterfaces.IToLLVM):
+class LLVMBasicBlock(IVisitable.ILLVMVisitable):
 
     # TODO Mapper for registers and locations (lecture 10) for good code generation into mips
     # You only need to keep track of this within each basic block
