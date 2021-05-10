@@ -8,6 +8,7 @@ import src.llvm.LLVMInterfaces as LLVMInterfaces
 import src.llvm.LLVMSymbolTable as LLVMSymbolTable
 import src.llvm.LLVMUtils as LLVMUtils
 import src.llvm.LLVMValue as LLVMValues
+import src.llvm.LLVMCode as LLVMCode
 from src.llvm import LLVMValue
 
 
@@ -445,3 +446,6 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         llvm_code += self.get_function_holder().to_llvm()
 
         return llvm_code
+
+    def build(self):
+        return LLVMCode.LLVMCode(self)
