@@ -3,7 +3,7 @@ from abc import abstractmethod
 import src.DataType as DataType
 from src.DataType import IHasDataType
 from src.ast.ASTTokens import *
-from src.ast.IAstVisitor import IASTVisitor
+from src.interfaces.IAstVisitor import IASTVisitor
 
 
 class SemanticError(Exception):

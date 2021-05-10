@@ -3,6 +3,10 @@ import src.llvm.LLVMInterfaces as LLVMInterfaces
 
 
 class LLVMFunctionHolder(LLVMInterfaces.IToLLVM):
+    """
+    Holds declared and defined functions. If defined, the declared function will be overwritten, which is why
+    the LLVMFunctionHolder is useful.
+    """
 
     def __init__(self):
         self.functions = dict()
