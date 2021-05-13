@@ -1,16 +1,14 @@
-import src.llvm.LLVMInstruction as LLVMInstruction
-import src.llvm.LLVMInterfaces as LLVMInterfaces
-import src.llvm.LLVMUtils as LLVMUtils
+import src.BasicBlock as BasicBlock
 import src.interfaces.IVisitable as IVisitable
+import src.llvm.LLVMInstruction as LLVMInstruction
+import src.llvm.LLVMUtils as LLVMUtils
+from src.interfaces import ILLVMVisitor as ILLVMVisitor
 
 
-class LLVMBasicBlock(IVisitable.ILLVMVisitable):
-
-    # TODO Mapper for registers and locations (lecture 10) for good code generation into mips
-    # You only need to keep track of this within each basic block
+class LLVMBasicBlock(IVisitable.ILLVMVisitable, BasicBlock.BasicBlock):
 
     def __init__(self):
-        self.instructions = list()
+        super().__init__()
         self._number = None
 
     def __repr__(self):
@@ -20,20 +18,9 @@ class LLVMBasicBlock(IVisitable.ILLVMVisitable):
         """
         Safely adds a new instruction to the list of instructions
         """
-        assert isinstance(instruction, LLVMInstruction.Instruction)
-        assert not isinstance(instruction, LLVMInstruction.AllocaInstruction)
-        assert not self.has_terminal_instruction()
-        self.instructions.append(instruction)
-
-    def has_terminal_instruction(self):
-        """
-        Checks whether or not this basic block has a terminator at the end (has a terminator at the end)
-        """
-
-        return len(self.instructions) > 0 and self.instructions[-1].is_terminator()
-
-    def is_empty(self):
-        return len(self.instructions) == 0
+        assert isinstance(instruction, LLVMInstruction.LLVMInstruction)
+        assert not isinstance(instruction, LLVMInstruction.LLVMAllocaInstruction)
+        super().add_instruction(instruction)
 
     def get_number(self):
         """
@@ -45,6 +32,9 @@ class LLVMBasicBlock(IVisitable.ILLVMVisitable):
     def update_numbering(self, counter: LLVMUtils.LLVMCounter):
         for instruction in self.instructions:
             instruction.update_numbering(counter)
+
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_basic_block(self)
 
     def to_llvm(self):
         llvm_code = ""

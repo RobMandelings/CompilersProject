@@ -34,65 +34,65 @@ class LLVMBaseVisitor(ILLVMVisitor.ILLVMVisitor):
         for instruction in llvm_basic_block.instructions:
             instruction.accept(self)
 
-    def visit_llvm_assign_instruction(self, instruction: LLVMInstruction.AssignInstruction):
+    def visit_llvm_assign_instruction(self, instruction: LLVMInstruction.LLVMAssignInstruction):
         pass
 
-    def visit_llvm_return_instruction(self, instruction: LLVMInstruction.ReturnInstruction):
+    def visit_llvm_return_instruction(self, instruction: LLVMInstruction.LLVMReturnInstruction):
         pass
 
-    def visit_llvm_raw_assign_instruction(self, instruction: LLVMInstruction.RawAssignInstruction):
+    def visit_llvm_raw_assign_instruction(self, instruction: LLVMInstruction.LLVMRawAssignInstruction):
         pass
 
-    def visit_llvm_alloca_instruction(self, instruction: LLVMInstruction.AllocaInstruction):
+    def visit_llvm_alloca_instruction(self, instruction: LLVMInstruction.LLVMAllocaInstruction):
         pass
 
-    def visit_llvm_alloca_array_instruction(self, instruction: LLVMInstruction.AllocaArrayInstruction):
+    def visit_llvm_alloca_array_instruction(self, instruction: LLVMInstruction.LLVMAllocaArrayInstruction):
         pass
 
-    def visit_llvm_store_instruction(self, instruction: LLVMInstruction.StoreInstruction):
+    def visit_llvm_store_instruction(self, instruction: LLVMInstruction.LLVMStoreInstruction):
         pass
 
-    def visit_llvm_load_instruction(self, instruction: LLVMInstruction.LoadInstruction):
+    def visit_llvm_load_instruction(self, instruction: LLVMInstruction.LLVMLoadInstruction):
         pass
 
-    def visit_llvm_conditional_instruction(self, instruction: LLVMInstruction.ConditionalBranchInstruction):
+    def visit_llvm_conditional_instruction(self, instruction: LLVMInstruction.LLVMConditionalBranchInstruction):
         pass
 
-    def visit_llvm_conditional_branch_instruction(self, instruction: LLVMInstruction.ConditionalBranchInstruction):
+    def visit_llvm_conditional_branch_instruction(self, instruction: LLVMInstruction.LLVMConditionalBranchInstruction):
         pass
 
-    def visit_llvm_unconditional_branch_instruction(self, instruction: LLVMInstruction.UnconditionalBranchInstruction):
+    def visit_llvm_unconditional_branch_instruction(self, instruction: LLVMInstruction.LLVMUnconditionalBranchInstruction):
         pass
 
-    def visit_llvm_unary_assign_instruction(self, instruction: LLVMInstruction.UnaryAssignInstruction):
+    def visit_llvm_unary_assign_instruction(self, instruction: LLVMInstruction.LLVMUnaryAssignInstruction):
         pass
 
-    def visit_llvm_binary_assign_instruction(self, instruction: LLVMInstruction.BinaryAssignInstruction):
+    def visit_llvm_binary_assign_instruction(self, instruction: LLVMInstruction.LLVMBinaryAssignInstruction):
         pass
 
-    def visit_llvm_binary_arithmetic_instruction(self, instruction: LLVMInstruction.BinaryArithmeticInstruction):
+    def visit_llvm_binary_arithmetic_instruction(self, instruction: LLVMInstruction.LLVMBinaryArithmeticInstruction):
         pass
 
-    def visit_llvm_data_type_convert_instruction(self, instruction: LLVMInstruction.DataTypeConvertInstruction):
+    def visit_llvm_data_type_convert_instruction(self, instruction: LLVMInstruction.LLVMDataTypeConvertInstruction):
         pass
 
-    def visit_llvm_compare_instruction(self, instruction: LLVMInstruction.CompareInstruction):
+    def visit_llvm_compare_instruction(self, instruction: LLVMInstruction.LLVMCompareInstruction):
         pass
 
-    def visit_llvm_unary_arithmetic_instruction(self, instruction: LLVMInstruction.UnaryArithmeticInstruction):
+    def visit_llvm_unary_arithmetic_instruction(self, instruction: LLVMInstruction.LLVMUnaryArithmeticInstruction):
         pass
 
-    def visit_llvm_get_elementptr_instruction(self, instruction: LLVMInstruction.GetElementPtrInstruction):
+    def visit_llvm_get_elementptr_instruction(self, instruction: LLVMInstruction.LLVMGetElementPtrInstruction):
         pass
 
-    def visit_llvm_printf_instruction(self, instruction: LLVMInstruction.PrintfInstruction):
+    def visit_llvm_printf_instruction(self, instruction: LLVMInstruction.LLVMPrintfInstruction):
         pass
 
-    def visit_llvm_call_instruction(self, instruction: LLVMInstruction.CallInstruction):
+    def visit_llvm_call_instruction(self, instruction: LLVMInstruction.LLVMCallInstruction):
         pass
 
-    def visit_llvm_bitcast_instruction(self, instruction: LLVMInstruction.BitcastInstruction):
+    def visit_llvm_bitcast_instruction(self, instruction: LLVMInstruction.LLVMBitcastInstruction):
         pass
 
-    def visit_llvm_memcpy_instruction(self, instruction: LLVMInstruction.MemcpyInstruction):
+    def visit_llvm_memcpy_instruction(self, instruction: LLVMInstruction.LLVMMemcpyInstruction):
         pass

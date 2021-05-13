@@ -101,8 +101,8 @@ class LLVMDefinedFunction(LLVMFunction):
     def get_current_basic_block(self):
         return self.basic_blocks.get(next(reversed(self.basic_blocks)))
 
-    def add_instruction(self, instruction: LLVMInstruction.Instruction):
-        if isinstance(instruction, LLVMInstruction.AllocaInstruction):
+    def add_instruction(self, instruction: LLVMInstruction.LLVMInstruction):
+        if isinstance(instruction, LLVMInstruction.LLVMAllocaInstruction):
             self.__alloca_instructions.append(instruction)
         else:
             self.get_current_basic_block().add_instruction(instruction)
@@ -146,7 +146,7 @@ class LLVMDefinedFunction(LLVMFunction):
         counter.increase()
 
         for alloca_instruction in self.__alloca_instructions:
-            assert isinstance(alloca_instruction, LLVMInstruction.AllocaInstruction)
+            assert isinstance(alloca_instruction, LLVMInstruction.LLVMAllocaInstruction)
             alloca_instruction.update_numbering(counter)
 
         first_basic_block = True
@@ -167,12 +167,12 @@ class LLVMDefinedFunction(LLVMFunction):
         if not self.get_current_basic_block().has_terminal_instruction():
             allocated_reg = LLVMValue.LLVMRegister(DataType.DataType(self.get_return_type().get_token(),
                                                                      self.get_return_type().get_pointer_level() + 1))
-            alloca_instruction = LLVMInstruction.AllocaInstruction(allocated_reg)
+            alloca_instruction = LLVMInstruction.LLVMAllocaInstruction(allocated_reg)
             self.add_instruction(alloca_instruction)
 
             loaded_reg = LLVMValue.LLVMRegister(self.get_return_type())
-            self.add_instruction(LLVMInstruction.LoadInstruction(loaded_reg, allocated_reg))
-            self.add_instruction(LLVMInstruction.ReturnInstruction(loaded_reg))
+            self.add_instruction(LLVMInstruction.LLVMLoadInstruction(loaded_reg, allocated_reg))
+            self.add_instruction(LLVMInstruction.LLVMReturnInstruction(loaded_reg))
 
     def to_llvm(self):
 

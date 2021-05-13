@@ -3,20 +3,22 @@ import src.ast.IAstVisitor as IAstVisitor
 import src.interfaces.ILLVMVisitor as ILLVMVisitor
 
 
-class IVisitable:
+class IVisitable(abc.ABC):
 
     @abc.abstractmethod
     def accept(self, visitor):
         pass
 
 
-class IASTVisitable(IVisitable):
+class IASTVisitable(IVisitable, abc.ABC):
 
+    @abc.abstractmethod
     def accept(self, visitor: IAstVisitor.IASTVisitor):
         pass
 
 
-class ILLVMVisitable(IVisitable):
+class ILLVMVisitable(IVisitable, abc.ABC):
 
+    @abc.abstractmethod
     def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
         pass

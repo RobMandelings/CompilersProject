@@ -43,7 +43,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         before_while_basic_block = self.get_current_basic_block()
         basic_block_of_condition, resulting_reg_of_condition = self.build_conditional_statement(while_loop_ast)
         before_while_basic_block.add_instruction(
-            LLVMInstructions.UnconditionalBranchInstruction(basic_block_of_condition))
+            LLVMInstructions.LLVMUnconditionalBranchInstruction(basic_block_of_condition))
 
         # First we need to keep track of the label of the condition block, then we make two new blocks:
         # one for the code within the loop and one label for what happens after the loop
@@ -62,13 +62,13 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
                     if while_loop_ast.get_update_step() is not None:
                         while_loop_ast.get_update_step().accept(self)
                     self.get_current_basic_block().add_instruction(
-                        LLVMInstructions.UnconditionalBranchInstruction(basic_block_of_condition))
+                        LLVMInstructions.LLVMUnconditionalBranchInstruction(basic_block_of_condition))
 
                     # Add a basic block to continue writing instructions
                     self.get_current_function().add_basic_block(LLVMBasicBlock.LLVMBasicBlock())
                 elif child.control_flow_token == ASTTokens.ControlFlowToken.BREAK:
                     self.get_current_basic_block().add_instruction(
-                        LLVMInstructions.UnconditionalBranchInstruction(after_while_loop_basic_block))
+                        LLVMInstructions.LLVMUnconditionalBranchInstruction(after_while_loop_basic_block))
                     self.get_current_function().add_basic_block(LLVMBasicBlock.LLVMBasicBlock())
                 else:
                     raise NotImplementedError
@@ -78,13 +78,13 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
             while_loop_ast.get_update_step().accept(self)
 
         self.get_current_basic_block().add_instruction(
-            LLVMInstructions.UnconditionalBranchInstruction(basic_block_of_condition))
+            LLVMInstructions.LLVMUnconditionalBranchInstruction(basic_block_of_condition))
 
         # Branch to the body of the loop or branch to the location after the loop, based on the outcome of the while loop condition
         basic_block_of_condition.add_instruction(
-            LLVMInstructions.ConditionalBranchInstruction(resulting_reg_of_condition,
-                                                          while_loop_body_basic_block,
-                                                          after_while_loop_basic_block))
+            LLVMInstructions.LLVMConditionalBranchInstruction(resulting_reg_of_condition,
+                                                              while_loop_body_basic_block,
+                                                              after_while_loop_basic_block))
 
         self.get_current_function().add_basic_block(after_while_loop_basic_block)
 
@@ -143,8 +143,8 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
                 else_statement_entry = self.builder.get_current_function().add_basic_block()
 
             basic_block_of_condition.add_instruction(
-                LLVMInstructions.ConditionalBranchInstruction(resulting_reg, exec_body,
-                                                              else_statement_entry))
+                LLVMInstructions.LLVMConditionalBranchInstruction(resulting_reg, exec_body,
+                                                                  else_statement_entry))
 
             # Return the conditional statement entry as it is the start of an if-statement with condition
             return basic_block_of_condition
@@ -172,12 +172,12 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         basic_block_outside_if_statement = self.builder.get_current_function().get_current_basic_block()
 
         before_if_basic_block.add_instruction(
-            LLVMInstructions.UnconditionalBranchInstruction(if_statement_entry))
+            LLVMInstructions.LLVMUnconditionalBranchInstruction(if_statement_entry))
         for basic_block in if_statement_ending_basic_blocks:
             assert isinstance(basic_block, LLVMBasicBlock.LLVMBasicBlock)
             if not basic_block.has_terminal_instruction():
                 basic_block.add_instruction(
-                    LLVMInstructions.UnconditionalBranchInstruction(basic_block_outside_if_statement))
+                    LLVMInstructions.LLVMUnconditionalBranchInstruction(basic_block_outside_if_statement))
 
     def visit_ast_while_loop(self, ast: ASTs.ASTWhileLoop):
         self.build_while_loop(ast)
@@ -249,7 +249,7 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
             assert isinstance(param, ASTs.ASTVarDeclaration)
             resulting_reg = self.builder.declare_variable(param)
             self.builder.get_current_function().add_instruction(
-                LLVMInstructions.StoreInstruction(resulting_reg, param_register))
+                LLVMInstructions.LLVMStoreInstruction(resulting_reg, param_register))
 
         ast.get_execution_body().accept(self)
 
@@ -271,14 +271,14 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
             return_value = LLVMValue.LLVMRegister(DataType.DataType(variable_register.get_data_type().get_token(),
                                                                     variable_register.get_data_type().get_pointer_level() - 1))
             self.builder.get_current_function().add_instruction(
-                LLVMInstructions.LoadInstruction(return_value, variable_register))
+                LLVMInstructions.LLVMLoadInstruction(return_value, variable_register))
         elif isinstance(ast.get_return_value(), ASTs.ASTLiteral):
             return_value = LLVMValue.LLVMLiteral(ast.get_return_value().get_value(),
                                                  ast.get_return_value().get_data_type())
         else:
             raise NotImplementedError
 
-        self.builder.get_current_function().add_instruction(LLVMInstructions.ReturnInstruction(return_value))
+        self.builder.get_current_function().add_instruction(LLVMInstructions.LLVMReturnInstruction(return_value))
         self.builder.get_current_function().add_basic_block()
 
     def to_file(self, output_filename: str):

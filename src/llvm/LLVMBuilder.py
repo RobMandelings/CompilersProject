@@ -8,7 +8,6 @@ import src.llvm.LLVMInterfaces as LLVMInterfaces
 import src.llvm.LLVMSymbolTable as LLVMSymbolTable
 import src.llvm.LLVMUtils as LLVMUtils
 import src.llvm.LLVMValue as LLVMValues
-import src.llvm.LLVMCode as LLVMCode
 from src.llvm import LLVMValue
 
 
@@ -100,7 +99,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
                     operand1.get_data_type())
 
                 self.get_current_function().add_instruction(
-                    LLVMInstructions.DataTypeConvertInstruction(converted_poorest_value, poorest_value))
+                    LLVMInstructions.LLVMDataTypeConvertInstruction(converted_poorest_value, poorest_value))
 
             # Convert the richest register to scientific notation as well if necessary
 
@@ -121,7 +120,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
                 else:
                     operand2 = LLVMUtils.get_llvm_for_literal(richest_value, operand2.get_data_type())
 
-        compare_instruction = LLVMInstructions.CompareInstruction(operation, operand1, operand2)
+        compare_instruction = LLVMInstructions.LLVMCompareInstruction(operation, operand1, operand2)
         self.get_current_function().add_instruction(compare_instruction)
 
         return compare_instruction.get_resulting_register()
@@ -135,8 +134,8 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         operation = ast.get_token()
 
         if isinstance(operation, ASTs.BinaryArithmeticExprToken):
-            instruction = LLVMInstructions.BinaryArithmeticInstruction(operation, operand1,
-                                                                       operand2)
+            instruction = LLVMInstructions.LLVMBinaryArithmeticInstruction(operation, operand1,
+                                                                           operand2)
             register_to_return = instruction.get_resulting_register()
         elif isinstance(operation, ASTTokens.RelationalExprToken):
 
@@ -145,7 +144,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             raise NotImplementedError("This type of instructions are not yet supported")
 
         if instruction is not None:
-            assert isinstance(instruction, LLVMInstructions.AssignInstruction)
+            assert isinstance(instruction, LLVMInstructions.LLVMAssignInstruction)
             self.get_current_function().add_instruction(instruction)
 
         return register_to_return
@@ -157,7 +156,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             resulting_reg = self.compute_expression(ast.get_value_applied_to())
             # Do nothing with plus as it doesn't do anything
             if ast.get_token() == ASTTokens.UnaryArithmeticExprToken.MINUS:
-                invert_instruction = LLVMInstructions.BinaryArithmeticInstruction(
+                invert_instruction = LLVMInstructions.LLVMBinaryArithmeticInstruction(
                     ASTTokens.BinaryArithmeticExprToken.SUB,
                     LLVMValue.LLVMLiteral(str(0), DataType.NORMAL_INT), resulting_reg)
                 self.get_current_function().add_instruction(invert_instruction)
@@ -192,7 +191,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
                                                                  load_from_reg.get_data_type().get_pointer_level() - 1))
 
         self.get_current_function().add_instruction(
-            LLVMInstructions.LoadInstruction(resulting_reg, load_from_reg))
+            LLVMInstructions.LLVMLoadInstruction(resulting_reg, load_from_reg))
 
         return resulting_reg
 
@@ -210,17 +209,18 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         register_with_element_ptr = self.get_current_function().get_new_register(
             DataType.DataType(array_element_register.get_data_type().get_token(), 1))
         index = ast.get_index_accessed()
-        instruction = getElementPtr_instruction = LLVMInstructions.GetElementPtrInstruction(register_with_element_ptr,
-                                                                                            str(
-                                                                                                ast.get_index_accessed().get_value()),
-                                                                                            array_symbol.get_array_size(),
-                                                                                            array_element_register)
+        instruction = getElementPtr_instruction = LLVMInstructions.LLVMGetElementPtrInstruction(
+            register_with_element_ptr,
+            str(
+                ast.get_index_accessed().get_value()),
+            array_symbol.get_array_size(),
+            array_element_register)
         self.get_current_function().add_instruction(instruction)
         register_to_return = self.get_current_function().get_new_register(
             DataType.DataType(array_element_register.get_data_type().get_token(), 0))
 
         self.get_current_function().add_instruction(
-            LLVMInstructions.LoadInstruction(register_to_return, register_with_element_ptr))
+            LLVMInstructions.LLVMLoadInstruction(register_to_return, register_with_element_ptr))
         return register_to_return
 
     def __compute_function_call(self, ast: ASTs.ASTFunctionCall):
@@ -272,7 +272,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
             instruction_parts.append(')')
 
-            instruction = LLVMInstructions.RawAssignInstruction(LLVMValues.LLVMRegister(), instruction_parts)
+            instruction = LLVMInstructions.LLVMRawAssignInstruction(LLVMValues.LLVMRegister(), instruction_parts)
             self.get_current_function().add_instruction(instruction)
 
         else:
@@ -285,7 +285,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
             function = self.get_function_holder().get_function(ast.get_function_called_id())
 
-            call_instruction = LLVMInstructions.CallInstruction(function, args_llvm_value)
+            call_instruction = LLVMInstructions.LLVMCallInstruction(function, args_llvm_value)
 
             self.get_current_function().add_instruction(call_instruction)
 
@@ -330,8 +330,8 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             DataType.DataType(variable_register.get_data_type().get_token(), 0))
 
         self.get_current_function().add_instruction(
-            LLVMInstructions.LoadInstruction(register_to_print,
-                                             variable_register))
+            LLVMInstructions.LLVMLoadInstruction(register_to_print,
+                                                 variable_register))
 
         # The global variable that contains the string of the corresponding type of variable to call (printf(%i, your_int))
         # has the string %i\00 as type to use for the print. The global variable contains this string
@@ -339,7 +339,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         resulting_register = self.get_current_function().get_new_register()
         # TODO handle assignments: printing variable results in the amount of characters printed, but they need to be
         # able to be assigned to a variable
-        instruction = LLVMInstructions.PrintfInstruction(register_to_print, global_var_data_type)
+        instruction = LLVMInstructions.LLVMPrintfInstruction(register_to_print, global_var_data_type)
         self.get_current_function().add_instruction(instruction)
 
         return resulting_register
@@ -354,7 +354,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             DataType.DataType(ast.get_data_type().get_token(), ast.get_data_type().get_pointer_level() + 1))
         self.get_last_symbol_table().insert_variable(ast.get_var_name(), resulting_register)
 
-        instruction = LLVMInstructions.AllocaInstruction(resulting_register)
+        instruction = LLVMInstructions.LLVMAllocaInstruction(resulting_register)
         self.get_current_function().add_instruction(instruction)
         return resulting_register
 
@@ -373,9 +373,9 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
                                                      new_register)
 
         self.get_current_function().add_instruction(
-            LLVMInstructions.AllocaInstruction(new_register))
+            LLVMInstructions.LLVMAllocaInstruction(new_register))
         self.get_current_function().add_instruction(
-            LLVMInstructions.StoreInstruction(new_register, value_to_store))
+            LLVMInstructions.LLVMStoreInstruction(new_register, value_to_store))
 
     def declare_array(self, ast: ASTs.ASTArrayVarDeclaration):
         """
@@ -385,7 +385,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             DataType.DataType(ast.get_data_type().get_token(), ast.get_data_type().get_pointer_level() + 1))
         llvm_size = LLVMValue.LLVMLiteral(ast.get_array_size().get_value(), ast.get_array_size().get_data_type())
         self.get_last_symbol_table().insert_array(ast.get_var_name(), resulting_register, llvm_size)
-        instruction = LLVMInstructions.AllocaArrayInstruction(resulting_register, llvm_size)
+        instruction = LLVMInstructions.LLVMAllocaArrayInstruction(resulting_register, llvm_size)
         self.get_current_function().add_instruction(instruction)
         return resulting_register
 
@@ -401,14 +401,15 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
                 string += '\\00'
 
             global_var_created = self.get_global_container().add_global_string(ast.get_array_size(), string)
-            bitcast_instruction = LLVMInstructions.BitcastInstruction(allocated_reg, f'[{ast.get_array_size()} x i8]*',
-                                                                      'i8*')
+            bitcast_instruction = LLVMInstructions.LLVMBitcastInstruction(allocated_reg,
+                                                                          f'[{ast.get_array_size()} x i8]*',
+                                                                          'i8*')
             self.get_current_function().add_instruction(bitcast_instruction)
 
             size = ast.get_array_size()
             self.get_current_function().add_instruction(
-                LLVMInstructions.MemcpyInstruction(bitcast_instruction.get_resulting_register(), size,
-                                                   global_var_created))
+                LLVMInstructions.LLVMMemcpyInstruction(bitcast_instruction.get_resulting_register(), size,
+                                                       global_var_created))
             self.get_global_container().add_memcpy_declaration()
 
     def get_string_from_char_array(self, array_init: ASTs.ASTArrayInit):
@@ -428,7 +429,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         store_in_reg = self.compute_expression(ast.left)
         value_to_store = self.compute_expression(ast.right)
 
-        store_instruction = LLVMInstructions.StoreInstruction(store_in_reg, value_to_store)
+        store_instruction = LLVMInstructions.LLVMStoreInstruction(store_in_reg, value_to_store)
         self.get_current_function().add_instruction(store_instruction)
 
     def to_file(self, filename: str):
@@ -448,4 +449,5 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         return llvm_code
 
     def build(self):
-        return LLVMCode.LLVMCode(self)
+        from src.llvm.LLVMCode import LLVMCode
+        return LLVMCode(self)

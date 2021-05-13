@@ -7,21 +7,20 @@ import src.llvm.LLVMInterfaces as LLVMInterfaces
 import src.llvm.LLVMUtils as LLVMUtils
 import src.llvm.LLVMValue as LLVMValue
 import src.interfaces.IVisitable as IVisitable
+import src.Instruction as Instruction
+from src.interfaces import ILLVMVisitor as ILLVMVisitor
 
 
-def isConstant(operand: str):
+def is_constant(operand: str):
     if operand.startswith('%'):
         return False
     return True
 
 
-class Instruction(LLVMInterfaces.IToLLVM, abc.ABC):
+class LLVMInstruction(LLVMInterfaces.IToLLVM, IVisitable.ILLVMVisitable, abc.ABC, Instruction.Instruction):
 
     def __init__(self):
-        pass
-
-    def is_terminator(self):
-        raise NotImplementedError
+        super().__init__()
 
     def to_llvm(self):
         raise NotImplementedError
@@ -33,7 +32,7 @@ class Instruction(LLVMInterfaces.IToLLVM, abc.ABC):
         pass
 
 
-class ReturnInstruction(Instruction):
+class LLVMReturnInstruction(LLVMInstruction):
 
     def __init__(self, return_value: LLVMValue.LLVMValue):
         super().__init__()
@@ -49,8 +48,11 @@ class ReturnInstruction(Instruction):
     def to_llvm(self):
         return f'ret {self.get_return_value().get_data_type().get_llvm_name()} {self.get_return_value().to_llvm()}'
 
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_return_instruction(self)
 
-class AssignInstruction(Instruction):
+
+class LLVMAssignInstruction(LLVMInstruction):
     """
     Instruction which has a resulting register
     """
@@ -75,7 +77,7 @@ class AssignInstruction(Instruction):
         return f"{self.resulting_reg.to_llvm()} = "
 
 
-class RawAssignInstruction(AssignInstruction):
+class LLVMRawAssignInstruction(LLVMAssignInstruction):
 
     def __init__(self, resulting_reg, instruction_parts: list, terminator: bool = False):
         super().__init__(resulting_reg)
@@ -96,8 +98,11 @@ class RawAssignInstruction(AssignInstruction):
 
         return llvm_code
 
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_raw_assign_instruction(self)
 
-class AllocaInstruction(AssignInstruction):
+
+class LLVMAllocaInstruction(LLVMAssignInstruction):
 
     def __init__(self, resulting_reg: LLVMValue.LLVMRegister):
         super().__init__(resulting_reg)
@@ -113,8 +118,11 @@ class AllocaInstruction(AssignInstruction):
     def is_terminator(self):
         return False
 
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_alloca_instruction(self)
 
-class AllocaArrayInstruction(AllocaInstruction):
+
+class LLVMAllocaArrayInstruction(LLVMAllocaInstruction):
     def __init__(self, resulting_reg: LLVMValue.LLVMRegister, size: LLVMValue.LLVMLiteral):
         super().__init__(resulting_reg)
         self.size = size
@@ -131,11 +139,14 @@ class AllocaArrayInstruction(AllocaInstruction):
             align_const = 4
         elif array_size >= 4:
             align_const = 16
-        return AssignInstruction.to_llvm(
+        return LLVMAssignInstruction.to_llvm(
             self) + f"alloca [{self.size.get_value()} x {llvm_for_data_type}], align {align_const}"
 
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_alloca_array_instruction(self)
 
-class StoreInstruction(Instruction):
+
+class LLVMStoreInstruction(LLVMInstruction):
 
     def __init__(self, put_in_register: LLVMValue.LLVMRegister, value_to_store: LLVMValue):
         """
@@ -159,8 +170,11 @@ class StoreInstruction(Instruction):
     def is_terminator(self):
         return False
 
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_store_instruction(self)
 
-class LoadInstruction(AssignInstruction):
+
+class LLVMLoadInstruction(LLVMAssignInstruction):
     """
     Loads the value of a pointer type into a register (for example, load an i32 from register %1 of type i32* in register %2)
     """
@@ -180,8 +194,11 @@ class LoadInstruction(AssignInstruction):
         llvm_data_type_to_load = self.resulting_reg.get_data_type().get_llvm_name()
         return super().to_llvm() + f"load {llvm_data_type_to_load}, {llvm_data_type_to_load}* {self.load_from_reg}, align 4"
 
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_load_instruction(self)
 
-class ConditionalBranchInstruction(Instruction):
+
+class LLVMConditionalBranchInstruction(LLVMInstruction):
     """
     Conditional Branch instruction for LLVM
     """
@@ -200,8 +217,11 @@ class ConditionalBranchInstruction(Instruction):
     def is_terminator(self):
         return True
 
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_conditional_branch_instruction(self)
 
-class UnconditionalBranchInstruction(Instruction):
+
+class LLVMUnconditionalBranchInstruction(LLVMInstruction):
 
     def __init__(self, destination: LLVMBasicBlock):
         """
@@ -216,8 +236,11 @@ class UnconditionalBranchInstruction(Instruction):
     def is_terminator(self):
         return True
 
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_unconditional_branch_instruction(self)
 
-class UnaryAssignInstruction(AssignInstruction):
+
+class LLVMUnaryAssignInstruction(LLVMAssignInstruction):
 
     def __init__(self, resulting_reg: LLVMValue.LLVMRegister, operand: LLVMValue.LLVMRegister):
         """
@@ -231,8 +254,11 @@ class UnaryAssignInstruction(AssignInstruction):
     def get_operand(self):
         return self.operand
 
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_unary_assign_instruction(self)
 
-class BinaryAssignInstruction(AssignInstruction):
+
+class LLVMBinaryAssignInstruction(LLVMAssignInstruction):
 
     def __init__(self, resulting_reg: LLVMValue.LLVMRegister, operation, operand1: LLVMValue,
                  operand2: LLVMValue):
@@ -250,13 +276,15 @@ class BinaryAssignInstruction(AssignInstruction):
         """
         return self.operand1.get_data_type().get_llvm_name(), self.operand2.get_data_type().get_llvm_name()
 
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_binary_assign_instruction(self)
 
-@abc.abstractmethod
-def get_llvm_for_operation(self):
-    raise NotImplementedError
+    @abc.abstractmethod
+    def get_llvm_for_operation(self):
+        raise NotImplementedError
 
 
-class BinaryArithmeticInstruction(BinaryAssignInstruction):
+class LLVMBinaryArithmeticInstruction(LLVMBinaryAssignInstruction):
     """
     Instructions which apply arithmetics on registers and puts the result in another register
     """
@@ -313,8 +341,11 @@ class BinaryArithmeticInstruction(BinaryAssignInstruction):
         operation_string = self.get_llvm_for_operation()
         return super().to_llvm() + operation_string + f'{self.operand1.to_llvm()}, {self.operand2.to_llvm()}'
 
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_binary_arithmetic_instruction(self)
 
-class DataTypeConvertInstruction(UnaryAssignInstruction):
+
+class LLVMDataTypeConvertInstruction(LLVMUnaryAssignInstruction):
 
     def __init__(self, resulting_reg: LLVMValue.LLVMRegister, reg_to_convert: LLVMValue.LLVMRegister):
         """
@@ -349,8 +380,11 @@ class DataTypeConvertInstruction(UnaryAssignInstruction):
         return super().to_llvm() + f'{self.llvm_operation} {self.get_operand().get_data_type().get_llvm_name()}' \
                                    f' {self.get_operand().to_llvm()} {self.llvm_to_data_type}'
 
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_data_type_convert_instruction(self)
 
-class CompareInstruction(BinaryAssignInstruction):
+
+class LLVMCompareInstruction(LLVMBinaryAssignInstruction):
     """
     Creates 1 compare instruction for the two resulting registers. Does not do any type conversions first, so make
     sure you do that. The LLVMBuilder has such a method to create the full compare statement (with type conversions)
@@ -424,9 +458,12 @@ class CompareInstruction(BinaryAssignInstruction):
         return super().to_llvm() + f'{self.get_llvm_comparison_type()} {self.get_llvm_for_operation()} ' \
                                    f'{self.operand1.get_data_type().get_llvm_name()} {self.operand1}, {self.operand2}'
 
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_compare_instruction(self)
+
 
 # TODO must be implemented
-class UnaryArithmeticInstruction(AssignInstruction):
+class LLVMUnaryArithmeticInstruction(LLVMAssignInstruction):
 
     def __init__(self, resulting_reg: LLVMValue.LLVMRegister):
         super().__init__(resulting_reg)
@@ -435,8 +472,11 @@ class UnaryArithmeticInstruction(AssignInstruction):
     def to_llvm(self):
         raise NotImplementedError
 
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_unary_arithmetic_instruction(self)
 
-class GetElementPtrInstruction(AssignInstruction):
+
+class LLVMGetElementPtrInstruction(LLVMAssignInstruction):
 
     def __init__(self, resulting_register: LLVMValue.LLVMRegister, index: str, size: LLVMValue.LLVMLiteral,
                  array_register: LLVMValue.LLVMRegister):
@@ -454,8 +494,11 @@ class GetElementPtrInstruction(AssignInstruction):
         return super().to_llvm() + f'getelementptr inbounds [{self.size.get_value()} x {datatype.get_llvm_name()}], ' \
                                    f'[{self.size.get_value()} x {datatype.get_llvm_name()}]* {self.array_register.to_llvm()}, i64 0, i64 {self.index}'
 
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_get_elementptr_instruction(self)
 
-class PrintfInstruction(AssignInstruction):
+
+class LLVMPrintfInstruction(LLVMAssignInstruction):
 
     def __init__(self, register_to_print: LLVMValue.LLVMRegister,
                  string_to_print_name: str):
@@ -477,8 +520,11 @@ class PrintfInstruction(AssignInstruction):
         # TODO must be customized to be able to print completely custom names
         return super().to_llvm() + f"call i32 (i8*, ...) @printf(i8* getelementptr inbounds([3 x i8], [3 x i8]* {self.string_to_print_name}, i64 0, i64 0), i32 {self.register_to_print})"
 
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_printf_instruction(self)
 
-class CallInstruction(AssignInstruction):
+
+class LLVMCallInstruction(LLVMAssignInstruction):
 
     def __init__(self, function_to_call, args: list, infinity_params=False):
         from src.llvm.LLVMFunction import LLVMFunction
@@ -509,8 +555,11 @@ class CallInstruction(AssignInstruction):
 
         return llvm_code
 
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_call_instruction(self)
 
-class BitcastInstruction(AssignInstruction):
+
+class LLVMBitcastInstruction(LLVMAssignInstruction):
 
     def __init__(self, reg_to_convert: LLVMValue.LLVMRegister, from_type: str, to_type: str):
         super().__init__(LLVMValue.LLVMRegister())
@@ -521,8 +570,11 @@ class BitcastInstruction(AssignInstruction):
     def to_llvm(self):
         return super().to_llvm() + f'bitcast {self.from_type} {self.reg_to_convert} to {self.to_type}'
 
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_bitcast_instruction(self)
 
-class MemcpyInstruction(Instruction):
+
+class LLVMMemcpyInstruction(LLVMInstruction):
 
     def __init__(self, copy_into_reg: LLVMValue.LLVMRegister, size: int, from_global_var: str):
         self.copy_in_reg = copy_into_reg
@@ -540,3 +592,6 @@ class MemcpyInstruction(Instruction):
 
     def update_numbering(self, counter):
         super().update_numbering(counter)
+
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_memcpy_instruction(self)
