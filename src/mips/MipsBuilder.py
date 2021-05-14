@@ -4,6 +4,7 @@ import src.llvm.LLVMBasicBlock as LLVMBasicBlock
 import src.mips.MipsValue as MipsValue
 import src.mips.MipsBasicBlock as MipsBasicBlock
 import src.mips.MipsInstruction as MipsInstruction
+import src.mips.LLVMUsageInformation as LLVMUsageInformation
 
 
 class RegisterPool:
@@ -153,7 +154,7 @@ class MipsFunction:
         self.name = name
         self.saved_registers_used = list()
         self.temporary_registers_used = list()
-        self.usage_information = LLVMUsageInformation()
+        self.usage_information = LLVMUsageInformation.LLVMUsageInformation()
         self.descriptors = Descriptors()
         self.stack_pointer_offset = 0
         self.basic_blocks = list()
