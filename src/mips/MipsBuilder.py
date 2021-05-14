@@ -171,8 +171,8 @@ class MipsFunction:
         stack_pointer_offset: the current offset for the stack pointer
         """
         self.name = name
-        self.saved_registers_used = list()
-        self.temporary_registers_used = list()
+        self.saved_registers_used = set()
+        self.temporary_registers_used = set()
         self.usage_information = LLVMUsageInformation.LLVMUsageInformation()
         self.descriptors = Descriptors()
         self.__stack_pointer_offset = 0
@@ -196,7 +196,8 @@ class MipsFunction:
         self.__stack_pointer_offset += 4
 
     def refresh_usage_information(self, llvm_basic_block: LLVMBasicBlock.LLVMBasicBlock):
-        self.usage_information.refresh(llvm_basic_block)
+        # TODO implement this
+        raise NotImplementedError('Refresh usage information not yet working')
 
     def get_current_basic_block(self):
         current_basic_block = self.basic_blocks[-1]
@@ -277,6 +278,8 @@ class MipsBuilder:
             if self.get_current_function().descriptors.has_register_location(llvm_reg):
                 return self.get_current_function().descriptors.get_mips_reg_for_llvm_reg(llvm_reg)
 
+            # Either choose from the s registers or the t registers as preference, depending on whether or not
+            # an allocated llvm register is used (corresponding to variables) or not (temporary values that were calculated)
             mips_registers_to_choose_from = self.reg_pool.get_saved_registers() if \
                 self.get_current_function().descriptors.is_allocated(
                     llvm_reg) else self.reg_pool.get_temporary_registers()
@@ -341,6 +344,10 @@ class MipsBuilder:
             # We only need to update information if it has to be updated
             if llvm_reg is not assigned_llvm_reg:
                 self.load_from_memory(llvm_reg, store_in_reg=mips_reg)
+
+            # TODO Add these registers to saved registers used and temporary registers used
+            # if mips_reg.name.startswith('t'):
+            # elif mips_reg.name.startswith('s'):
 
         return results
 
