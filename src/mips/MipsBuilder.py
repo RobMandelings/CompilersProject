@@ -1,6 +1,9 @@
 import src.llvm.LLVMInstruction as LLVMInstruction
 import src.llvm.LLVMValue as LLVMValue
+import src.llvm.LLVMBasicBlock as LLVMBasicBlock
 import src.mips.MipsValue as MipsValue
+import src.mips.MipsBasicBlock as MipsBasicBlock
+import src.mips.MipsInstruction as MipsInstruction
 
 
 class RegisterPool:
@@ -96,10 +99,19 @@ class Descriptors:
         # opens the locations for other llvm registers to me stored there
         # Which in turn decreases the rate at which the stack pointer lowers.
 
-        assert not llvm_register in self.__address_descriptor, "Address can only be assigned once."
+        assert not self.has_address_location(llvm_register), "Address can only be assigned once."
 
         self.__address_descriptor[
             llvm_register] = f'{stack_pointer_offset}({MipsValue.MipsRegister.STACK_POINTER.get_name()})'
+
+    def has_address_location(self, llvm_register: LLVMValue.LLVMRegister):
+        """
+        Returns whether or not the
+        """
+        return self.get_address_location(llvm_register) is not None
+
+    def get_address_location(self, llvm_register: LLVMValue.LLVMRegister):
+        return self.__address_descriptor.get(llvm_register)
 
     def get_current_location(self, llvm_register: LLVMValue.LLVMRegister):
         """
@@ -179,11 +191,49 @@ class LLVMUsageInformation:
         instruction_information = self.llvm_instructions_information[llvm_instruction]
         assert isinstance(instruction_information, LLVMInstructionInformation)
 
-    def refresh(self, llvm_basic_block):
+    def refresh(self, llvm_basic_block: LLVMBasicBlock.LLVMBasicBlock):
         """
         Refreshes the table with new information for another basic block
         """
         # TODO probably with a visitor that visits all applicable instructions
+
+
+class MipsFunction:
+
+    def __init__(self, name):
+        """
+        usage_information: the current usage information of the basic block
+        descriptors: contains register and address descriptor
+        saved_registers_used: list of saved mips registers ($s) that are used within the current function
+        temporary_registers_used: list of temporary mips registers ($t) that are used within the current function
+        stack_pointer_offset: the current offset for the stack pointer
+        """
+        self.name = name
+        self.saved_registers_used = list()
+        self.temporary_registers_used = list()
+        self.usage_information = LLVMUsageInformation()
+        self.descriptors = Descriptors()
+        self.stack_pointer_offset = 0
+        self.basic_blocks = list()
+        self.add_mips_basic_block(MipsBasicBlock.MipsBasicBlock(self.name))
+
+    def get_name(self):
+        return self.name
+
+    def add_mips_basic_block(self, basic_block: MipsBasicBlock.MipsBasicBlock):
+        basic_block.name = f'{self.get_name()}_{len(self.basic_blocks)}'
+        self.basic_blocks.append(basic_block)
+
+    def refresh_usage_information(self, llvm_basic_block: LLVMBasicBlock.LLVMBasicBlock):
+        self.usage_information.refresh(llvm_basic_block)
+
+    def get_current_basic_block(self):
+        current_basic_block = self.basic_blocks[-1]
+        assert isinstance(current_basic_block, MipsBasicBlock.MipsBasicBlock)
+        return current_basic_block
+
+    def add_instruction(self, mips_instruction: MipsInstruction.MipsInstruction):
+        self.get_current_basic_block().add_instruction(mips_instruction)
 
 
 class MipsBuilder:
@@ -193,19 +243,14 @@ class MipsBuilder:
 
     def __init__(self):
         """
-        usage_information: the current usage information of the basic block
-        descriptors: contains register and address descriptor
         basic_blocks: the basic blocks containing the currently-generated mips code
-        saved_registers_used: list of saved mips registers ($s) that are used within the current function
-        temporary_registers_used: list of temporary mips registers ($t) that are used within the current function
-        stack_pointer_offset: the current offset for the stack pointer
         """
-        self.usage_information = LLVMUsageInformation()
-        self.descriptors = Descriptors()
-        self.basic_blocks = list()
-        self.saved_registers_used = list()
-        self.temporary_registers_used = list()
-        self.stack_pointer_offset = 0
+        self.functions = list()
+
+    def get_current_function(self):
+        current_function = self.functions[-1]
+        assert isinstance(current_function, MipsFunction)
+        return current_function
 
     def get_register(self, instruction):
         """
@@ -224,8 +269,16 @@ class MipsBuilder:
         Should be executed whenever the program enters a function (the callees' responsibility)
         """
 
+    def load_saved_registers(self):
+        pass
+
     def store_temporary_registers(self):
         """
         Generate the instructions to store the temporary instructions into memory
         Should be executed before the program enters a function (the callers' responsibility)
+        """
+
+    def load_temporary_registers(self):
+        """
+
         """
