@@ -114,6 +114,12 @@ class Descriptors:
     def get_address_location(self, llvm_register: LLVMValue.LLVMRegister):
         return self.__address_descriptor.get(llvm_register)
 
+    def has_register_location(self, llvm_register: LLVMValue.LLVMRegister):
+        return self.get_register_location(llvm_register) is not None
+
+    def get_register_location(self, llvm_register: LLVMValue.LLVMRegister):
+        return self.__reg_descriptor.get(llvm_register)
+
     def get_current_location(self, llvm_register: LLVMValue.LLVMRegister):
         """
         Returns the current location of an llvm register, either currently in a mips register or in memory
@@ -189,17 +195,125 @@ class MipsBuilder:
         basic_blocks: the basic blocks containing the currently-generated mips code
         """
         self.functions = list()
+        self.reg_pool = RegisterPool()
 
     def get_current_function(self):
         current_function = self.functions[-1]
         assert isinstance(current_function, MipsFunction)
         return current_function
 
-    def get_register(self, instruction):
+    def get_current_descriptors(self):
+        return self.get_current_function().descriptors
+
+    def __get_candidate_register(self, llvm_register: LLVMValue.LLVMRegister):
         """
-        Retrieves registers for the given binary instruction where you can work with
+        Selects a candidate register from the register pool
         """
-        pass
+
+        # TODO support for t registers being used for allocated registers as well if necessary
+
+    def convert_to_mips_literal(self, llvm_literal: LLVMValue.LLVMLiteral):
+        """
+        Simply converts the llvm literal instance into an instance of mips literal
+        """
+
+        return MipsValue.MipsLiteral(llvm_literal.get_value())
+
+    def get_mips_values(self, instruction: LLVMInstruction.LLVMBinaryAssignInstruction):
+        """
+        Retrieves an available register for usage, spilling old values into memory if
+        necessary or returns a mips literal which you can also use as operand in a mips instruction
+        llvm_register: the register to get a corresponding register for
+        reg_index: the register index for which you want to get the corresponding mips register from
+        """
+
+        # The llvm registers in the instruction to get the corresponding mips registers from
+        # List of tuples <llvmregister, operand-bool>, the operand bool indicating whether or
+        # not the register is for a result or for operand. As the algorithm differs a little bit
+        llvm_values = list()
+
+        llvm_values.append((instruction.get_resulting_register(), False))
+        llvm_values.append((instruction.operand1, True))
+        llvm_values.append((instruction.operand2, True))
+
+        # List of mips registers or mips literals returned from the instruction
+        results = list()
+
+        for pair in llvm_values:
+
+            if isinstance(pair[0], LLVMValue.LLVMLiteral):
+                results.append(self.convert_to_mips_literal(pair[0]))
+
+            # Its not a literal, so it must be a register, continue with the algorithm
+            llvm_register = pair[0]
+
+            # Bool indicating whether its a register for operand or not
+            operand = pair[0]
+
+            assert isinstance(llvm_register, LLVMValue.LLVMRegister)
+
+            if self.get_current_function().descriptors.has_register_location(llvm_register):
+                return self.get_current_function().descriptors.get_register_location(llvm_register)
+
+            mips_registers_to_choose_from = self.reg_pool.get_saved_registers() if \
+                self.get_current_function().descriptors.is_allocated(
+                    llvm_register) else self.reg_pool.get_temporary_registers()
+
+            # Not operand means register for result, we first check if the
+            # result llvm register is already assigned to a mips register, because we can easily return this one
+            # (always a safe option)
+            if not operand:
+                for mips_register in mips_registers_to_choose_from:
+                    if self.get_current_descriptors().get_assigned_register(mips_register) == llvm_register:
+                        return mips_register
+
+            # First choose from the mips registers that are empty
+            for mips_register in mips_registers_to_choose_from:
+                if self.get_current_descriptors().is_empty(mips_register):
+                    return mips_register
+
+                assigned_llvm_register = self.get_current_descriptors().get_assigned_register(mips_register)
+
+                # TODO check x not element of y or z
+                # If the only variable whose descriptor says their value is in r is x
+                # and x not y or z, then return r. (We will overwrite it anyways!)
+                if assigned_llvm_register == llvm_register:
+                    return mips_register
+
+                if not self.get_current_function().usage_information.get_instruction_information(
+                        instruction).get_register_information(assigned_llvm_register).is_live():
+                    return mips_register
+
+            # Filter the mips registers to choose from to make sure you won't spill already
+            # chosen mips registers for the same instruction
+            filtered_mips_registers_to_choose_from = \
+                [mips_register for mips_register in mips_registers_to_choose_from if not mips_register in results]
+
+            for mips_register in filtered_mips_registers_to_choose_from:
+                # Spill the variable for which the mips register is currently assigned into memory first
+                self.spill_into_memory(self.get_current_descriptors().get_assigned_register(mips_register))
+
+                # Now the mips register can be used
+                results.append(mips_register)
+
+        assert len(results) == len(llvm_values)
+
+        # Update the descriptors as there are mips registers assigned to different llvm registers now
+        for i in range(0, len(results)):
+
+            llvm_value = llvm_values[i][0]
+            result = results[i]
+
+            if isinstance(llvm_value, LLVMValue.LLVMRegister):
+                assert isinstance(result, MipsValue.MipsRegister)
+
+                assigned_llvm_register = self.get_current_descriptors().get_assigned_register(result)
+
+                # We only need to update information if it has to be updated
+                if llvm_value is not assigned_llvm_register:
+                    self.get_current_descriptors().assign_to_mips_reg(llvm_value, result)
+
+        return results
 
     def spill_into_memory(self, llvm_reg: LLVMValue.LLVMRegister):
         """

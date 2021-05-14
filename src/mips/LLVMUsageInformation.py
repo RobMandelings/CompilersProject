@@ -23,14 +23,14 @@ class LLVMRegisterInformation:
     """
 
     def __init__(self, alive, next_usage):
-        self.alive = alive
+        self.live = alive
         self.next_usage = next_usage
 
-    def is_alive(self):
+    def is_live(self):
         """
         Returns whether or not the register is alive (from the definition)
         """
-        return self.alive
+        return self.live
 
     def get_next_usage(self):
         """
@@ -47,15 +47,10 @@ class LLVMUsageInformation:
     def __init__(self):
         self.llvm_instructions_information = dict()
 
-    def get_usage_information(self, llvm_instruction: LLVMInstruction.LLVMInstruction):
+    def get_instruction_information(self, llvm_instruction: LLVMInstruction.LLVMInstruction):
         """
         Retrieves the usage and liveness information for a given instruction
         """
         instruction_information = self.llvm_instructions_information[llvm_instruction]
         assert isinstance(instruction_information, LLVMInstructionInformation)
-
-    def refresh(self, llvm_basic_block: LLVMBasicBlock.LLVMBasicBlock):
-        """
-        Refreshes the table with new information for another basic block
-        """
-        # TODO probably with a visitor that visits all applicable instructions
+        return instruction_information
