@@ -60,3 +60,11 @@ class MipsRegister(enum.Enum, MipsValue):
 
     def get_name(self):
         return self.content
+
+
+class MipsLiteral(MipsValue):
+    def __init__(self, value):
+        super().__init__(value)
+
+    def get_value(self):
+        return self.content
