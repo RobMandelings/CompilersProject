@@ -10,9 +10,10 @@ import src.llvm.LLVMUtils as LLVMUtils
 import src.llvm.LLVMValue as LLVMValue
 import src.ast.ASTs as ASTs
 import src.interfaces.IVisitable as IVisitable
+import src.interfaces.ILLVMVisitor as ILLVMVisitor
 
 
-class LLVMFunction(LLVMInterfaces.IToLLVM, abc.ABC):
+class LLVMFunction(LLVMInterfaces.IToLLVM, IVisitable.ILLVMVisitable, abc.ABC):
 
     def __init__(self, identifier: str, return_type: DataType.DataType, params: list):
         self.identifier = identifier
@@ -66,6 +67,9 @@ class LLVMDeclaredFunction(LLVMFunction):
 
         llvm_code += ')'
         return llvm_code
+
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_declared_function(self)
 
 
 class LLVMDefinedFunction(LLVMFunction):
@@ -211,3 +215,6 @@ class LLVMDefinedFunction(LLVMFunction):
         llvm_code += '}'
 
         return llvm_code
+
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_defined_function(self)

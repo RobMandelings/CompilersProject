@@ -12,7 +12,10 @@ class ILLVMVisitor(abc.ABC):
     def visit_llvm_function_holder(self, llvm_function_holder):
         pass
 
-    def visit_llvm_function(self, llvm_function):
+    def visit_llvm_defined_function(self, llvm_defined_function):
+        pass
+
+    def visit_llvm_declared_function(self, llvm_declared_function):
         pass
 
     def visit_llvm_basic_block(self, llvm_basic_block):
