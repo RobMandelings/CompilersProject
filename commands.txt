@@ -1,1 +1,3 @@
 clang -S -emit-llvm test.c
+
+clang -target mipsel-linux-gnu testinput/input.c -S -o

@@ -17,7 +17,7 @@ def is_constant(operand: str):
     return True
 
 
-class LLVMInstruction(LLVMInterfaces.IToLLVM, IVisitable.ILLVMVisitable, abc.ABC, Instruction.Instruction):
+class LLVMInstruction(LLVMInterfaces.IToLLVM, IVisitable.ILLVMVisitable, Instruction.Instruction):
 
     def __init__(self):
         super().__init__()
