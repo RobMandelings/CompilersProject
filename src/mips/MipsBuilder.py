@@ -65,6 +65,13 @@ class Descriptors:
         """
         return self.get_assigned_register_for_mips_reg(mips_register) is None
 
+    def loaded_in_mips_reg(self, llvm_reg: LLVMValue.LLVMRegister, mips_reg: MipsValue.MipsRegister):
+        """
+        Returns whether or not the given llvm register is currently loaded in the given mips register
+        """
+        assigned_reg = self.get_assigned_register_for_mips_reg(mips_reg)
+        return assigned_reg is llvm_reg
+
     def get_assigned_register_for_mips_reg(self, mips_register: MipsValue.MipsRegister):
         """
         Returns the register that is currently assigned to a the given mips register if possible
@@ -339,10 +346,8 @@ class MipsBuilder:
 
             assert isinstance(mips_reg, MipsValue.MipsRegister)
 
-            assigned_llvm_reg = self.get_current_descriptors().get_assigned_register_for_mips_reg(mips_reg)
-
             # We only need to update information if it has to be updated
-            if llvm_reg is not assigned_llvm_reg:
+            if self.get_current_descriptors().loaded_in_mips_reg(llvm_reg, mips_reg):
                 self.load_from_memory(llvm_reg, store_in_reg=mips_reg)
 
             # TODO Add these registers to saved registers used and temporary registers used
