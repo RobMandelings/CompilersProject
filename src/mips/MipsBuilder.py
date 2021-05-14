@@ -221,10 +221,10 @@ class MipsBuilder:
 
     def get_mips_values(self, instruction: LLVMInstruction.LLVMBinaryAssignInstruction):
         """
-        Retrieves an available register for usage, spilling old values into memory if
-        necessary or returns a mips literal which you can also use as operand in a mips instruction
-        llvm_register: the register to get a corresponding register for
-        reg_index: the register index for which you want to get the corresponding mips register from
+        Retrieves:
+        - Mips registers for the result and operands of the given instruction, spilling old values into memory if
+        necessary
+        - Mips literal(s) for operands if the operand(s) in the given instruction also holds literal(s)
         """
 
         # The llvm registers in the instruction to get the corresponding mips registers from
@@ -265,12 +265,14 @@ class MipsBuilder:
             if not operand:
                 for mips_register in mips_registers_to_choose_from:
                     if self.get_current_descriptors().get_assigned_register(mips_register) == llvm_register:
-                        return mips_register
+                        results.append(mips_register)
+                        continue
 
             # First choose from the mips registers that are empty
             for mips_register in mips_registers_to_choose_from:
                 if self.get_current_descriptors().is_empty(mips_register):
-                    return mips_register
+                    results.append(mips_register)
+                    continue
 
                 assigned_llvm_register = self.get_current_descriptors().get_assigned_register(mips_register)
 
@@ -278,11 +280,13 @@ class MipsBuilder:
                 # If the only variable whose descriptor says their value is in r is x
                 # and x not y or z, then return r. (We will overwrite it anyways!)
                 if assigned_llvm_register == llvm_register:
-                    return mips_register
+                    results.append(mips_register)
+                    continue
 
                 if not self.get_current_function().usage_information.get_instruction_information(
                         instruction).get_register_information(assigned_llvm_register).is_live():
-                    return mips_register
+                    results.append(mips_register)
+                    continue
 
             # Filter the mips registers to choose from to make sure you won't spill already
             # chosen mips registers for the same instruction
@@ -295,23 +299,26 @@ class MipsBuilder:
 
                 # Now the mips register can be used
                 results.append(mips_register)
+                continue
 
         assert len(results) == len(llvm_values)
 
         # Update the descriptors as there are mips registers assigned to different llvm registers now
         for i in range(0, len(results)):
 
-            llvm_value = llvm_values[i][0]
-            result = results[i]
+            if isinstance(llvm_values[i][0], LLVMValue.LLVMLiteral):
+                break
 
-            if isinstance(llvm_value, LLVMValue.LLVMRegister):
-                assert isinstance(result, MipsValue.MipsRegister)
+            llvm_register = llvm_values[i][0]
+            mips_register = results[i]
 
-                assigned_llvm_register = self.get_current_descriptors().get_assigned_register(result)
+            assert isinstance(mips_register, MipsValue.MipsRegister)
 
-                # We only need to update information if it has to be updated
-                if llvm_value is not assigned_llvm_register:
-                    self.get_current_descriptors().assign_to_mips_reg(llvm_value, result)
+            assigned_llvm_register = self.get_current_descriptors().get_assigned_register(mips_register)
+
+            # We only need to update information if it has to be updated
+            if llvm_register is not assigned_llvm_register:
+                self.get_current_descriptors().assign_to_mips_reg(llvm_register, mips_register)
 
         return results
 
