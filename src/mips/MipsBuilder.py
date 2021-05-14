@@ -128,7 +128,7 @@ class Descriptors:
         return llvm_register in self.__allocated_registers
 
 
-class MipsInstructionInformation:
+class LLVMInstructionInformation:
     """
     Usage and liveness information for all registers in this instruction
     """
@@ -138,11 +138,11 @@ class MipsInstructionInformation:
 
     def get_register_information(self, llvm_register: LLVMValue.LLVMRegister):
         register_information = self.registers_information[llvm_register]
-        assert isinstance(register_information, MipsRegisterInformation)
+        assert isinstance(register_information, LLVMRegisterInformation)
         return register_information
 
 
-class MipsRegisterInformation:
+class LLVMRegisterInformation:
     """
     Usage and liveness information for this register in a specific instruction
     """
@@ -152,13 +152,19 @@ class MipsRegisterInformation:
         self.next_usage = next_usage
 
     def is_alive(self):
+        """
+        Returns whether or not the register is alive (from the definition)
+        """
         return self.alive
 
     def get_next_usage(self):
+        """
+        Returns the next usage of the register, or None if it doesn't have a next usage
+        """
         return self.next_usage
 
 
-class MipsUsageInformation:
+class LLVMUsageInformation:
     """
     Table which keeps track, for each instruction within a basic block whether or not the variable is live and used
     """
@@ -171,12 +177,13 @@ class MipsUsageInformation:
         Retrieves the usage and liveness information for a given instruction
         """
         instruction_information = self.llvm_instructions_information[llvm_instruction]
-        assert isinstance(instruction_information, MipsInstructionInformation)
+        assert isinstance(instruction_information, LLVMInstructionInformation)
 
     def refresh(self, llvm_basic_block):
         """
         Refreshes the table with new information for another basic block
         """
+        # TODO probably with a visitor that visits all applicable instructions
 
 
 class MipsBuilder:
@@ -193,30 +200,32 @@ class MipsBuilder:
         temporary_registers_used: list of temporary mips registers ($t) that are used within the current function
         stack_pointer_offset: the current offset for the stack pointer
         """
-        self.usage_information = MipsUsageInformation()
+        self.usage_information = LLVMUsageInformation()
         self.descriptors = Descriptors()
         self.basic_blocks = list()
         self.saved_registers_used = list()
         self.temporary_registers_used = list()
         self.stack_pointer_offset = 0
 
-    def get_register(self):
+    def get_register(self, instruction):
         """
         Retrieves registers for the given binary instruction where you can work with
         """
         pass
 
-    def spill_into_memory(self, llvm_reg):
+    def spill_into_memory(self, llvm_reg: LLVMValue.LLVMRegister):
         """
         Stores the given llvm register into memory, generating instructions and updating the descriptors in the process
         """
 
     def store_saved_registers(self):
         """
-        Generate the instructions to store the saved temporary instructions into memory
+        Generate the instructions to store the saved temporary instructions into memory.
+        Should be executed whenever the program enters a function (the callees' responsibility)
         """
 
     def store_temporary_registers(self):
         """
         Generate the instructions to store the temporary instructions into memory
+        Should be executed before the program enters a function (the callers' responsibility)
         """
