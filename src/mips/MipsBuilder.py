@@ -287,6 +287,8 @@ class MipsBuilder:
 
             # Either choose from the s registers or the t registers as preference, depending on whether or not
             # an allocated llvm register is used (corresponding to variables) or not (temporary values that were calculated)
+            # TODO implement 'as preference' meaning that t registers may be used for allocated llvm registers as well
+            # if necessary and vice versa, but make sure that the saving into memory is done properly in function calls
             mips_registers_to_choose_from = self.reg_pool.get_saved_registers() if \
                 self.get_current_function().descriptors.is_allocated(
                     llvm_reg) else self.reg_pool.get_temporary_registers()
@@ -318,6 +320,8 @@ class MipsBuilder:
                 if not self.get_current_function().usage_information.get_instruction_information(
                         instruction).get_register_information(assigned_llvm_reg).is_live():
                     results.append(mips_reg)
+                    # TODO remove all assignments made in the descriptors as the assigned llvm register will
+                    # not be used anymore
                     continue
 
             # Filter the mips registers to choose from to make sure you won't spill already
@@ -357,6 +361,8 @@ class MipsBuilder:
         return results
 
     def load_from_memory(self, llvm_reg: LLVMValue.LLVMRegister, store_in_reg: MipsValue.MipsRegister):
+
+        # TODO what happens when the register to be assigned neither in a mips register or address?
         """
         Generates the instructions to load the given register from memory and places it in a designated mips register
         Also updates the register descriptor properly.
