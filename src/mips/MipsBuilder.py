@@ -282,6 +282,9 @@ class MipsBuilder:
 
             assert isinstance(llvm_reg, LLVMValue.LLVMRegister)
 
+            # TODO Use reference mapper to map the llvm register to its allocated llvm register to get rid of
+            # The load and store operations from llvm (not required anymore)
+
             if self.get_current_function().descriptors.has_register_location(llvm_reg):
                 return self.get_current_function().descriptors.get_mips_reg_for_llvm_reg(llvm_reg)
 
