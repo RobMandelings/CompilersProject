@@ -115,6 +115,11 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         # Creation of mips instruction is done, now adding the instruction to the current function
         self.get_mips_builder().get_current_function().add_instruction(mips_instruction)
 
+
+
+    def visit_llvm_printf_instruction(self, instruction: LLVMInstruction.LLVMPrintfInstruction):
+        super().visit_llvm_printf_instruction(instruction)
+
     def visit_llvm_compare_instruction(self, instruction: LLVMInstruction.LLVMCompareInstruction):
         super().visit_llvm_compare_instruction(instruction)
 
