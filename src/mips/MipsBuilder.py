@@ -542,6 +542,7 @@ class MipsBuilder:
                 if instruction_information is None or instruction_information.get_register_information(
                         assigned_llvm_reg).is_live():
                     chosen_values.append(mips_value)
+                    result_found = True
                     break
 
             if result_found:

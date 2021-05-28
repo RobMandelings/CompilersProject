@@ -31,4 +31,8 @@ int i = 6;
 const int a = 28.999; char c = 'a';
 
 Improved semantic analysing on scopes: variables may be redeclared in another (deeper) scope, just not in the exact same
-scope. Do a lookup_lookal instead of lookup to find the redeclaration of a variable 
+scope. Do a lookup_lookal instead of lookup to find the redeclaration of a variable
+
+# Fixessss
+
+Already declared errors with for loops event though not already declared
