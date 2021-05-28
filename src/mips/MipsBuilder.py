@@ -359,8 +359,13 @@ class MipsBuilder:
         # not the register is for a result or for operand. As the algorithm differs a little bit
         llvm_values = list()
 
+        # List of mips registers or mips literals returned from the instruction
+        results = list()
+
         if resulting_reg is not None:
             llvm_values.append((resulting_reg, False))
+        else:
+            results.append(None)
 
         for operand in operands:
             assert isinstance(operand, LLVMValue.LLVMValue)
@@ -374,9 +379,6 @@ class MipsBuilder:
             if isinstance(llvm_value, LLVMValue.LLVMRegister):
                 if llvm_value in self.ref_mapper:
                     llvm_values[i] = self.ref_mapper[llvm_value]
-
-        # List of mips registers or mips literals returned from the instruction
-        results = list()
 
         for pair in llvm_values:
 
