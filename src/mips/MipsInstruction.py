@@ -177,7 +177,7 @@ class BranchEqualInstruction(BranchInstruction):
         super().__init__(first_register, second_register, label)
 
     def to_mips(self):
-        return f"beq {self.first_register},{self.second_register},{self.label}"
+        return f"beq {self.first_register.get_name()},{self.second_register.get_name()},{self.label.name}"
 
 
 class BranchNotEqualInstruction(BranchInstruction):
@@ -186,7 +186,7 @@ class BranchNotEqualInstruction(BranchInstruction):
         super().__init__(first_register, second_register, label)
 
     def to_mips(self):
-        return f"bne {self.first_register},{self.second_register},{self.label}"
+        return f"bne {self.first_register.get_name()},{self.second_register.get_name()},{self.label.name}"
 
 
 class BranchGreaterThanInstruction(BranchInstruction):
@@ -195,7 +195,7 @@ class BranchGreaterThanInstruction(BranchInstruction):
         super().__init__(first_register, second_register, label)
 
     def to_mips(self):
-        return f"bgt {self.first_register},{self.second_register},{self.label}"
+        return f"bgt {self.first_register.get_name()},{self.second_register.get_name()},{self.label.name}"
 
 
 class BranchGreaterThanOrEqualInstruction(BranchInstruction):
@@ -204,7 +204,7 @@ class BranchGreaterThanOrEqualInstruction(BranchInstruction):
         super().__init__(first_register, second_register, label)
 
     def to_mips(self):
-        return f"bge {self.first_register},{self.second_register},{self.label}"
+        return f"bge {self.first_register.get_name()},{self.second_register.get_name()},{self.label.name}"
 
 
 class BranchLessThaninstruction(BranchInstruction):
@@ -213,7 +213,7 @@ class BranchLessThaninstruction(BranchInstruction):
         super().__init__(first_register, second_register, label)
 
     def to_mips(self):
-        return f"blt {self.first_register},{self.second_register},{self.label}"
+        return f"blt {self.first_register.get_name},{self.second_register.get_name()},{self.label.name}"
 
 
 class BranchLessThanOrEqualInstruction(BranchInstruction):
@@ -222,7 +222,7 @@ class BranchLessThanOrEqualInstruction(BranchInstruction):
         super().__init__(first_register, second_register, label)
 
     def to_mips(self):
-        return f"ble {self.first_register},{self.second_register},{self.label}"
+        return f"ble {self.first_register.get_name},{self.second_register.get_content},{self.label.name}"
 
 # ############################### #
 # Unconditional Jump Instructions #
@@ -276,4 +276,18 @@ class SetOnLessThanInstruction(MipsInstruction):
         self.second_value = second_value
 
     def to_mips(self):
-        raise NotImplementedError
+        if isinstance(self.second_value, MipsValue.MipsLiteral):
+            immediate = True
+        elif isinstance(self.second_value, MipsValue.MipsRegister):
+            immediate = False
+        else:
+            raise NotImplementedError
+
+        operation_string = ""
+        if immediate:
+            operation_string = "slti"
+        else:
+            operation_string = "slt"
+
+        return f"{operation_string} {self.resulting_register.get_name()},{self.first_register.get_name()},{self.second_value.get_content()}"
+
