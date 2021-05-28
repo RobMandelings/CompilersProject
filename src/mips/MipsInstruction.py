@@ -179,7 +179,13 @@ class ArithmeticBinaryInstruction(ArithmeticInstruction):
     def to_mips(self):
         operation_string = ""
         if self.token == ASTTokens.BinaryArithmeticExprToken.ADD:
-            operation_string = "add"
+            if isinstance(self.second_register, MipsValue.MipsRegister):
+                operation_string = "add"
+            elif isinstance(self.second_register, MipsValue.MipsLiteral):
+                operation_string = "addi"
+            else:
+                raise NotImplementedError
+
         elif self.token == ASTTokens.BinaryArithmeticExprToken.SUB:
             operation_string = "sub"
         elif self.token == ASTTokens.BinaryArithmeticExprToken.MUL:
@@ -187,6 +193,8 @@ class ArithmeticBinaryInstruction(ArithmeticInstruction):
         elif self.token == ASTTokens.BinaryArithmeticExprToken.DIV:
             operation_string = "div"
             return operation_string + f" {self.resulting_register.get_name()}, {self.first_register.get_name()}"
+        else:
+            raise NotImplementedError
 
         return operation_string + f" {self.resulting_register.get_name()}, {self.first_register.get_name()}, {self.second_register.get_content()}"
 
