@@ -338,7 +338,8 @@ class MipsBuilder:
 
         return chosen_mips_regs
 
-    def get_mips_values(self, llvm_instruction: LLVMInstruction.LLVMInstruction, resulting_reg: LLVMValue.LLVMRegister,
+    def get_mips_values(self, llvm_instruction: LLVMInstruction.LLVMInstruction,
+                        resulting_reg: LLVMValue.LLVMRegister or None,
                         operands: list, all_registers=False):
         """
 
@@ -358,7 +359,8 @@ class MipsBuilder:
         # not the register is for a result or for operand. As the algorithm differs a little bit
         llvm_values = list()
 
-        llvm_values.append((resulting_reg, False))
+        if resulting_reg is not None:
+            llvm_values.append((resulting_reg, False))
 
         for operand in operands:
             assert isinstance(operand, LLVMValue.LLVMValue)
