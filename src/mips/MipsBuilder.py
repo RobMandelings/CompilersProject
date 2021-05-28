@@ -268,13 +268,15 @@ class MipsFunction:
 
     def add_mips_basic_block(self):
         """
-        Adds a basic block to the current function. Initially empty.
+        Adds a basic block to the current function and returns it. Initially empty.
 
         No argument as basic block required for mips in comparison to llvm, because the conversion from llvm
         to mips is always top-down (this wasn't the case with asts to llvm)
         """
 
-        self.basic_blocks.append(MipsBasicBlock.MipsBasicBlock(f'{self.get_name()}_{len(self.basic_blocks)}'))
+        added_basic_block = MipsBasicBlock.MipsBasicBlock(f'{self.get_name()}_{len(self.basic_blocks)}')
+        self.basic_blocks.append(added_basic_block)
+        return added_basic_block
 
     def refresh_usage_information(self, llvm_basic_block: LLVMBasicBlock.LLVMBasicBlock):
         # TODO implement this
@@ -445,8 +447,6 @@ class MipsBuilder:
 
         if resulting_reg is not None:
             llvm_values.append((resulting_reg, False))
-        else:
-            chosen_values.append(None)
 
         for is_operand in operands:
             assert isinstance(is_operand, LLVMValue.LLVMValue)
@@ -547,6 +547,8 @@ class MipsBuilder:
             else:
                 raise AssertionError(f'No result was found for llvm value {llvm_value}')
 
+        assert len(chosen_values) == len(llvm_values)
+
         for i in range(0, len(chosen_values)):
 
             llvm_value = llvm_values[i][0]
@@ -556,8 +558,6 @@ class MipsBuilder:
                     mips_value) and not self.get_current_descriptors().loaded_in_mips_reg(llvm_value, mips_value):
                 # Spill the variable for which the mips register is currently assigned into memory first
                 self.store_in_memory(mips_value)
-
-        assert len(chosen_values) == len(llvm_values)
 
         # Load the given llvm values into mips registers and updates the descriptors if necessary
         for i in range(0, len(chosen_values)):
@@ -604,6 +604,10 @@ class MipsBuilder:
                         self.get_current_function().saved_temporary_registers_used.append(mips_value)
 
         # Return tuple of <mips_result, mips_operands>
+
+        if resulting_reg is None:
+            chosen_values.insert(0, None)
+
         return chosen_values[0], chosen_values[1:]
 
     def load_in_reg(self, llvm_value: LLVMValue.LLVMValue, store_in_reg: MipsValue.MipsRegister):

@@ -19,8 +19,31 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         """
         Symbol table holds for each basic block the liveness and usage information for each instruction within this
         basic block as well as some other useful information
+        mips_builder: the builder used to generate mips code
+        basic_block_mapper: maps LLVMBasicBlocks to their corresponding MipsBasicBocks
         """
         self.mips_builder = None
+        self.basic_block_mapper = dict()
+
+    def update_basic_block_references(self):
+        """
+        Updates the mips branch instructions to branch to a mips basic block label instead of the llvm basic block label
+        This is used if the mips basic block to branch to was not yet created at the time the branch instruction was created
+
+        Pre-condition: all code must be converted into mips code, so that the references can be updated properly
+        """
+
+        for function in self.get_mips_builder().functions:
+            for basic_block in function.basic_blocks:
+                for instruction in basic_block.instructions:
+                    if isinstance(instruction, MipsInstruction.BranchInstruction):
+                        if isinstance(instruction.label, LLVMBasicBlock.LLVMBasicBlock):
+                            instruction.label = self.basic_block_mapper[instruction.label]
+
+                    elif isinstance(instruction,
+                                    MipsInstruction.UnconditionalJumpInstruction):
+                        if isinstance(instruction.to_jump_to, LLVMBasicBlock.LLVMBasicBlock):
+                            instruction.to_jump_to = self.basic_block_mapper[instruction.to_jump_to]
 
     def get_mips_builder(self):
         assert isinstance(self.mips_builder, MipsBuilder.MipsBuilder)
@@ -29,6 +52,7 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
     def visit_llvm_code(self, llvm_code: LLVMCode.LLVMCode):
         self.mips_builder = MipsBuilder.MipsBuilder()
         super().visit_llvm_code(llvm_code)
+        self.update_basic_block_references()
 
     def visit_llvm_defined_function(self, llvm_defined_function: LLVMFunction.LLVMDefinedFunction):
 
@@ -90,7 +114,8 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         print('hi')
 
     def visit_llvm_basic_block(self, llvm_basic_block: LLVMBasicBlock.LLVMBasicBlock):
-        self.get_mips_builder().get_current_function().add_mips_basic_block()
+        mips_basic_block = self.get_mips_builder().get_current_function().add_mips_basic_block()
+        self.basic_block_mapper[llvm_basic_block] = mips_basic_block
 
         usage_table_visitor = FillUsageTableVisitor.LLVMFillUsageTableVisitor()
         llvm_basic_block.accept(usage_table_visitor)
@@ -132,6 +157,11 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
         # Creation of mips instructions is done, now adding the instructions to the current function
         self.get_mips_builder().get_current_function().add_instruction(mips_instruction_bne)
+
+        # Previous basic block has ended; Create a new one to add the next branch instruction
+        # (not really necessary, but for consistency of the concept 'basic blocks')
+
+        self.get_mips_builder().get_current_function().add_mips_basic_block()
         self.get_mips_builder().get_current_function().add_instruction(mips_instruction_beq)
 
     def visit_llvm_unconditional_branch_instruction(self,
@@ -269,7 +299,7 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
             self.get_mips_builder().get_current_function().add_instruction(sw_instruction)
 
         self.get_mips_builder().store_temporary_registers()
-        
+
         self.get_mips_builder().get_current_function().add_instruction(
             MipsInstruction.JumpAndLinkInstruction(
                 self.get_mips_builder().get_function_entry_block(instruction.function_to_call.get_identifier()))
