@@ -186,7 +186,7 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
         # We need to get the mips args to be stored in memory as all registers,
         # In order to store the arguments into memory
-        mips_result, mips_args_to_be_stored_in_memory = self.get_mips_builder() \
+        resulting_mips_reg, mips_args_to_be_stored_in_memory = self.get_mips_builder() \
             .get_mips_values(instruction,
                              instruction.get_resulting_register(),
                              llvm_args_to_be_stored_in_memory,
@@ -229,3 +229,20 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
         # Callers responsibility: load the registers used that you want to keep
         self.get_mips_builder().load_temporary_registers()
+
+        # Put the v0 in the designated mips resulting register
+        self.get_mips_builder().get_current_function().add_instruction(
+            MipsInstruction.MoveInstruction(register_to_move_in=resulting_mips_reg,
+                                            register_to_move_from=MipsValue.MipsRegister.V0)
+        )
+
+    def visit_llvm_return_instruction(self, instruction: LLVMInstruction.LLVMReturnInstruction):
+
+        # We assert there is only one or zero return value and this will be placed in v0
+
+        self.get_mips_builder().load_in_reg(instruction.get_return_value(), MipsValue.MipsRegister.V0)
+        self.get_mips_builder().get_current_function().add_instruction(
+            MipsInstruction.JumpRegisterInstruction(MipsValue.MipsRegister.RETURN_ADDRESS)
+        )
+
+        super().visit_llvm_return_instruction(instruction)
