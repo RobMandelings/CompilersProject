@@ -186,11 +186,11 @@ class MipsFunction:
         stack_pointer_offset: the current offset for the stack pointer
         """
         self.name = name
-        self.saved_registers_used = set()
+        self.saved_temporary_registers_used = set()
         self.temporary_registers_used = set()
         self.usage_information = LLVMUsageInformation.LLVMUsageInformation()
         self.descriptors = Descriptors()
-        self.__frame_pointer_offset = 0
+        self.frame_pointer_offset = 0
         self.basic_blocks = list()
         self.add_mips_basic_block()
         self.nr_params = nr_params
@@ -213,13 +213,13 @@ class MipsFunction:
         self.basic_blocks.append(MipsBasicBlock.MipsBasicBlock(f'{self.get_name()}_{len(self.basic_blocks)}'))
 
     def get_frame_pointer_offset(self):
-        return self.__frame_pointer_offset
+        return self.frame_pointer_offset
 
-    def increase_fp_offset_by_four(self):
+    def decrease_fp_offset_by_four(self):
         """
         Increases the stack pointer offset by one word (4) as mips is byte addressed
         """
-        self.__frame_pointer_offset += 4
+        self.frame_pointer_offset -= 4
 
     def refresh_usage_information(self, llvm_basic_block: LLVMBasicBlock.LLVMBasicBlock):
         # TODO implement this
@@ -482,6 +482,16 @@ class MipsBuilder:
 
                 raise NotImplementedError('Not supported!')
 
+        for mips_value in results:
+            if isinstance(mips_value, MipsValue.MipsRegister):
+                if MipsValue.MipsRegister.is_temporary_register(mips_value):
+                    self.get_current_function().temporary_registers_used.add(mips_value)
+                elif MipsValue.MipsRegister.is_saved_temporary_register(mips_value):
+                    self.get_current_function().saved_temporary_registers_used.add(mips_value)
+                else:
+                    raise NotImplementedError(
+                        'Resulting register should either be saved temporary ($s) or temporary ($t)')
+
         # Return tuple of <mips_result, mips_operands>
         return results[0], results[1:]
 
@@ -547,7 +557,7 @@ class MipsBuilder:
             self.get_current_descriptors() \
                 .assign_address_location_to_llvm_reg(assigned_llvm_reg,
                                                      self.get_current_function().get_frame_pointer_offset())
-            self.get_current_function().increase_fp_offset_by_four()
+            self.get_current_function().decrease_fp_offset_by_four()
             offset = self.get_current_descriptors().get_address_location(assigned_llvm_reg)
 
         sw_instruction = MipsInstruction.StoreWordInstruction(register_to_store=mips_register,
@@ -595,7 +605,7 @@ class MipsBuilder:
 
         current_fp_offset -= 4
         # Store the saved registers used to restore it later on
-        for saved_register in self.get_current_function().saved_registers_used:
+        for saved_register in self.get_current_function().saved_temporary_registers_used:
             entry_basic_block.add_instruction(MipsInstruction.StoreWordInstruction(register_to_store=saved_register,
                                                                                    register_address=MipsValue.MipsRegister.FRAME_POINTER,
                                                                                    offset=current_fp_offset))
@@ -624,7 +634,7 @@ class MipsBuilder:
 
         current_fp_offset = self.get_current_function().get_frame_pointer_offset()
 
-        for saved_reg in self.get_current_function().saved_registers_used:
+        for saved_reg in self.get_current_function().saved_temporary_registers_used:
             end_basic_block.add_instruction(MipsInstruction.LoadWordInstruction(
                 register_to_load_into=saved_reg,
                 register_address=MipsValue.MipsRegister.FRAME_POINTER,
@@ -657,7 +667,41 @@ class MipsBuilder:
         Should be executed before the program enters a function (the callers' responsibility)
         """
 
+        # Store the saved registers used to restore it later on
+
+        # Decrease the stack pointer by the amount of temporary registers that will be saved * 4
+        if len(self.get_current_function().temporary_registers_used) > 0:
+            self.get_current_function().add_instruction(
+                MipsInstruction.ArithmeticBinaryInstruction(first_operand=MipsValue.MipsRegister.STACK_POINTER,
+                                                            second_operand=MipsValue.MipsLiteral(len(
+                                                                self.get_current_function().temporary_registers_used) * 4),
+                                                            token=ASTTokens.BinaryArithmeticExprToken.SUB,
+                                                            resulting_register=MipsValue.MipsRegister.STACK_POINTER))
+
+        for temporary_reg in self.get_current_function().temporary_registers_used:
+            self.get_current_function().add_instruction(
+                MipsInstruction.StoreWordInstruction(register_to_store=temporary_reg,
+                                                     register_address=MipsValue.MipsRegister.FRAME_POINTER,
+                                                     offset=self.get_current_function().frame_pointer_offset))
+            self.get_current_function().frame_pointer_offset -= 4
+
     def load_temporary_registers(self):
         """
 
         """
+
+        for temporary_reg in self.get_current_function().temporary_registers_used:
+            self.get_current_function().frame_pointer_offset += 4
+
+            self.get_current_function().add_instruction(
+                MipsInstruction.LoadWordInstruction(register_to_load_into=temporary_reg,
+                                                    register_address=MipsValue.MipsRegister.FRAME_POINTER,
+                                                    offset=self.get_current_function().frame_pointer_offset))
+
+        if len(self.get_current_function().temporary_registers_used) > 0:
+            self.get_current_function().add_instruction(
+                MipsInstruction.ArithmeticBinaryInstruction(first_operand=MipsValue.MipsRegister.STACK_POINTER,
+                                                            second_operand=MipsValue.MipsLiteral(len(
+                                                                self.get_current_function().temporary_registers_used) * 4),
+                                                            token=ASTTokens.BinaryArithmeticExprToken.ADD,
+                                                            resulting_register=MipsValue.MipsRegister.STACK_POINTER))

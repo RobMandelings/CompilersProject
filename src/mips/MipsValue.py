@@ -62,6 +62,26 @@ class MipsRegister(enum.Enum, MipsValue):
     def get_arg_registers():
         return [MipsRegister.A0, MipsRegister.A1, MipsRegister.A2, MipsRegister.A3]
 
+    @staticmethod
+    def get_saved_temporary_registers():
+        return [MipsRegister.S0, MipsRegister.S1, MipsRegister.S2, MipsRegister.S3, MipsRegister.S4, MipsRegister.S4,
+                MipsRegister.S5, MipsRegister.S6, MipsRegister.S7]
+
+    @staticmethod
+    def get_temporary_registers():
+        return [MipsRegister.T0, MipsRegister.T1, MipsRegister.T2, MipsRegister.T3, MipsRegister.T4, MipsRegister.T5,
+                MipsRegister.T6, MipsRegister.T7, MipsRegister.T8, MipsRegister.T9]
+
+    @staticmethod
+    def is_temporary_register(mips_register):
+        assert isinstance(mips_register, MipsRegister)
+        return mips_register in MipsRegister.get_temporary_registers()
+
+    @staticmethod
+    def is_saved_temporary_register(mips_register):
+        assert isinstance(mips_register, MipsRegister)
+        return mips_register in MipsRegister.get_saved_temporary_registers()
+
     def get_name(self):
         return self.content
 

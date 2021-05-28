@@ -76,7 +76,8 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
     def visit_llvm_store_instruction(self, instruction: LLVMInstruction.LLVMStoreInstruction):
         super().visit_llvm_store_instruction(instruction)
 
-        mips_values = self.get_mips_builder().get_mips_values(instruction, instruction.resulting_reg, [instruction.value_to_store])
+        mips_values = self.get_mips_builder().get_mips_values(instruction, instruction.resulting_reg,
+                                                              [instruction.value_to_store])
         mips_resulting_register = mips_values[0]
         mips_operands = mips_values[1]
 
@@ -117,7 +118,8 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
     def visit_llvm_compare_instruction(self, instruction: LLVMInstruction.LLVMCompareInstruction):
         super().visit_llvm_compare_instruction(instruction)
 
-        mips_values = self.get_mips_builder().get_mips_values(instruction, instruction.get_resulting_register(), [instruction.operand1, instruction.operand2])
+        mips_values = self.get_mips_builder().get_mips_values(instruction, instruction.get_resulting_register(),
+                                                              [instruction.operand1, instruction.operand2])
 
         mips_resulting_register = mips_values[0]
         mips_operands = mips_values[1]
@@ -130,7 +132,8 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
     def visit_llvm_binary_arithmetic_instruction(self, instruction: LLVMInstruction.LLVMBinaryArithmeticInstruction):
         super().visit_llvm_binary_arithmetic_instruction(instruction)
 
-        mips_values = self.get_mips_builder().get_mips_values(instruction, instruction.get_resulting_register(), [instruction.operand1, instruction.operand2])
+        mips_values = self.get_mips_builder().get_mips_values(instruction, instruction.get_resulting_register(),
+                                                              [instruction.operand1, instruction.operand2])
 
         mips_resulting_register = mips_values[0]
         mips_operands = mips_values[1]
@@ -138,13 +141,16 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         current_function = self.get_mips_builder().get_current_function()
 
         if instruction.operation == ASTTokens.BinaryArithmeticExprToken.DIV:
-            mips_division_instruction = MipsInstruction.ArithmeticBinaryInstruction(mips_operands[0], mips_operands[1], instruction.operation)
+            mips_division_instruction = MipsInstruction.ArithmeticBinaryInstruction(mips_operands[0], mips_operands[1],
+                                                                                    instruction.operation)
             mips_mflo_instruction = MipsInstruction.MoveFromLoInstruction(mips_resulting_register)
 
             current_function.add_instruction(mips_division_instruction)
             current_function.add_instruction(mips_mflo_instruction)
         else:
-            mips_instruction = MipsInstruction.ArithmeticBinaryInstruction(mips_operands[0], mips_operands[1], instruction.operation, mips_resulting_register)
+            mips_instruction = MipsInstruction.ArithmeticBinaryInstruction(mips_operands[0], mips_operands[1],
+                                                                           instruction.operation,
+                                                                           mips_resulting_register)
             current_function.add_instruction(mips_instruction)
 
     def visit_llvm_call_instruction(self, instruction: LLVMInstruction.LLVMCallInstruction):
@@ -186,6 +192,14 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
                              llvm_args_to_be_stored_in_memory,
                              all_registers=True)
 
+        # Decrease the top of the stack to make room for the mips arguments stored in memory
+        self.get_mips_builder().get_current_function().add_instruction(
+            MipsInstruction.ArithmeticBinaryInstruction(first_operand=MipsValue.MipsRegister.STACK_POINTER,
+                                                        second_operand=MipsValue.MipsLiteral(
+                                                            len(mips_args_to_be_stored_in_memory) * 4),
+                                                        token=ASTTokens.BinaryArithmeticExprToken.SUB,
+                                                        resulting_register=MipsValue.MipsRegister.STACK_POINTER))
+
         for mips_arg in mips_args_to_be_stored_in_memory:
             assert isinstance(mips_arg, MipsValue.MipsRegister)
 
@@ -197,10 +211,21 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
                                                                   register_address=MipsValue.MipsRegister.STACK_POINTER,
                                                                   offset=self.get_mips_builder().get_current_function().get_frame_pointer_offset())
 
-            self.get_mips_builder().get_current_function().increase_fp_offset_by_four()
+            self.get_mips_builder().get_current_function().frame_pointer_offset -= 4
             self.get_mips_builder().get_current_function().add_instruction(sw_instruction)
 
         super().visit_llvm_call_instruction(instruction)
+
+        # Increase the top of the stack as the arguments stored in memory are no longer of any usage
+        # Also increase the current frame pointer offset so that new store instructions
+        # will use this new frame pointer offset
+        self.get_mips_builder().get_current_function().add_instruction(
+            MipsInstruction.ArithmeticBinaryInstruction(first_operand=MipsValue.MipsRegister.STACK_POINTER,
+                                                        second_operand=MipsValue.MipsLiteral(
+                                                            len(mips_args_to_be_stored_in_memory) * 4),
+                                                        token=ASTTokens.BinaryArithmeticExprToken.ADD,
+                                                        resulting_register=MipsValue.MipsRegister.STACK_POINTER))
+        self.get_mips_builder().get_current_function().frame_pointer_offset += len(mips_args_to_be_stored_in_memory) * 4
 
         # Callers responsibility: load the registers used that you want to keep
         self.get_mips_builder().load_temporary_registers()
