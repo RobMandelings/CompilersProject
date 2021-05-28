@@ -52,7 +52,6 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         mips = self.get_mips_builder().get_mips_values(instruction, instruction.resulting_reg, [instruction.value_to_store])
         mips_resulting_register = mips[0]
         mips_operands = mips[1]
-
         token = ASTTokens.BinaryArithmeticExprToken.ADD
 
         mips_instruction = MipsInstruction.ArithmeticBinaryInstruction(MipsValue.MipsRegister.ZERO, mips_operands[0], token, mips_resulting_register)
