@@ -359,31 +359,38 @@ class JumpAndLinkInstruction(UnconditionalJumpInstruction):
 # Comparison Instructions #
 # ####################### #
 
-
-class SetOnLessThanInstruction(MipsInstruction):
+class CompareInstruction(MipsInstruction):
     """
-    This class corresponds to the comparison mips instructions: [set on less than, set on less than immediate]
+    This class corresponds to the llvm comparison instructions
+    This is a general class that will generate the right comparison instruction according to the given token
     """
 
-    def __init__(self, resulting_register: MipsValue.MipsRegister, first_register: MipsValue.MipsRegister,
-                 second_value: MipsValue.MipsValue):
+    def __init__(self, resulting_register: MipsValue.MipsRegister, first_operand: MipsValue.MipsRegister,
+                 second_operand: MipsValue.MipsValue, token: ASTTokens.RelationalExprToken):
         super().__init__()
         self.resulting_register = resulting_register
-        self.first_register = first_register
-        self.second_value = second_value
+        self.first_operand = first_operand
+        self.second_operand = second_operand
+        self.token = token
 
     def to_mips(self):
-        if isinstance(self.second_value, MipsValue.MipsLiteral):
-            immediate = True
-        elif isinstance(self.second_value, MipsValue.MipsRegister):
-            immediate = False
+        operation_string = ""
+        if self.token == ASTTokens.RelationalExprToken.EQUALS:
+            operation_string = "seq"
+        elif self.token == ASTTokens.RelationalExprToken.NOT_EQUALS:
+            operation_string = "sne"
+        elif self.token == ASTTokens.RelationalExprToken.LESS_THAN:
+            if isinstance(self.second_operand, MipsValue.MipsRegister):
+                operation_string = "slt"
+            elif isinstance(self.second_operand, MipsValue.MipsLiteral):
+                operation_string = "slti"
+        elif self.token == ASTTokens.RelationalExprToken.GREATER_THAN:
+            operation_string = "sgt"
+        elif self.token == ASTTokens.RelationalExprToken.LESS_THAN_OR_EQUALS:
+            operation_string = "sle"
+        elif self.token == ASTTokens.RelationalExprToken.GREATER_THAN_OR_EQUALS:
+            operation_string = "sge"
         else:
             raise NotImplementedError
 
-        operation_string = ""
-        if immediate:
-            operation_string = "slti"
-        else:
-            operation_string = "slt"
-
-        return f"{operation_string} {self.resulting_register.get_name()},{self.first_register.get_name()},{self.second_value.get_content()}"
+        return f"{operation_string} {self.resulting_register.get_name()},{self.first_operand.get_name()},{self.second_operand.get_content()}"

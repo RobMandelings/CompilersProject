@@ -2,7 +2,6 @@ import src.llvm.visitors.LLVMBaseVisitor as LLVMBaseVisitor
 import src.mips.MipsValue as MipsValue
 import src.llvm.LLVMValue as LLVMValue
 import src.mips.MipsBuilder as MipsBuilder
-import src.mips.MipsInstruction as MipsInstruction
 from src.llvm import LLVMFunction as LLVMFunction, LLVMCode as LLVMCode, LLVMBasicBlock as LLVMBasicBlock, \
     LLVMInstruction as LLVMInstruction
 import src.mips.MipsInstruction as MipsInstruction
@@ -65,10 +64,10 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         # Registers needs to be saved
         # We need to save the used registers from within the function definition to make sure that the
         # Registers can be restored after the function is done.
-        self.get_mips_builder().add_function_body_initial_instructions(llvm_defined_function)
+        self.get_mips_builder().add_function_body_initial_instructions()
 
         # Load the saved registers after executing instructions. This just adds the final basic block to the function
-        self.get_mips_builder().add_function_body_ending_instructions(llvm_defined_function)
+        self.get_mips_builder().add_function_body_ending_instructions()
 
     def visit_llvm_basic_block(self, llvm_basic_block: LLVMBasicBlock.LLVMBasicBlock):
         self.get_mips_builder().get_current_function().add_mips_basic_block()
@@ -81,11 +80,66 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
                                                        [instruction.value_to_store])
         mips_resulting_register = mips[0]
         mips_operands = mips[1]
-
         token = ASTTokens.BinaryArithmeticExprToken.ADD
 
         mips_instruction = MipsInstruction.ArithmeticBinaryInstruction(MipsValue.MipsRegister.ZERO, mips_operands[0],
                                                                        token, mips_resulting_register)
+
+        # Creation of mips instruction is done, now adding the instruction to the current function
+        self.get_mips_builder().get_current_function().add_instruction(mips_instruction)
+
+    def visit_llvm_conditional_branch_instruction(self, instruction: LLVMInstruction.LLVMConditionalBranchInstruction):
+        super().visit_llvm_conditional_branch_instruction(instruction)
+
+        # TODO Extend get_mips_values for LLVMConditionalBranchInstruction
+        mips = self.get_mips_builder().get_mips_values(instruction, None, [instruction.condition_reg])
+        mips_conditional_register = mips[1][0]
+
+        mips_instruction_bne = MipsInstruction.BranchNotEqualInstruction(mips_conditional_register,
+                                                                         MipsValue.MipsRegister.ZERO,
+                                                                         instruction.if_true)
+        mips_instruction_beq = MipsInstruction.BranchEqualInstruction(mips_conditional_register,
+                                                                      MipsValue.MipsRegister.ZERO, instruction.if_false)
+
+        # Creation of mips instructions is done, now adding the instructions to the current function
+        self.get_mips_builder().get_current_function().add_instruction(mips_instruction_bne)
+        self.get_mips_builder().get_current_function().add_instruction(mips_instruction_beq)
+
+    def visit_llvm_unconditional_branch_instruction(self,
+                                                    instruction: LLVMInstruction.LLVMUnconditionalBranchInstruction):
+        super().visit_llvm_unconditional_branch_instruction(instruction)
+
+        mips_instruction = MipsInstruction.JumpInstruction(instruction.destination)
+
+        # Creation of mips instruction is done, now adding the instruction to the current function
+        self.get_mips_builder().get_current_function().add_instruction(mips_instruction)
+
+    def visit_llvm_compare_instruction(self, instruction: LLVMInstruction.LLVMCompareInstruction):
+        super().visit_llvm_compare_instruction(instruction)
+
+        mips = self.get_mips_builder().get_mips_values(instruction, instruction.get_resulting_register(),
+                                                       [instruction.operand1, instruction.operand2])
+
+        mips_resulting_register = mips[0]
+        mips_operands = mips[1]
+
+        mips_instruction = MipsInstruction.CompareInstruction(mips_resulting_register, mips_operands[0],
+                                                              mips_operands[1], instruction.operation)
+
+        self.get_mips_builder().get_current_function().add_instruction(mips_instruction)
+
+    def visit_llvm_binary_arithmetic_instruction(self, instruction: LLVMInstruction.LLVMBinaryArithmeticInstruction):
+        super().visit_llvm_binary_arithmetic_instruction(instruction)
+
+        mips = self.get_mips_builder().get_mips_values(instruction, instruction.get_resulting_register(),
+                                                       [instruction.operand1, instruction.operand2])
+
+        mips_resulting_register = mips[0]
+        mips_operands = mips[1]
+
+        mips_instruction = MipsInstruction.ArithmeticBinaryInstruction(mips_operands[0], mips_operands[1],
+                                                                       instruction.operation, mips_resulting_register)
+
         self.get_mips_builder().get_current_function().add_instruction(mips_instruction)
 
     def visit_llvm_call_instruction(self, instruction: LLVMInstruction.LLVMCallInstruction):
