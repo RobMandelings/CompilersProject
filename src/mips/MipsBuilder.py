@@ -786,7 +786,6 @@ class MipsBuilder:
         mips_code = ""
         for function in self.functions:
             for basic_block in function.basic_blocks:
-                for instruction in basic_block.instructions:
-                    mips_code += instruction.to_mips() + "\n"
+                mips_code += basic_block.to_mips()
 
         return mips_code

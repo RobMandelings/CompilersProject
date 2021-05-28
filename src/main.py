@@ -111,6 +111,8 @@ def main(argv):
                 llvm_to_mips_visitor = LLVMToMipsVisitor()
                 llvm_code.accept(llvm_to_mips_visitor)
 
+                llvm_to_mips_visitor.get_mips_builder().to_file('output/mips.asm')
+
 
             except SemanticError as e:
                 print("A semantic error occurred: ")

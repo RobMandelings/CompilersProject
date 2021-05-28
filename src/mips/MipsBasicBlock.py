@@ -14,3 +14,11 @@ class MipsBasicBlock(BasicBlock.BasicBlock):
     def add_instruction(self, instruction: MipsInstruction.MipsInstruction):
         assert isinstance(instruction, MipsInstruction.MipsInstruction)
         super().add_instruction(instruction)
+
+    def to_mips(self):
+        mips_code = f"{self.name}:\n"
+
+        for instruction in self.instructions:
+            mips_code += f"  {instruction.to_mips()}\n"
+
+        return mips_code

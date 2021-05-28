@@ -50,7 +50,7 @@ class LoadWordInstruction(MipsInstruction):
         self.offset = offset
 
     def to_mips(self):
-        return f"lw {self.register_to_store},{self.offset.get_value()}({self.register_address})"
+        return f"lw {self.register_to_store}, {self.offset.get_value()}({self.register_address})"
 
 
 class StoreWordInstruction(MipsInstruction):
@@ -66,7 +66,7 @@ class StoreWordInstruction(MipsInstruction):
         self.offset = offset
 
     def to_mips(self):
-        return f"sw {self.register_to_store},{self.offset.get_value()}({self.register_address})"
+        return f"sw {self.register_to_store}, {self.offset.get_value()}({self.register_address})"
 
 
 class LoadUpperImmediateInstruction(MipsInstruction):
@@ -149,7 +149,7 @@ class MoveInstruction(MipsInstruction):
         self.register_to_move_from = register_to_move_from
 
     def to_mips(self):
-        return f"move {self.register_to_move_in},{self.register_to_move_from}"
+        return f"move {self.register_to_move_in}, {self.register_to_move_from}"
 
 
 # ####################### #
