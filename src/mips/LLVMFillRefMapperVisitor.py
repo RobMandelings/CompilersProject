@@ -17,9 +17,5 @@ class LLVMFillRefMapperVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
     def __init__(self):
         self.ref_mapper = dict()
 
-    def get_ref_mapper(self):
-        assert self.ref_mapper
-        return self.ref_mapper
-
     def visit_llvm_load_instruction(self, instruction: LLVMInstruction.LLVMLoadInstruction):
         self.ref_mapper[instruction.get_resulting_register()] = instruction.load_from_reg

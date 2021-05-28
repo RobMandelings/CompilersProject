@@ -1,6 +1,8 @@
 import src.llvm.LLVMBasicBlock as LLVMBasicBlock
 import src.llvm.LLVMInstruction as LLVMInstruction
 import src.llvm.LLVMValue as LLVMValue
+import src.llvm.LLVMCode as LLVMCode
+import src.mips.LLVMFillRefMapperVisitor as LLVMFillRefMapperVisitor
 import src.mips.LLVMUsageInformation as LLVMUsageInformation
 import src.mips.MipsBasicBlock as MipsBasicBlock
 import src.mips.MipsInstruction as MipsInstruction
@@ -220,7 +222,7 @@ class MipsBuilder:
     Helper to build mips code more easily
     """
 
-    def __init__(self):
+    def __init__(self, llvm_code: LLVMCode.LLVMCode):
         """
         functions: the functions containing the currently-generated mips code
         reg_pool: contains the available mips registers for usage (temporary and saved temporary),
@@ -231,7 +233,11 @@ class MipsBuilder:
         """
         self.functions = list()
         self.reg_pool = RegisterPool()
-        self.ref_mapper = dict()
+
+        # Look in the docs of LLVMFillRefMapper to see why its necessary
+        ref_mapper_visitor = LLVMFillRefMapperVisitor.LLVMFillRefMapperVisitor()
+        llvm_code.accept(ref_mapper_visitor)
+        self.ref_mapper = ref_mapper_visitor.ref_mapper
 
     def get_current_function(self):
         current_function = self.functions[-1]
