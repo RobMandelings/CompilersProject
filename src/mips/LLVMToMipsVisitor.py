@@ -76,6 +76,11 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         # Load the saved registers after executing instructions. This just adds the final basic block to the function
         self.get_mips_builder().add_function_body_ending_instructions()
         self.get_mips_builder().get_current_function().update_fp_offset_values()
+        
+        self.get_mips_builder().get_current_function().replace_return_instruction_point_with_actual_instructions(
+            self.get_mips_builder().get_current_function().get_current_basic_block())
+
+        print('hi')
 
     def visit_llvm_basic_block(self, llvm_basic_block: LLVMBasicBlock.LLVMBasicBlock):
         self.get_mips_builder().get_current_function().add_mips_basic_block()
@@ -264,8 +269,6 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         # We assert there is only one or zero return value and this will be placed in v0
 
         self.get_mips_builder().load_in_reg(instruction.get_return_value(), MipsValue.MipsRegister.V0)
-        self.get_mips_builder().get_current_function().add_instruction(
-            MipsInstruction.JumpRegisterInstruction(MipsValue.MipsRegister.RETURN_ADDRESS)
-        )
+        self.get_mips_builder().get_current_function().add_return_instruction_point()
 
         super().visit_llvm_return_instruction(instruction)

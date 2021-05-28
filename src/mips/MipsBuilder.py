@@ -201,6 +201,18 @@ class MipsFunction:
         self.init_fp_offsets = list()
         self.nr_return_values = nr_return_values
 
+    def add_return_instruction_point(self):
+        """
+        For documentation, see the MipsBasicBlock::add_return_instruction_point() method
+        """
+        self.get_current_basic_block().add_return_instruction_point()
+
+    def replace_return_instruction_point_with_actual_instructions(self,
+                                                                  return_to_basic_block: MipsBasicBlock.MipsBasicBlock):
+
+        for basic_block in self.basic_blocks:
+            basic_block.replace_return_instruction_points_with_instructions(return_to_basic_block)
+
     def get_name(self):
         return self.name
 
@@ -732,6 +744,10 @@ class MipsBuilder:
                                                 register_address=MipsValue.MipsRegister.STACK_POINTER,
                                                 offset=self.get_current_function().init_fp_offsets[
                                                     current_fp_offset_index]))
+
+        end_basic_block.add_instruction(
+            MipsInstruction.JumpRegisterInstruction(MipsValue.MipsRegister.RETURN_ADDRESS)
+        )
 
         self.get_current_function().basic_blocks.append(end_basic_block)
 
