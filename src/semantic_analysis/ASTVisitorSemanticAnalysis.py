@@ -712,7 +712,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                     for i in range(len(function_lookup.get_params())):
 
                         data_type_param = function_lookup.get_params()[i].get_data_type()
-                        data_type_argument = ast.get_arguments()[i].get_data_type()
+                        data_type_argument = self.check_resulting_data_type(ast.get_arguments()[i])
 
                         if data_type_param != data_type_argument:
                             raise SemanticError(

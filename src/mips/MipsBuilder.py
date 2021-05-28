@@ -60,10 +60,16 @@ class Descriptors:
         """
         allocated_registers: registers from LLVM that were allocated and thus contain values that must be preserved
         by spilling into memory once the register descriptor is used for another register
+        allocated_registers: list of allocated registers from llvm
+        reg_descriptor: maps an llvm register to a mips register (this means that the value of the llvm register can currently be found in the mips register
+        address descriptor: maps an llvm register to an offset (meaning that the value of the llvm register can be found at this offset
+        mips_reg_offset_mapper: maps a mips register to an offset, meaning that the mips register is currently saved at that specified offset.
+        This is used to save temporary registers and saved temporaries and load them back in from the specified offset
         """
         self.__allocated_registers = list()
         self.__reg_descriptor = dict()
         self.__address_descriptor = dict()
+        self.__mips_reg_offset_mapper = dict()
 
     def is_empty(self, mips_register: MipsValue.MipsRegister):
         """
@@ -126,6 +132,15 @@ class Descriptors:
         self.__address_descriptor[
             llvm_register] = fp_offset
 
+    def get_asigned_offset_for_mips_reg(self, mips_reg: MipsValue.MipsRegister):
+        return self.__mips_reg_offset_mapper.get(mips_reg)
+
+    def assign_offset_to_mips_reg(self, mips_reg: MipsValue.MipsRegister, fp_offset: FPOffset.FPOffset):
+        self.__mips_reg_offset_mapper[mips_reg] = fp_offset
+
+    def remove_offset_from_mips_reg(self, mips_reg: MipsValue.MipsRegister):
+        self.__mips_reg_offset_mapper[mips_reg] = None
+
     def has_address_location(self, llvm_register: LLVMValue.LLVMRegister):
         """
         Returns whether or not the
@@ -177,7 +192,7 @@ class Descriptors:
 
 class MipsFunction:
 
-    def __init__(self, name, nr_params: int, nr_return_values: int):
+    def __init__(self, name, nr_params: int, nr_return_values: int, ref_mapper: dict):
         """
         usage_information: the current usage information of the basic block
         descriptors: contains register and address descriptor
@@ -188,10 +203,11 @@ class MipsFunction:
         saved_registers_fp_offsets_index: the latest index in the list that contributes to saving registers on the stack
         (these are initial instructions every function has to restore the used registers later on). This is used
         to correctly load from the correct frame pointer offsets when restoring the data.
+        ref_mapper: maps loaded llvm registers to their corresponding 'allocated' registers from which they were loaded.
         """
         self.name = name
-        self.saved_temporary_registers_used = set()
-        self.temporary_registers_used = set()
+        self.saved_temporary_registers_used = list()
+        self.temporary_registers_used = list()
         self.usage_information = LLVMUsageInformation.LLVMUsageInformation()
         self.descriptors = Descriptors()
         self.basic_blocks = list()
@@ -200,6 +216,8 @@ class MipsFunction:
         self.current_after_init_fp_offset_index: int = 0
         self.init_fp_offsets = list()
         self.nr_return_values = nr_return_values
+        # Look in the docs of LLVMFillRefMapper to see why its necessary
+        self.ref_mapper = ref_mapper
 
     def add_return_instruction_point(self):
         """
@@ -241,6 +259,11 @@ class MipsFunction:
         return new_fp_offset
 
     def decrease_after_init_fp_offset_index(self, amount):
+        """
+        Decrease the frame pointer offset index that will be used to create FPOffset instances.
+        Lowering the index means that the actual frame pointer offset increases, as more frame pointer offsets
+        normally means 'growing' the offset downwards.
+        """
         self.current_after_init_fp_offset_index -= amount
 
     def add_mips_basic_block(self):
@@ -284,22 +307,22 @@ class MipsBuilder:
     Helper to build mips code more easily
     """
 
-    def __init__(self, llvm_code: LLVMCode.LLVMCode):
+    def __init__(self):
         """
         functions: the functions containing the currently-generated mips code
         reg_pool: contains the available mips registers for usage (temporary and saved temporary),
         but is used for more easy retrieval instead of using the enum directly.
-        ref_mapper: maps loaded llvm registers to their corresponding 'allocated' registers from which they were loaded.
         This is because we don't need the load instruction from mips anymore,
         and can just 'assign' new values to the allocated reg
         """
         self.functions = list()
         self.reg_pool = RegisterPool()
 
-        # Look in the docs of LLVMFillRefMapper to see why its necessary
-        ref_mapper_visitor = LLVMFillRefMapperVisitor.LLVMFillRefMapperVisitor()
-        llvm_code.accept(ref_mapper_visitor)
-        self.ref_mapper = ref_mapper_visitor.ref_mapper
+    def get_current_ref_mapper(self):
+        """
+        Retrieves the ref mapper of the current function
+        """
+        return self.get_current_function().ref_mapper
 
     def add_function(self, mips_function: MipsFunction):
         """
@@ -312,6 +335,15 @@ class MipsBuilder:
         current_function = self.functions[-1]
         assert isinstance(current_function, MipsFunction)
         return current_function
+
+    def get_function_entry_block(self, function_name: str):
+        """
+        Returns the first basic block that belongs to the requested function
+        """
+
+        for function in self.functions:
+            if function.get_name() == function_name:
+                return function.basic_blocks[0]
 
     def get_current_descriptors(self):
         """
@@ -426,8 +458,8 @@ class MipsBuilder:
 
             llvm_value = llvm_values[i][0]
             if isinstance(llvm_value, LLVMValue.LLVMRegister):
-                if llvm_value in self.ref_mapper:
-                    llvm_values[i] = (self.ref_mapper[llvm_value], llvm_values[i][1])
+                if llvm_value in self.get_current_ref_mapper():
+                    llvm_values[i] = (self.get_current_ref_mapper()[llvm_value], llvm_values[i][1])
 
         for pair in llvm_values:
 
@@ -565,12 +597,11 @@ class MipsBuilder:
         for mips_value in chosen_values:
             if isinstance(mips_value, MipsValue.MipsRegister):
                 if MipsValue.MipsRegister.is_temporary_register(mips_value):
-                    self.get_current_function().temporary_registers_used.add(mips_value)
+                    if mips_value not in self.get_current_function().temporary_registers_used:
+                        self.get_current_function().temporary_registers_used.append(mips_value)
                 elif MipsValue.MipsRegister.is_saved_temporary_register(mips_value):
-                    self.get_current_function().saved_temporary_registers_used.add(mips_value)
-                else:
-                    raise NotImplementedError(
-                        'Resulting register should either be saved temporary ($s) or temporary ($t)')
+                    if mips_value not in self.get_current_function().saved_temporary_registers_used:
+                        self.get_current_function().saved_temporary_registers_used.append(mips_value)
 
         # Return tuple of <mips_result, mips_operands>
         return chosen_values[0], chosen_values[1:]
@@ -782,29 +813,35 @@ class MipsBuilder:
                                                             resulting_register=MipsValue.MipsRegister.STACK_POINTER))
 
         for temporary_reg in self.get_current_function().temporary_registers_used:
+            offset_to_store_in = self.get_current_function().get_new_fp_offset(False)
             self.get_current_function().add_instruction(
                 MipsInstruction.StoreWordInstruction(register_to_store=temporary_reg,
                                                      register_address=MipsValue.MipsRegister.FRAME_POINTER,
-                                                     offset=self.get_current_function().get_new_fp_offset(False)))
+                                                     offset=offset_to_store_in))
+            self.get_current_descriptors().assign_offset_to_mips_reg(temporary_reg, offset_to_store_in)
 
     def load_temporary_registers(self):
         """
 
         """
 
-        for temporary_reg in self.get_current_function().temporary_registers_used:
+        for temporary_reg in reversed(self.get_current_function().temporary_registers_used):
+            offset_to_load_from = self.get_current_descriptors().get_asigned_offset_for_mips_reg(temporary_reg)
             self.get_current_function().add_instruction(
                 MipsInstruction.LoadWordInstruction(register_to_load_into=temporary_reg,
                                                     register_address=MipsValue.MipsRegister.FRAME_POINTER,
-                                                    offset=self.get_current_function().get_new_fp_offset(False)))
+                                                    offset=offset_to_load_from))
+            self.get_current_descriptors().remove_offset_from_mips_reg(temporary_reg)
 
-        if len(self.get_current_function().temporary_registers_used) > 0:
+        amount_of_words_to_increase = len(self.get_current_function().temporary_registers_used)
+        if amount_of_words_to_increase > 0:
             self.get_current_function().add_instruction(
                 MipsInstruction.ArithmeticBinaryInstruction(first_operand=MipsValue.MipsRegister.STACK_POINTER,
-                                                            second_operand=MipsValue.MipsLiteral(len(
-                                                                self.get_current_function().temporary_registers_used) * 4),
+                                                            second_operand=MipsValue.MipsLiteral(
+                                                                amount_of_words_to_increase * 4),
                                                             token=ASTTokens.BinaryArithmeticExprToken.ADD,
                                                             resulting_register=MipsValue.MipsRegister.STACK_POINTER))
+            self.get_current_function().decrease_after_init_fp_offset_index(amount_of_words_to_increase)
 
     def to_file(self, filename: str):
         f = open(filename, "w+")
@@ -816,5 +853,7 @@ class MipsBuilder:
         for function in self.functions:
             for basic_block in function.basic_blocks:
                 mips_code += basic_block.to_mips()
+
+            mips_code += "\n\n"
 
         return mips_code
