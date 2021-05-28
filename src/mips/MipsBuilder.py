@@ -652,10 +652,8 @@ class MipsBuilder:
 
             else:
 
-                instruction = MipsInstruction.ArithmeticBinaryInstruction(first_operand=MipsValue.MipsRegister.ZERO,
-                                                                          second_operand=current_mips_reg,
-                                                                          token=ASTTokens.BinaryArithmeticExprToken.ADD,
-                                                                          resulting_register=store_in_reg)
+                instruction = MipsInstruction.MoveInstruction(register_to_move_in=store_in_reg,
+                                                              register_to_move_from=current_mips_reg)
 
         elif isinstance(llvm_value, LLVMValue.LLVMLiteral):
 

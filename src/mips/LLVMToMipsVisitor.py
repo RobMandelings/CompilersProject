@@ -247,6 +247,7 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         arg_mips_registers = list()
 
         # You can only take 4 $a registers, so range is (0, 3) at most
+        current_arg_reg_index = 0
         for i in range(0, min(3, len(instruction.args))):
 
             llvm_arg = instruction.args[i]
@@ -266,12 +267,12 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
                 if current_assigned_llvm_reg is not None:
                     self.get_mips_builder().store_in_memory(current_assigned_llvm_reg)
 
-                # Now load the current llvm argument into the argument register for usage
-                # We need to generate the correct instructions for loading,
-                # but we don't need to update the descriptor to map the llvm argument to the argument mips reg
-                # (the argument register is only used in the called function, not from outside
-                self.get_mips_builder().load_in_reg(llvm_value=llvm_arg, store_in_reg=current_mips_reg,
-                                                    update_reg_descriptor=False)
+            # Now load the current llvm argument into the argument register for usage
+            # We need to generate the correct instructions for loading,
+            # but we don't need to update the descriptor to map the llvm argument to the argument mips reg
+            # (the argument register is only used in the called function, not from outside)
+            self.get_mips_builder().load_in_reg(llvm_value=llvm_arg, store_in_reg=current_mips_reg,
+                                                update_reg_descriptor=False)
 
         if len(instruction.args) > 4:
             # The other arguments need to be stored in memory
