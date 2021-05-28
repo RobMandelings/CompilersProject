@@ -252,7 +252,7 @@ class BranchEqualInstruction(BranchInstruction):
     def to_mips(self):
         # References should be updated now
         assert isinstance(self.label, MipsBasicBlock.MipsBasicBlock)
-        return f"beq {self.first_register.get_name()},{self.second_register.get_name()},{self.label.name}"
+        return f"beq {self.first_register.get_name()}, {self.second_register.get_name()}, {self.label.name}"
 
 
 class BranchNotEqualInstruction(BranchInstruction):
@@ -268,7 +268,7 @@ class BranchNotEqualInstruction(BranchInstruction):
     def to_mips(self):
         # References should be updated now
         assert isinstance(self.label, MipsBasicBlock.MipsBasicBlock)
-        return f"bne {self.first_register.get_name()},{self.second_register.get_name()},{self.label.name}"
+        return f"bne {self.first_register.get_name()}, {self.second_register.get_name()}, {self.label.name}"
 
 
 class BranchGreaterThanInstruction(BranchInstruction):
@@ -284,7 +284,7 @@ class BranchGreaterThanInstruction(BranchInstruction):
     def to_mips(self):
         # References should be updated now
         assert isinstance(self.label, MipsBasicBlock.MipsBasicBlock)
-        return f"bgt {self.first_register.get_name()},{self.second_register.get_name()},{self.label.name}"
+        return f"bgt {self.first_register.get_name()}, {self.second_register.get_name()}, {self.label.name}"
 
 
 class BranchGreaterThanOrEqualInstruction(BranchInstruction):
@@ -300,7 +300,7 @@ class BranchGreaterThanOrEqualInstruction(BranchInstruction):
     def to_mips(self):
         # References should be updated now
         assert isinstance(self.label, MipsBasicBlock.MipsBasicBlock)
-        return f"bge {self.first_register.get_name()},{self.second_register.get_name()},{self.label.name}"
+        return f"bge {self.first_register.get_name()}, {self.second_register.get_name()}, {self.label.name}"
 
 
 class BranchLessThaninstruction(BranchInstruction):
@@ -316,7 +316,7 @@ class BranchLessThaninstruction(BranchInstruction):
     def to_mips(self):
         # References should be updated now
         assert isinstance(self.label, MipsBasicBlock.MipsBasicBlock)
-        return f"blt {self.first_register.get_name},{self.second_register.get_name()},{self.label.name}"
+        return f"blt {self.first_register.get_name}, {self.second_register.get_name()}, {self.label.name}"
 
 
 class BranchLessThanOrEqualInstruction(BranchInstruction):
@@ -332,7 +332,7 @@ class BranchLessThanOrEqualInstruction(BranchInstruction):
     def to_mips(self):
         # References should be updated now
         assert isinstance(self.label, MipsBasicBlock.MipsBasicBlock)
-        return f"ble {self.first_register.get_name},{self.second_register.get_content},{self.label.name}"
+        return f"ble {self.first_register.get_name}, {self.second_register.get_content}, {self.label.name}"
 
 
 # ############################### #
