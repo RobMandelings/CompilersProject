@@ -7,6 +7,7 @@ from src.llvm import LLVMFunction as LLVMFunction, LLVMCode as LLVMCode, LLVMBas
 import src.mips.MipsInstruction as MipsInstruction
 import src.ast.ASTTokens as ASTTokens
 
+
 class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
     """
     Visitor which will generate MIPS code from LLVM IR
@@ -49,9 +50,9 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
     def visit_llvm_store_instruction(self, instruction: LLVMInstruction.LLVMStoreInstruction):
         super().visit_llvm_store_instruction(instruction)
 
-        mips = self.get_mips_builder().get_mips_values(instruction, instruction.resulting_reg, [instruction.value_to_store])
-        mips_resulting_register = mips[0]
-        mips_operands = mips[1]
+        mips_values = self.get_mips_builder().get_mips_values(instruction, instruction.resulting_reg, [instruction.value_to_store])
+        mips_resulting_register = mips_values[0]
+        mips_operands = mips_values[1]
         token = ASTTokens.BinaryArithmeticExprToken.ADD
         mips_instruction = MipsInstruction.ArithmeticBinaryInstruction(MipsValue.MipsRegister.ZERO, mips_operands[0], token, mips_resulting_register)
 
@@ -62,8 +63,8 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         super().visit_llvm_conditional_branch_instruction(instruction)
 
         # TODO Extend get_mips_values for LLVMConditionalBranchInstruction
-        mips = self.get_mips_builder().get_mips_values(instruction, None, [instruction.condition_reg])
-        mips_conditional_register = mips[1][0]
+        mips_values = self.get_mips_builder().get_mips_values(instruction, None, [instruction.condition_reg])
+        mips_conditional_register = mips_values[1][0]
 
         mips_instruction_bne = MipsInstruction.BranchNotEqualInstruction(mips_conditional_register, MipsValue.MipsRegister.ZERO, instruction.if_true)
         mips_instruction_beq = MipsInstruction.BranchEqualInstruction(mips_conditional_register, MipsValue.MipsRegister.ZERO, instruction.if_false)
@@ -83,10 +84,10 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
     def visit_llvm_compare_instruction(self, instruction: LLVMInstruction.LLVMCompareInstruction):
         super().visit_llvm_compare_instruction(instruction)
 
-        mips = self.get_mips_builder().get_mips_values(instruction, instruction.get_resulting_register(), [instruction.operand1, instruction.operand2])
+        mips_values = self.get_mips_builder().get_mips_values(instruction, instruction.get_resulting_register(), [instruction.operand1, instruction.operand2])
 
-        mips_resulting_register = mips[0]
-        mips_operands = mips[1]
+        mips_resulting_register = mips_values[0]
+        mips_operands = mips_values[1]
 
         mips_instruction = MipsInstruction.CompareInstruction(mips_resulting_register, mips_operands[0], mips_operands[1], instruction.operation)
 
@@ -95,14 +96,22 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
     def visit_llvm_binary_arithmetic_instruction(self, instruction: LLVMInstruction.LLVMBinaryArithmeticInstruction):
         super().visit_llvm_binary_arithmetic_instruction(instruction)
 
-        mips = self.get_mips_builder().get_mips_values(instruction, instruction.get_resulting_register(), [instruction.operand1, instruction.operand2])
+        mips_values = self.get_mips_builder().get_mips_values(instruction, instruction.get_resulting_register(), [instruction.operand1, instruction.operand2])
 
-        mips_resulting_register = mips[0]
-        mips_operands = mips[1]
+        mips_resulting_register = mips_values[0]
+        mips_operands = mips_values[1]
 
-        mips_instruction = MipsInstruction.ArithmeticBinaryInstruction(mips_operands[0], mips_operands[1], instruction.operation, mips_resulting_register)
+        current_function = self.get_mips_builder().get_current_function()
 
-        self.get_mips_builder().get_current_function().add_instruction(mips_instruction)
+        if instruction.operation == ASTTokens.BinaryArithmeticExprToken.DIV:
+            mips_division_instruction = MipsInstruction.ArithmeticBinaryInstruction(mips_operands[0], mips_operands[1], instruction.operation)
+            mips_mflo_instruction = MipsInstruction.MoveFromLoInstruction(mips_resulting_register)
+
+            current_function.add_instruction(mips_division_instruction)
+            current_function.add_instruction(mips_mflo_instruction)
+        else:
+            mips_instruction = MipsInstruction.ArithmeticBinaryInstruction(mips_operands[0], mips_operands[1], instruction.operation, mips_resulting_register)
+            current_function.add_instruction(mips_instruction)
 
     def visit_llvm_call_instruction(self, instruction: LLVMInstruction.LLVMCallInstruction):
         # Callers responsibility: store the registers used that you want to keep after the function call
