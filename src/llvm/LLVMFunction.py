@@ -95,6 +95,9 @@ class LLVMDefinedFunction(LLVMFunction):
     def get_first_basic_block(self):
         return self.first_basic_block
 
+    def get_alloca_instructions(self):
+        return self.__alloca_instructions
+
     def has_basic_block(self, basic_block):
         """
         Returns the index of the basic block given from the list of basic blocks in this function if applicable.

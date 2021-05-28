@@ -5,6 +5,7 @@ from src.ast.CSTtoASTConverter import *
 from src.llvm.ASTVisitorToLLVM import ASTVisitorToLLVM
 from src.semantic_analysis.ASTVisitorSemanticAnalysis import ASTVisitorSemanticAnalysis, SemanticError
 from src.syntacticalAnalysis import CSTErrorListener
+from src.mips.LLVMToMipsVisitor import LLVMToMipsVisitor
 
 
 # TODO support for unary operations ('-5' for example)
@@ -105,6 +106,11 @@ def main(argv):
                 ast_visitor_to_llvm = ASTVisitorToLLVM()
                 ast.accept(ast_visitor_to_llvm)
                 ast_visitor_to_llvm.to_file("testinput/output.ll")
+
+                llvm_code = ast_visitor_to_llvm.get_builder().build()
+                llvm_to_mips_visitor = LLVMToMipsVisitor()
+                llvm_code.accept(llvm_to_mips_visitor)
+
 
             except SemanticError as e:
                 print("A semantic error occurred: ")

@@ -1,8 +1,7 @@
-import abc
 import enum
 
 
-class MipsValue(abc.ABC):
+class MipsValue:
     """
     Abstract class which is used as a general interface for both mips
     """
@@ -14,7 +13,7 @@ class MipsValue(abc.ABC):
         return self.content
 
 
-class MipsRegister(enum.Enum, MipsValue):
+class MipsRegister(MipsValue, enum.Enum):
     # Constant 0
     ZERO = '$zero'
 

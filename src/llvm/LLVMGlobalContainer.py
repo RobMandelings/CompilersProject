@@ -11,6 +11,9 @@ class LLVMGlobalContainer(LLVMInterfaces.IToLLVM):
     def update_numbering(self, counter):
         pass
 
+    def accept(self, visitor):
+        visitor.visit_llvm_global_container(self)
+
     def __init__(self):
         self.global_strings = list()
         self.global_declaration_instructions = list()
