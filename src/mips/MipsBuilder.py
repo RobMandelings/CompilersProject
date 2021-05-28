@@ -515,10 +515,13 @@ class MipsBuilder:
             else:
                 raise AssertionError(f'No result was found for llvm value {llvm_value}')
 
-        for mips_value in chosen_values:
+        for i in range(0, len(chosen_values)):
+
+            llvm_value = llvm_values[i][0]
+            mips_value = chosen_values[i]
 
             if isinstance(mips_value, MipsValue.MipsRegister) and not self.get_current_descriptors().is_empty(
-                    mips_value):
+                    mips_value) and not self.get_current_descriptors().loaded_in_mips_reg(llvm_value, mips_value):
                 # Spill the variable for which the mips register is currently assigned into memory first
                 self.store_in_memory(mips_value)
 
