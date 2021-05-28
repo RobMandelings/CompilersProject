@@ -36,7 +36,7 @@ class LoadWordInstruction(MipsInstruction):
         self.offset = offset
 
     def to_mips(self):
-        raise NotImplementedError
+        return f"lw {self.register_to_store},{self.offset}({self.register_address})"
 
 
 class StoreWordInstruction(MipsInstruction):
@@ -48,7 +48,7 @@ class StoreWordInstruction(MipsInstruction):
         self.offset = offset
 
     def to_mips(self):
-        raise NotImplementedError
+        return f"sw {self.register_to_store},{self.offset}({self.register_address})"
 
 
 class LoadUpperImmediateInstruction(MipsInstruction):
@@ -59,7 +59,7 @@ class LoadUpperImmediateInstruction(MipsInstruction):
         self.immediate = immediate
 
     def to_mips(self):
-        raise NotImplementedError
+        return f"lui {self.register_to_store},{self.immediate}"
 
 
 class LoadAddressInstruction(MipsInstruction):
@@ -70,7 +70,7 @@ class LoadAddressInstruction(MipsInstruction):
         self.label = label
 
     def to_mips(self):
-        raise NotImplementedError
+        return f"la {self.register_to_load},{self.label}"
 
 
 class LoadImmediateInstruction(MipsInstruction):
@@ -81,7 +81,7 @@ class LoadImmediateInstruction(MipsInstruction):
         self.immediate = immediate
 
     def to_mips(self):
-        raise NotImplementedError
+        return f"li {self.register_to_load},{self.immediate}"
 
 
 class MoveFromHiInstruction(MipsInstruction):
@@ -91,7 +91,7 @@ class MoveFromHiInstruction(MipsInstruction):
         self.register_to_move_in = register_to_move_in
 
     def to_mips(self):
-        raise NotImplementedError
+        return f"mfhi {self.register_to_move_in}"
 
 
 class MoveFromLoInstruction(MipsInstruction):
@@ -101,7 +101,7 @@ class MoveFromLoInstruction(MipsInstruction):
         self.register_to_move_in = register_to_move_in
 
     def to_mips(self):
-        raise NotImplementedError
+        return f"mflo {self.register_to_move_in}"
 
 
 class MoveInstruction(MipsInstruction):
@@ -112,7 +112,7 @@ class MoveInstruction(MipsInstruction):
         self.register_to_move_from = register_to_move_from
 
     def to_mips(self):
-        raise NotImplementedError
+        return f"move {self.register_to_move_in},{self.register_to_move_from}"
 
 
 # ####################### #
