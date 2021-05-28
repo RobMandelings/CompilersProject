@@ -2,6 +2,8 @@ import src.llvm.LLVMBasicBlock as LLVMBasicBlock
 import src.llvm.LLVMInstruction as LLVMInstruction
 import src.llvm.LLVMValue as LLVMValue
 import src.llvm.LLVMCode as LLVMCode
+import src.llvm.LLVMFunction as LLVMFunction
+import src.ast.ASTTokens as ASTTokens
 import src.mips.LLVMFillRefMapperVisitor as LLVMFillRefMapperVisitor
 import src.mips.LLVMUsageInformation as LLVMUsageInformation
 import src.mips.MipsBasicBlock as MipsBasicBlock
@@ -140,6 +142,10 @@ class Descriptors:
         return self.get_mips_reg_for_llvm_reg(llvm_register) is not None
 
     def get_mips_reg_for_llvm_reg(self, llvm_register: LLVMValue.LLVMRegister):
+        """
+        Returns the mips register that currently holds the value of the given llvm register if there is such a mips register
+        Otherwise, returns None
+        """
         return self.__reg_descriptor.get(llvm_register)
 
     def get_current_location(self, llvm_register: LLVMValue.LLVMRegister):
@@ -186,14 +192,20 @@ class MipsFunction:
         self.descriptors = Descriptors()
         self.__stack_pointer_offset = 0
         self.basic_blocks = list()
-        self.add_mips_basic_block(MipsBasicBlock.MipsBasicBlock(self.name))
+        self.add_mips_basic_block()
 
     def get_name(self):
         return self.name
 
-    def add_mips_basic_block(self, basic_block: MipsBasicBlock.MipsBasicBlock):
-        basic_block.name = f'{self.get_name()}_{len(self.basic_blocks)}'
-        self.basic_blocks.append(basic_block)
+    def add_mips_basic_block(self):
+        """
+        Adds a basic block to the current function. Initially empty.
+
+        No argument as basic block required for mips in comparison to llvm, because the conversion from llvm
+        to mips is always top-down (this wasn't the case with asts to llvm)
+        """
+
+        self.basic_blocks.append(MipsBasicBlock.MipsBasicBlock(f'{self.get_name()}_{len(self.basic_blocks)}'))
 
     def get_stack_pointer_offset(self):
         return self.__stack_pointer_offset
@@ -239,6 +251,13 @@ class MipsBuilder:
         llvm_code.accept(ref_mapper_visitor)
         self.ref_mapper = ref_mapper_visitor.ref_mapper
 
+    def add_function(self, mips_function: MipsFunction):
+        """
+        Adds a mips function to the builder which makes the added function the current one (to add instructions to)
+        mips_function: the mips function to add
+        """
+        self.functions.append(mips_function)
+
     def get_current_function(self):
         current_function = self.functions[-1]
         assert isinstance(current_function, MipsFunction)
@@ -261,12 +280,19 @@ class MipsBuilder:
 
         return MipsValue.MipsLiteral(llvm_literal.get_value())
 
-    def get_mips_values(self, instruction: LLVMInstruction.LLVMBinaryAssignInstruction):
+    def get_mips_values(self, llvm_instruction: LLVMInstruction.LLVMInstruction, resulting_reg: LLVMValue.LLVMRegister,
+                        operands: list):
         """
-        Retrieves:
-        - Mips registers for the result and operands of the given instruction, spilling old values into memory if
-        necessary
-        - Mips literal(s) for operands if the operand(s) in the given instruction also holds literal(s)
+
+        Returns the corresponding mips registers and values from the given instruction with resulting register
+        and operands. Also spills the old values that were mapped onto these registers into memory if necessary
+
+        resulting_reg: llvm_register used to put the result of an expression in
+        operands: list operands used for the operation. Either LLVMValue or LLVMRegister
+
+        Returns tuple of <mips_result, mips_operands>
+        Mips result: an instance of the MipsRegister class
+        Mips operands: list of instances of MipsValue, either MipsRegisters or MipsLiterals
         """
 
         # The llvm registers in the instruction to get the corresponding mips registers from
@@ -274,9 +300,11 @@ class MipsBuilder:
         # not the register is for a result or for operand. As the algorithm differs a little bit
         llvm_values = list()
 
-        llvm_values.append((instruction.get_resulting_register(), False))
-        llvm_values.append((instruction.operand1, True))
-        llvm_values.append((instruction.operand2, True))
+        llvm_values.append((resulting_reg, False))
+
+        for operand in operands:
+            assert isinstance(operand, LLVMValue.LLVMValue)
+            llvm_values.append((operand, True))
 
         # Everywhere were a 'loaded llvm register' is used, map it to the corresponding 'allocated llvm register'
         # As the load instruction from llvm is not necessary anymore
@@ -342,7 +370,7 @@ class MipsBuilder:
                     continue
 
                 if not self.get_current_function().usage_information.get_instruction_information(
-                        instruction).get_register_information(assigned_llvm_reg).is_live():
+                        llvm_instruction).get_register_information(assigned_llvm_reg).is_live():
                     results.append(mips_reg)
                     # TODO remove all assignments made in the descriptors as the assigned llvm register will
                     # not be used anymore
@@ -376,32 +404,57 @@ class MipsBuilder:
 
             # We only need to update information if it has to be updated
             if self.get_current_descriptors().loaded_in_mips_reg(llvm_reg, mips_reg):
-                self.load_from_memory(llvm_reg, store_in_reg=mips_reg)
+                self.load_in_reg(llvm_reg, store_in_reg=mips_reg)
 
             # TODO Add these registers to saved registers used and temporary registers used
             # if mips_reg.name.startswith('t'):
             # elif mips_reg.name.startswith('s'):
 
-        return results
+        # Return tuple of <mips_result, mips_operands>
+        return results[0], results[1:]
 
-    def load_from_memory(self, llvm_reg: LLVMValue.LLVMRegister, store_in_reg: MipsValue.MipsRegister):
+    def load_in_reg(self, llvm_value: LLVMValue.LLVMValue, store_in_reg: MipsValue.MipsRegister):
 
         # TODO what happens when the register to be assigned neither in a mips register or address?
         """
-        Generates the instructions to load the given register from memory and places it in a designated mips register
-        Also updates the register descriptor properly.
+        Generates the instructions to load the given value (literal/register) in a designated mips register,
+        from memory if this is necessary, else uses assignment instructions.
+        Also updates the register descriptor properly if necessary.
         """
-        assert isinstance(llvm_reg, LLVMValue.LLVMRegister)
         assert isinstance(store_in_reg, MipsValue.MipsRegister)
 
-        offset = self.get_current_descriptors().get_address_location(llvm_reg)
-        assert offset is not None
+        if isinstance(llvm_value, LLVMValue.LLVMRegister):
 
-        lw_instruction = MipsInstruction.LoadWordInstruction(register_to_store=store_in_reg,
-                                                             register_address=MipsValue.MipsRegister.STACK_POINTER,
-                                                             offset=offset)
-        self.get_current_function().add_instruction(lw_instruction)
-        self.get_current_descriptors().assign_to_mips_reg(llvm_reg, store_in_reg)
+            # Mips register which currently holds the value of the llvm register
+            current_mips_reg = self.get_current_descriptors().get_mips_reg_for_llvm_reg(llvm_value)
+
+            if current_mips_reg is None:
+                offset = self.get_current_descriptors().get_address_location(llvm_value)
+                assert offset is not None
+
+                instruction = MipsInstruction.LoadWordInstruction(register_to_store=store_in_reg,
+                                                                  register_address=MipsValue.MipsRegister.STACK_POINTER,
+                                                                  offset=offset)
+            else:
+
+                instruction = MipsInstruction.ArithmeticBinaryInstruction(first_register=MipsValue.MipsRegister.ZERO,
+                                                                          second_register=current_mips_reg,
+                                                                          token=ASTTokens.BinaryArithmeticExprToken.ADD,
+                                                                          resulting_register=store_in_reg)
+
+        elif isinstance(llvm_value, LLVMValue.LLVMLiteral):
+
+            mips_literal = self.convert_to_mips_literal(llvm_value)
+            instruction = MipsInstruction.ArithmeticBinaryInstruction(first_register=MipsValue.MipsRegister.ZERO,
+                                                                      second_register=mips_literal,
+                                                                      token=ASTTokens.BinaryArithmeticExprToken.ADD,
+                                                                      resulting_register=store_in_reg)
+        else:
+
+            raise NotImplementedError('Should either be literal or register')
+
+        self.get_current_function().add_instruction(instruction)
+        self.get_current_descriptors().assign_to_mips_reg(llvm_value, store_in_reg)
 
     def store_in_memory(self, llvm_reg_to_store: LLVMValue.LLVMRegister):
         """

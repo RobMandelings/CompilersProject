@@ -58,6 +58,10 @@ class MipsRegister(enum.Enum, MipsValue):
     def __init__(self, name):
         super().__init__(name)
 
+    @staticmethod
+    def get_arg_registers():
+        return [MipsRegister.A0, MipsRegister.A1, MipsRegister.A2, MipsRegister.A3]
+
     def get_name(self):
         return self.content
 
