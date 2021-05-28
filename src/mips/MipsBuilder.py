@@ -427,7 +427,7 @@ class MipsBuilder:
             llvm_value = llvm_values[i][0]
             if isinstance(llvm_value, LLVMValue.LLVMRegister):
                 if llvm_value in self.ref_mapper:
-                    llvm_values[i][0] = self.ref_mapper[llvm_value]
+                    llvm_values[i] = (self.ref_mapper[llvm_value], llvm_values[i][1])
 
         for pair in llvm_values:
 
@@ -436,7 +436,6 @@ class MipsBuilder:
             if isinstance(pair[0], LLVMValue.LLVMLiteral) and not all_registers:
                 chosen_values.append(self.convert_to_mips_literal(pair[0]))
                 result_found = True
-                break
 
             if result_found:
                 continue
@@ -455,7 +454,6 @@ class MipsBuilder:
             if self.get_current_function().descriptors.has_register_location(llvm_value):
                 chosen_values.append(self.get_current_function().descriptors.get_mips_reg_for_llvm_reg(llvm_value))
                 result_found = True
-                break
 
             if result_found:
                 continue
@@ -482,12 +480,17 @@ class MipsBuilder:
             if result_found:
                 continue
 
-            # First choose from the mips registers that are empty
             for mips_value in mips_registers_to_choose_from:
                 if self.get_current_descriptors().is_empty(mips_value):
                     chosen_values.append(mips_value)
                     result_found = True
                     break
+
+            if result_found:
+                continue
+
+            # First choose from the mips registers that are empty
+            for mips_value in mips_registers_to_choose_from:
 
                 assigned_llvm_reg = self.get_current_descriptors().get_assigned_register_for_mips_reg(mips_value)
 
@@ -509,6 +512,8 @@ class MipsBuilder:
 
             if result_found:
                 continue
+            else:
+                raise AssertionError(f'No result was found for llvm value {llvm_value}')
 
         for mips_value in chosen_values:
 
@@ -541,6 +546,10 @@ class MipsBuilder:
                 # We only need to update information if it has to be updated
                 if is_operand and not self.get_current_descriptors().loaded_in_mips_reg(llvm_value, mips_value):
                     self.load_in_reg(llvm_value, store_in_reg=mips_value)
+                elif not is_operand:
+                    # If its not an operand, this means its a register for result. Update the descriptor accordingly
+                    # So that the 'result' llvm register gets assigned to the mips register
+                    self.get_current_function().descriptors.assign_to_mips_reg(llvm_value, mips_value)
 
                 # TODO Add these registers to saved registers used and temporary registers used
                 # if mips_reg.name.startswith('t'):
@@ -638,7 +647,8 @@ class MipsBuilder:
         # Assign a new address location to the llvm register with current offset and increase it afterwards
         if offset is None:
             self.get_current_descriptors() \
-                .assign_address_location_to_llvm_reg(assigned_llvm_reg)
+                .assign_address_location_to_llvm_reg(assigned_llvm_reg,
+                                                     self.get_current_function().get_new_fp_offset(False))
             offset = self.get_current_descriptors().get_address_location(assigned_llvm_reg)
 
         sw_instruction = MipsInstruction.StoreWordInstruction(register_to_store=mips_register,

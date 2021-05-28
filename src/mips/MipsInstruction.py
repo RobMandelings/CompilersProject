@@ -178,6 +178,9 @@ class ArithmeticBinaryInstruction(ArithmeticInstruction):
 
     def __init__(self, first_operand: MipsValue.MipsRegister, second_operand: MipsValue.MipsValue,
                  token: ASTTokens.BinaryArithmeticExprToken, resulting_register: MipsValue.MipsRegister = None):
+        assert isinstance(first_operand, MipsValue.MipsRegister)
+        assert isinstance(second_operand, MipsValue.MipsValue)
+        assert isinstance(resulting_register, MipsValue.MipsRegister)
         super().__init__(first_operand, second_operand, resulting_register)
         self.token = token
 

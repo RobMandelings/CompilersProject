@@ -76,7 +76,7 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         # Load the saved registers after executing instructions. This just adds the final basic block to the function
         self.get_mips_builder().add_function_body_ending_instructions()
         self.get_mips_builder().get_current_function().update_fp_offset_values()
-        
+
         self.get_mips_builder().get_current_function().replace_return_instruction_point_with_actual_instructions(
             self.get_mips_builder().get_current_function().get_current_basic_block())
 
@@ -172,7 +172,21 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
             current_function.add_instruction(mips_division_instruction)
             current_function.add_instruction(mips_mflo_instruction)
         else:
-            mips_instruction = MipsInstruction.ArithmeticBinaryInstruction(mips_operands[0], mips_operands[1],
+
+            if isinstance(mips_operands[0], MipsValue.MipsLiteral):
+                assert not isinstance(mips_operands[1], MipsValue.MipsLiteral)
+                first_operand = mips_operands[1]
+                second_operand = mips_operands[0]
+            elif isinstance(mips_operands[1], MipsValue.MipsLiteral):
+                assert not isinstance(mips_operands[0], MipsValue.MipsLiteral)
+                first_operand = mips_operands[0]
+                second_operand = mips_operands[1]
+            else:
+                # Doesn't really matter here; both are registers
+                first_operand = mips_operands[0]
+                second_operand = mips_operands[1]
+
+            mips_instruction = MipsInstruction.ArithmeticBinaryInstruction(first_operand, second_operand,
                                                                            instruction.operation,
                                                                            mips_resulting_register)
             current_function.add_instruction(mips_instruction)

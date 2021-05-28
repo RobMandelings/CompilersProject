@@ -51,6 +51,5 @@ class LLVMUsageInformation:
         """
         Retrieves the usage and liveness information for a given instruction
         """
-        instruction_information = self.llvm_instructions_information[llvm_instruction]
-        assert isinstance(instruction_information, LLVMInstructionInformation)
+        instruction_information = self.llvm_instructions_information.get(llvm_instruction)
         return instruction_information
