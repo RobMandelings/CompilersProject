@@ -54,9 +54,24 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         mips_resulting_register = mips[0]
         mips_operands = mips[1]
         token = ASTTokens.BinaryArithmeticExprToken.ADD
-
         mips_instruction = MipsInstruction.ArithmeticBinaryInstruction(MipsValue.MipsRegister.ZERO, mips_operands[0], token, mips_resulting_register)
+
+        # Creation of mips instruction is done, now adding the instruction to the current function
         self.get_mips_builder().get_current_function().add_instruction(mips_instruction)
+
+    def visit_llvm_conditional_branch_instruction(self, instruction: LLVMInstruction.LLVMConditionalBranchInstruction):
+        super().visit_llvm_conditional_branch_instruction(instruction)
+
+        # TODO Extend get_mips_values for LLVMConditionalBranchInstruction
+        mips = self.get_mips_builder().get_mips_values(instruction, None, [instruction.condition_reg])
+        mips_conditional_register = mips[1][0]
+
+        mips_instruction_bne = MipsInstruction.BranchNotEqualInstruction(mips_conditional_register, MipsValue.MipsRegister.ZERO, instruction.if_true.name)
+        mips_instruction_beq = MipsInstruction.BranchEqualInstruction(mips_conditional_register, MipsValue.MipsRegister.ZERO, instruction.if_false.name)
+
+        # Creation of mips instructions is done, now adding the instructions to the current function
+        self.get_mips_builder().get_current_function().add_instruction(mips_instruction_bne)
+        self.get_mips_builder().get_current_function().add_instruction(mips_instruction_beq)
 
     def visit_llvm_call_instruction(self, instruction: LLVMInstruction.LLVMCallInstruction):
         # Callers responsibility: store the registers used that you want to keep after the function call
