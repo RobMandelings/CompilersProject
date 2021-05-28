@@ -177,7 +177,7 @@ class BranchEqualInstruction(BranchInstruction):
         super().__init__(first_register, second_register, label)
 
     def to_mips(self):
-        raise NotImplementedError
+        return f"beq {self.first_register},{self.second_register},{self.label}"
 
 
 class BranchNotEqualInstruction(BranchInstruction):
@@ -186,7 +186,7 @@ class BranchNotEqualInstruction(BranchInstruction):
         super().__init__(first_register, second_register, label)
 
     def to_mips(self):
-        raise NotImplementedError
+        return f"bne {self.first_register},{self.second_register},{self.label}"
 
 
 class BranchGreaterThanInstruction(BranchInstruction):
@@ -195,7 +195,7 @@ class BranchGreaterThanInstruction(BranchInstruction):
         super().__init__(first_register, second_register, label)
 
     def to_mips(self):
-        raise NotImplementedError
+        return f"bgt {self.first_register},{self.second_register},{self.label}"
 
 
 class BranchGreaterThanOrEqualInstruction(BranchInstruction):
@@ -204,7 +204,7 @@ class BranchGreaterThanOrEqualInstruction(BranchInstruction):
         super().__init__(first_register, second_register, label)
 
     def to_mips(self):
-        raise NotImplementedError
+        return f"bge {self.first_register},{self.second_register},{self.label}"
 
 
 class BranchLessThaninstruction(BranchInstruction):
@@ -213,7 +213,7 @@ class BranchLessThaninstruction(BranchInstruction):
         super().__init__(first_register, second_register, label)
 
     def to_mips(self):
-        raise NotImplementedError
+        return f"blt {self.first_register},{self.second_register},{self.label}"
 
 
 class BranchLessThanOrEqualInstruction(BranchInstruction):
@@ -222,7 +222,7 @@ class BranchLessThanOrEqualInstruction(BranchInstruction):
         super().__init__(first_register, second_register, label)
 
     def to_mips(self):
-        raise NotImplementedError
+        return f"ble {self.first_register},{self.second_register},{self.label}"
 
 # ############################### #
 # Unconditional Jump Instructions #
