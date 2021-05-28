@@ -1,14 +1,19 @@
 import src.Instruction as Instruction
 import src.mips.MipsValue as MipsValue
 import src.mips.MipsBasicBlock as MipsBasicBlock
+import src.ast.ASTTokens as ASTTokens
 import abc
 
 """
 Contains all mips instructions that the compiler can generate
 """
 
+# One line per instruction
 
 class MipsInstruction(abc.ABC, Instruction.Instruction):
+    """
+    Abstract class for all the mips instructions
+    """
 
     def __init__(self):
         super().__init__()
@@ -20,6 +25,7 @@ class MipsInstruction(abc.ABC, Instruction.Instruction):
 # ######################### #
 # DataTransfer Instructions #
 # ######################### #
+
 
 class LoadWordInstruction(MipsInstruction):
 
@@ -115,55 +121,38 @@ class MoveInstruction(MipsInstruction):
 
 class ArithmeticInstruction(MipsInstruction):
 
-    def __init__(self, resulting_register: MipsValue.MipsRegister, register_to_add: MipsValue.MipsRegister, secondary_value_to_add: MipsValue.MipsValue = None):
+    def __init__(self, first_register: MipsValue.MipsRegister, second_register: MipsValue.MipsValue, resulting_register: MipsValue.MipsRegister = None):
         super().__init__()
         self.resulting_register = resulting_register
-        self.register_to_add = register_to_add
-        self.secondary_value_to_add = secondary_value_to_add
+        self.first_register = first_register
+        self.second_register = second_register
 
 
-class ArithmeticAddInstruction(ArithmeticInstruction):
+class ArithmeticBinaryInstruction(ArithmeticInstruction):
 
-    def __init__(self, resulting_register: MipsValue.MipsRegister, register_to_add: MipsValue.MipsRegister, secondary_value_to_add: MipsValue.MipsValue):
-        super().__init__(resulting_register, register_to_add, secondary_value_to_add)
-
-    def to_mips(self):
-        raise NotImplementedError
-
-
-class ArithmeticSubInstruction(ArithmeticInstruction):
-
-    def __init__(self, resulting_register: MipsValue.MipsRegister, register_to_sub: MipsValue.MipsRegister,
-                 secondary_value_to_sub: MipsValue.MipsRegister):
-        super().__init__(resulting_register, register_to_sub, secondary_value_to_sub)
+    def __init__(self, first_register: MipsValue.MipsRegister, second_register: MipsValue.MipsValue, token: ASTTokens.BinaryArithmeticExprToken, resulting_register: MipsValue.MipsRegister = None):
+        super().__init__(first_register, second_register, resulting_register)
+        self.token = token
 
     def to_mips(self):
-        raise NotImplementedError
+        operation_string = ""
+        if self.token == ASTTokens.BinaryArithmeticExprToken.ADD:
+            operation_string = "add"
+        elif self.token == ASTTokens.BinaryArithmeticExprToken.SUB:
+            operation_string = "sub"
+        elif self.token == ASTTokens.BinaryArithmeticExprToken.MUL:
+            operation_string = "mul"
+        elif self.token == ASTTokens.BinaryArithmeticExprToken.DIV:
+            operation_string = "div"
+            return operation_string + f" {self.resulting_register.get_name()}, {self.first_register.get_name()}"
+
+        return operation_string + f" {self.resulting_register.get_name()}, {self.first_register.get_name()}, {self.second_register.get_content()}"
 
 
-class ArithmeticMultiplyInstruction(ArithmeticInstruction):
-
-    def __init__(self, resulting_register: MipsValue.MipsRegister, register_to_multiply: MipsValue.MipsRegister,
-                 secondary_value_to_multiply: MipsValue.MipsRegister = None):
-        super().__init__(resulting_register, register_to_multiply, secondary_value_to_multiply)
-
-    def to_mips(self):
-        raise NotImplementedError
-
-
-class ArithmeticMultiplyOverflowInstruction(ArithmeticMultiplyInstruction):
+class ArithmeticMultiplyOverflowInstruction(ArithmeticInstruction):
 
     def __init__(self, register_to_multiply_1: MipsValue.MipsRegister, register_to_multiply_2: MipsValue.MipsRegister):
         super().__init__(register_to_multiply_1, register_to_multiply_2)
-
-    def to_mips(self):
-        raise NotImplementedError
-
-
-class ArithmeticDivideInstruction(ArithmeticInstruction):
-
-    def __init__(self, register_to_divide_1: MipsValue.MipsRegister, register_to_divide_2: MipsValue.MipsRegister):
-        super().__init__(register_to_divide_1, register_to_divide_2)
 
     def to_mips(self):
         raise NotImplementedError
