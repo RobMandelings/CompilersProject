@@ -612,7 +612,8 @@ class MipsBuilder:
 
         return chosen_values[0], chosen_values[1:]
 
-    def load_in_reg(self, llvm_value: LLVMValue.LLVMValue, store_in_reg: MipsValue.MipsRegister):
+    def load_in_reg(self, llvm_value: LLVMValue.LLVMValue, store_in_reg: MipsValue.MipsRegister,
+                    update_reg_descriptor=True):
 
         # TODO what happens when the register to be assigned neither in a mips register or address?
         """
@@ -669,7 +670,7 @@ class MipsBuilder:
 
         self.get_current_function().add_instruction(instruction)
 
-        if isinstance(llvm_value, LLVMValue.LLVMRegister):
+        if isinstance(llvm_value, LLVMValue.LLVMRegister) and update_reg_descriptor:
             self.get_current_descriptors().assign_to_mips_reg(llvm_value, store_in_reg)
         else:
             print(

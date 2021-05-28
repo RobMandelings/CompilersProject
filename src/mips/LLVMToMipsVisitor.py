@@ -193,9 +193,19 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
     def visit_llvm_binary_arithmetic_instruction(self, instruction: LLVMInstruction.LLVMBinaryArithmeticInstruction):
         super().visit_llvm_binary_arithmetic_instruction(instruction)
 
+        if isinstance(instruction.operand1, LLVMValue.LLVMLiteral) and isinstance(instruction.operand2,
+                                                                                  LLVMValue.LLVMLiteral):
+            # Mips can't handle multiple literals in arithmetic instruction, so if the instruction has two literal operands,
+            # 2 Mips registers will be returned instead of two literals
+            all_registers = True
+        else:
+
+            # Either no literal operands or one, mips can handle this
+            all_registers = False
+
         mips_values = self.get_mips_builder().get_mips_values(instruction, instruction.get_resulting_register(),
                                                               [instruction.operand1, instruction.operand2],
-                                                              all_registers=True)
+                                                              all_registers=all_registers)
 
         mips_resulting_register = mips_values[0]
         mips_operands = mips_values[1]
@@ -257,7 +267,11 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
                     self.get_mips_builder().store_in_memory(current_assigned_llvm_reg)
 
                 # Now load the current llvm argument into the argument register for usage
-                self.get_mips_builder().load_in_reg(llvm_value=llvm_arg, store_in_reg=current_mips_reg)
+                # We need to generate the correct instructions for loading,
+                # but we don't need to update the descriptor to map the llvm argument to the argument mips reg
+                # (the argument register is only used in the called function, not from outside
+                self.get_mips_builder().load_in_reg(llvm_value=llvm_arg, store_in_reg=current_mips_reg,
+                                                    update_reg_descriptor=False)
 
         if len(instruction.args) > 4:
             # The other arguments need to be stored in memory
