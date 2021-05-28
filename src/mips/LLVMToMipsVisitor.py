@@ -2,6 +2,7 @@ import src.llvm.visitors.LLVMBaseVisitor as LLVMBaseVisitor
 import src.mips.MipsValue as MipsValue
 import src.llvm.LLVMValue as LLVMValue
 import src.mips.MipsBuilder as MipsBuilder
+import src.mips.MipsInstruction as MipsInstruction
 from src.llvm import LLVMFunction as LLVMFunction, LLVMCode as LLVMCode, LLVMBasicBlock as LLVMBasicBlock, \
     LLVMInstruction as LLVMInstruction
 
@@ -64,11 +65,39 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
                 current_assigned_llvm_reg = self.get_mips_builder().get_current_descriptors() \
                     .get_assigned_register_for_mips_reg(current_mips_reg)
                 self.get_mips_builder().store_in_memory(current_assigned_llvm_reg)
+
+                # Now load the current llvm argument into the argument register for usage
                 self.get_mips_builder().load_in_reg(llvm_value=llvm_arg, store_in_reg=current_mips_reg)
 
-        mips_result, mips_operands = self.get_mips_builder().get_mips_values(instruction,
-                                                                             instruction.get_resulting_register(),
-                                                                             instruction.args)
+        if len(instruction.args) > 4:
+            # The other arguments need to be stored in memory
+            llvm_args_to_be_stored_in_memory = instruction.args[4:]
+
+        else:
+
+            llvm_args_to_be_stored_in_memory = []
+
+        # We need to get the mips args to be stored in memory as all registers,
+        # In order to store the arguments into memory
+        mips_result, mips_args_to_be_stored_in_memory = self.get_mips_builder() \
+            .get_mips_values(instruction,
+                             instruction.get_resulting_register(),
+                             llvm_args_to_be_stored_in_memory,
+                             all_registers=True)
+
+        for mips_arg in mips_args_to_be_stored_in_memory:
+            assert isinstance(mips_arg, MipsValue.MipsRegister)
+
+            # storing is a little bit different than in store_in_memory(mips_reg),
+            # as the mips registers don't necessarily have an llvm register assigned to it.
+            # The offset at which the arguments are stored are thus not saved in a descriptor, but we will be able
+            # to retrieve the corresponding arguments in the function body (by convention of args > 4).
+            sw_instruction = MipsInstruction.StoreWordInstruction(register_to_store=mips_arg,
+                                                                  register_address=MipsValue.MipsRegister.STACK_POINTER,
+                                                                  offset=self.get_mips_builder().get_current_function().get_stack_pointer_offset())
+
+            self.get_mips_builder().get_current_function().increase_sp_offset_by_four()
+            self.get_mips_builder().get_current_function().add_instruction(sw_instruction)
 
         super().visit_llvm_call_instruction(instruction)
 
