@@ -222,10 +222,16 @@ class MipsBuilder:
 
     def __init__(self):
         """
-        basic_blocks: the basic blocks containing the currently-generated mips code
+        functions: the functions containing the currently-generated mips code
+        reg_pool: contains the available mips registers for usage (temporary and saved temporary),
+        but is used for more easy retrieval instead of using the enum directly.
+        ref_mapper: maps loaded llvm registers to their corresponding 'allocated' registers from which they were loaded.
+        This is because we don't need the load instruction from mips anymore,
+        and can just 'assign' new values to the allocated reg
         """
         self.functions = list()
         self.reg_pool = RegisterPool()
+        self.ref_mapper = dict()
 
     def get_current_function(self):
         current_function = self.functions[-1]
@@ -265,6 +271,15 @@ class MipsBuilder:
         llvm_values.append((instruction.get_resulting_register(), False))
         llvm_values.append((instruction.operand1, True))
         llvm_values.append((instruction.operand2, True))
+
+        # Everywhere were a 'loaded llvm register' is used, map it to the corresponding 'allocated llvm register'
+        # As the load instruction from llvm is not necessary anymore
+        for i in range(0, len(llvm_values)):
+
+            llvm_value = llvm_values[i]
+            if isinstance(llvm_value, LLVMValue.LLVMRegister):
+                if llvm_value in self.ref_mapper:
+                    llvm_values[i] = self.ref_mapper[llvm_value]
 
         # List of mips registers or mips literals returned from the instruction
         results = list()
