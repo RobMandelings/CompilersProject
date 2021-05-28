@@ -5,7 +5,8 @@ import src.mips.MipsBuilder as MipsBuilder
 import src.mips.MipsInstruction as MipsInstruction
 from src.llvm import LLVMFunction as LLVMFunction, LLVMCode as LLVMCode, LLVMBasicBlock as LLVMBasicBlock, \
     LLVMInstruction as LLVMInstruction
-
+import src.mips.MipsInstruction as MipsInstruction
+import src.ast.ASTTokens as ASTTokens
 
 class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
     """
@@ -45,6 +46,18 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
     def visit_llvm_basic_block(self, llvm_basic_block: LLVMBasicBlock.LLVMBasicBlock):
         self.get_mips_builder().get_current_function().add_mips_basic_block()
         super().visit_llvm_basic_block(llvm_basic_block)
+
+    def visit_llvm_store_instruction(self, instruction: LLVMInstruction.LLVMStoreInstruction):
+        super().visit_llvm_store_instruction(instruction)
+
+        mips = self.get_mips_builder().get_mips_values(instruction, instruction.resulting_reg, [instruction.value_to_store])
+        mips_resulting_register = mips[0]
+        mips_operands = mips[1]
+
+        token = ASTTokens.BinaryArithmeticExprToken.ADD
+
+        mips_instruction = MipsInstruction.ArithmeticBinaryInstruction(MipsValue.MipsRegister.ZERO, mips_operands[0], token, mips_resulting_register)
+        self.get_mips_builder().get_current_function().add_instruction(mips_instruction)
 
     def visit_llvm_call_instruction(self, instruction: LLVMInstruction.LLVMCallInstruction):
         # Callers responsibility: store the registers used that you want to keep after the function call
