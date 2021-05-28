@@ -478,8 +478,6 @@ class MipsBuilder:
             # Bool indicating whether its a register for operand or not
             is_operand = pair[1]
 
-            assert isinstance(llvm_value, LLVMValue.LLVMRegister)
-
             # TODO Use reference mapper to map the llvm register to its allocated llvm register to get rid of
             # The load and store operations from llvm (not required anymore)
 
@@ -498,6 +496,9 @@ class MipsBuilder:
                 isinstance(llvm_value,
                            LLVMValue.LLVMRegister) and self.get_current_function().descriptors.is_allocated(
                     llvm_value) else self.reg_pool.get_temporary_registers()
+
+            mips_registers_to_choose_from = [mips_reg for mips_reg in
+                                             mips_registers_to_choose_from if mips_reg not in chosen_values]
 
             # Not operand means register for result, we first check if the
             # result llvm register is already assigned to a mips register, because we can easily return this one
@@ -537,6 +538,7 @@ class MipsBuilder:
                 instruction_information = self.get_current_function().usage_information.get_instruction_information(
                     llvm_instruction)
 
+                # Worst case: the chosen register has an llvm register assigned to it, so we will need to spill into memory
                 if instruction_information is None or instruction_information.get_register_information(
                         assigned_llvm_reg).is_live():
                     chosen_values.append(mips_value)
@@ -666,7 +668,13 @@ class MipsBuilder:
             raise NotImplementedError('Should either be literal or register')
 
         self.get_current_function().add_instruction(instruction)
-        self.get_current_descriptors().assign_to_mips_reg(llvm_value, store_in_reg)
+
+        if isinstance(llvm_value, LLVMValue.LLVMRegister):
+            self.get_current_descriptors().assign_to_mips_reg(llvm_value, store_in_reg)
+        else:
+            print(
+                f"Load_in_reg: the given llvmvalue to be stored in mips register {store_in_reg} "
+                f"is a literal ({llvm_value}) and the descriptor will not be updated (never used afterwards)")
 
     def store_in_memory(self, mips_register: MipsValue.MipsRegister):
         """

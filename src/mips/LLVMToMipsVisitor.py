@@ -194,7 +194,8 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         super().visit_llvm_binary_arithmetic_instruction(instruction)
 
         mips_values = self.get_mips_builder().get_mips_values(instruction, instruction.get_resulting_register(),
-                                                              [instruction.operand1, instruction.operand2])
+                                                              [instruction.operand1, instruction.operand2],
+                                                              all_registers=True)
 
         mips_resulting_register = mips_values[0]
         mips_operands = mips_values[1]
