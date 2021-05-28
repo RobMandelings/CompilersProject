@@ -432,6 +432,22 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         store_instruction = LLVMInstructions.LLVMStoreInstruction(store_in_reg, value_to_store)
         self.get_current_function().add_instruction(store_instruction)
 
+    def to_file(self, filename: str):
+        f = open(filename, "w+")
+        f.write(self.to_llvm())
+        f.close()
+
+    # TODO optimize
+    def to_llvm(self):
+        llvm_code = self.get_global_container().to_llvm() + "\n"
+
+        if self.get_global_container().has_printf_type_string():
+            llvm_code += self.get_printf_function_declaration() + "\n\n"
+
+        llvm_code += self.get_function_holder().to_llvm()
+
+        return llvm_code
+
     def build(self):
         from src.llvm.LLVMCode import LLVMCode
         return LLVMCode(self)
