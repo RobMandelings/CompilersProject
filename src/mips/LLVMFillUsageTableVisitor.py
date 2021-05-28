@@ -6,7 +6,7 @@ import src.mips.LLVMUsageInformation as LLVMUsageInformation
 
 class LLVMFillUsageTableVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
     """
-    Fills a usage and liveness table for each instructio
+    Fills a usage and liveness table for each instruction
     """
 
     def __init__(self):

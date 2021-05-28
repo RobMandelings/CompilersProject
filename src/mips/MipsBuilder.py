@@ -53,7 +53,7 @@ class Descriptors:
     def __init__(self):
         """
         allocated_registers: registers from LLVM that were allocated and thus contain values that must be preserved
-        by spilling into memory once the register descriptor
+        by spilling into memory once the register descriptor is used for another register
         """
         self.__allocated_registers = list()
         self.__reg_descriptor = dict()
