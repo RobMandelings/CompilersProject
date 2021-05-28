@@ -171,9 +171,9 @@ class ArithmeticBinaryInstruction(ArithmeticInstruction):
     Token values in this case can be : [ADD, SUB, MUL, DIV]
     """
 
-    def __init__(self, first_register: MipsValue.MipsRegister, second_register: MipsValue.MipsValue,
+    def __init__(self, first_operand: MipsValue.MipsRegister, second_operand: MipsValue.MipsValue,
                  token: ASTTokens.BinaryArithmeticExprToken, resulting_register: MipsValue.MipsRegister = None):
-        super().__init__(first_register, second_register, resulting_register)
+        super().__init__(first_operand, second_operand, resulting_register)
         self.token = token
 
     def to_mips(self):

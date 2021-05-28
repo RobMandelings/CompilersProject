@@ -437,16 +437,16 @@ class MipsBuilder:
                                                                   offset=offset)
             else:
 
-                instruction = MipsInstruction.ArithmeticBinaryInstruction(first_register=MipsValue.MipsRegister.ZERO,
-                                                                          second_register=current_mips_reg,
+                instruction = MipsInstruction.ArithmeticBinaryInstruction(first_operand=MipsValue.MipsRegister.ZERO,
+                                                                          second_operand=current_mips_reg,
                                                                           token=ASTTokens.BinaryArithmeticExprToken.ADD,
                                                                           resulting_register=store_in_reg)
 
         elif isinstance(llvm_value, LLVMValue.LLVMLiteral):
 
             mips_literal = self.convert_to_mips_literal(llvm_value)
-            instruction = MipsInstruction.ArithmeticBinaryInstruction(first_register=MipsValue.MipsRegister.ZERO,
-                                                                      second_register=mips_literal,
+            instruction = MipsInstruction.ArithmeticBinaryInstruction(first_operand=MipsValue.MipsRegister.ZERO,
+                                                                      second_operand=mips_literal,
                                                                       token=ASTTokens.BinaryArithmeticExprToken.ADD,
                                                                       resulting_register=store_in_reg)
         else:
