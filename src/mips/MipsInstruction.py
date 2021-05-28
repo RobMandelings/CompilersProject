@@ -2,6 +2,7 @@ import src.Instruction as Instruction
 import src.mips.MipsValue as MipsValue
 import src.mips.MipsBasicBlock as MipsBasicBlock
 import src.ast.ASTTokens as ASTTokens
+import src.mips.FPOffset as FPOffset
 import abc
 
 """
@@ -11,13 +12,16 @@ Contains all mips instructions that the compiler can generate
 
 # One line per instruction
 
-class MipsInstruction(abc.ABC, Instruction.Instruction):
+class MipsInstruction(Instruction.Instruction, abc.ABC):
     """
     Abstract class for all the mips instructions
     """
 
     def __init__(self):
         super().__init__()
+
+    def is_terminator(self):
+        return False
 
     def to_mips(self):
         """
@@ -39,14 +43,14 @@ class LoadWordInstruction(MipsInstruction):
     """
 
     def __init__(self, register_to_load_into: MipsValue.MipsRegister, register_address: MipsValue.MipsRegister,
-                 offset: int):
+                 offset: FPOffset.FPOffset):
         super().__init__()
         self.register_to_store = register_to_load_into
         self.register_address = register_address
         self.offset = offset
 
     def to_mips(self):
-        return f"lw {self.register_to_store},{self.offset}({self.register_address})"
+        return f"lw {self.register_to_store},{self.offset.get_value()}({self.register_address})"
 
 
 class StoreWordInstruction(MipsInstruction):
@@ -55,14 +59,14 @@ class StoreWordInstruction(MipsInstruction):
     """
 
     def __init__(self, register_to_store: MipsValue.MipsRegister, register_address: MipsValue.MipsRegister,
-                 offset: int):
+                 offset: FPOffset.FPOffset):
         super().__init__()
         self.register_to_store = register_to_store
         self.register_address = register_address
         self.offset = offset
 
     def to_mips(self):
-        return f"sw {self.register_to_store},{self.offset}({self.register_address})"
+        return f"sw {self.register_to_store},{self.offset.get_value()}({self.register_address})"
 
 
 class LoadUpperImmediateInstruction(MipsInstruction):
@@ -84,7 +88,8 @@ class LoadAddressInstruction(MipsInstruction):
     This class corresponds to the load address mips instruction
     """
 
-    def __init__(self, register_to_load: MipsValue.MipsRegister, label: MipsBasicBlock.MipsBasicBlock):
+    def __init__(self, register_to_load: MipsValue.MipsRegister, label):
+        assert isinstance(label, MipsBasicBlock.MipsBasicBlock)
         super().__init__()
         self.register_to_load = register_to_load
         self.label = label
@@ -218,12 +223,16 @@ class BranchInstruction(MipsInstruction):
     This class is an abstract class for all conditional branch mips instructions
     """
 
-    def __init__(self, first_register: MipsValue.MipsRegister, second_register: MipsValue.MipsRegister,
-                 label: MipsBasicBlock.MipsBasicBlock):
+    def __init__(self, first_register: MipsValue.MipsRegister, second_register: MipsValue.MipsRegister
+                 , label):
+        assert isinstance(label, MipsBasicBlock.MipsBasicBlock)
         super().__init__()
         self.first_register = first_register
         self.second_register = second_register
         self.label = label
+
+    def is_terminator(self):
+        return True
 
 
 class BranchEqualInstruction(BranchInstruction):
@@ -232,7 +241,8 @@ class BranchEqualInstruction(BranchInstruction):
     """
 
     def __init__(self, first_register: MipsValue.MipsRegister, second_register: MipsValue.MipsRegister,
-                 label: MipsBasicBlock.MipsBasicBlock):
+                 label):
+        assert isinstance(label, MipsBasicBlock.MipsBasicBlock)
         super().__init__(first_register, second_register, label)
 
     def to_mips(self):
@@ -245,7 +255,8 @@ class BranchNotEqualInstruction(BranchInstruction):
     """
 
     def __init__(self, first_register: MipsValue.MipsRegister, second_register: MipsValue.MipsRegister,
-                 label: MipsBasicBlock.MipsBasicBlock):
+                 label):
+        assert isinstance(label, MipsBasicBlock.MipsBasicBlock)
         super().__init__(first_register, second_register, label)
 
     def to_mips(self):
@@ -258,7 +269,8 @@ class BranchGreaterThanInstruction(BranchInstruction):
     """
 
     def __init__(self, first_register: MipsValue.MipsRegister, second_register: MipsValue.MipsRegister,
-                 label: MipsBasicBlock.MipsBasicBlock):
+                 label):
+        assert isinstance(label, MipsBasicBlock.MipsBasicBlock)
         super().__init__(first_register, second_register, label)
 
     def to_mips(self):
@@ -271,7 +283,8 @@ class BranchGreaterThanOrEqualInstruction(BranchInstruction):
     """
 
     def __init__(self, first_register: MipsValue.MipsRegister, second_register: MipsValue.MipsRegister,
-                 label: MipsBasicBlock.MipsBasicBlock):
+                 label):
+        assert isinstance(label, MipsBasicBlock.MipsBasicBlock)
         super().__init__(first_register, second_register, label)
 
     def to_mips(self):
@@ -284,7 +297,8 @@ class BranchLessThaninstruction(BranchInstruction):
     """
 
     def __init__(self, first_register: MipsValue.MipsRegister, second_register: MipsValue.MipsRegister,
-                 label: MipsBasicBlock.MipsBasicBlock):
+                 label):
+        assert isinstance(label, MipsBasicBlock.MipsBasicBlock)
         super().__init__(first_register, second_register, label)
 
     def to_mips(self):
@@ -297,7 +311,8 @@ class BranchLessThanOrEqualInstruction(BranchInstruction):
     """
 
     def __init__(self, first_register: MipsValue.MipsRegister, second_register: MipsValue.MipsRegister,
-                 label: MipsBasicBlock.MipsBasicBlock):
+                 label):
+        assert isinstance(label, MipsBasicBlock.MipsBasicBlock)
         super().__init__(first_register, second_register, label)
 
     def to_mips(self):
@@ -314,9 +329,12 @@ class UnconditionalJumpInstruction(MipsInstruction):
     This class is an abstract class for all unconditional jump mips instructions
     """
 
-    def __init__(self, to_jump_to: MipsBasicBlock.MipsBasicBlock or MipsValue.MipsRegister):
+    def __init__(self, to_jump_to):
         super().__init__()
         self.to_jump_to = to_jump_to
+
+    def is_terminator(self):
+        return True
 
 
 class JumpInstruction(UnconditionalJumpInstruction):
@@ -324,11 +342,14 @@ class JumpInstruction(UnconditionalJumpInstruction):
     This class corresponds to the jump mips instruction
     """
 
-    def __init__(self, to_jump_to: MipsBasicBlock.MipsBasicBlock):
+    def __init__(self, to_jump_to):
         super().__init__(to_jump_to)
 
     def to_mips(self):
         return f"j {self.to_jump_to.name}"
+
+    def is_terminator(self):
+        return True
 
 
 class JumpRegisterInstruction(UnconditionalJumpInstruction):
@@ -342,17 +363,23 @@ class JumpRegisterInstruction(UnconditionalJumpInstruction):
     def to_mips(self):
         return f"jr {self.to_jump_to.get_name()}"
 
+    def is_terminator(self):
+        return True
+
 
 class JumpAndLinkInstruction(UnconditionalJumpInstruction):
     """
     This class corresponds to the jump and link mips instruction
     """
 
-    def __init__(self, to_jump_to: MipsBasicBlock.MipsBasicBlock):
+    def __init__(self, to_jump_to):
         super().__init__(to_jump_to)
 
     def to_mips(self):
         return f"jal {self.to_jump_to.name}"
+
+    def is_terminator(self):
+        return False
 
 
 # ####################### #

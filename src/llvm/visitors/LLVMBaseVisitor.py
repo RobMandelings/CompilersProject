@@ -20,14 +20,14 @@ class LLVMBaseVisitor(ILLVMVisitor.ILLVMVisitor):
         super().visit_llvm_global_container(llvm_global_container)
 
     def visit_llvm_function_holder(self, llvm_function_holder: LLVMFunctionHolder.LLVMFunctionHolder):
-        for function in llvm_function_holder.functions:
+        for function in llvm_function_holder.functions.values():
             function.accept(self)
 
     def visit_llvm_declared_function(self, llvm_function_declaration: LLVMFunction.LLVMDeclaredFunction):
         pass
 
     def visit_llvm_defined_function(self, llvm_defined_function: LLVMFunction.LLVMDefinedFunction):
-        for basic_block in llvm_defined_function.basic_blocks:
+        for basic_block in llvm_defined_function.basic_blocks.values():
             basic_block.accept(self)
 
     def visit_llvm_basic_block(self, llvm_basic_block: LLVMBasicBlock.LLVMBasicBlock):
@@ -61,7 +61,8 @@ class LLVMBaseVisitor(ILLVMVisitor.ILLVMVisitor):
     def visit_llvm_conditional_branch_instruction(self, instruction: LLVMInstruction.LLVMConditionalBranchInstruction):
         pass
 
-    def visit_llvm_unconditional_branch_instruction(self, instruction: LLVMInstruction.LLVMUnconditionalBranchInstruction):
+    def visit_llvm_unconditional_branch_instruction(self,
+                                                    instruction: LLVMInstruction.LLVMUnconditionalBranchInstruction):
         pass
 
     def visit_llvm_unary_assign_instruction(self, instruction: LLVMInstruction.LLVMUnaryAssignInstruction):

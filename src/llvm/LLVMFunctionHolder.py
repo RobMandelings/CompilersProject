@@ -9,6 +9,9 @@ class LLVMFunctionHolder(LLVMInterfaces.IToLLVM):
         self.functions = dict()
         self.current_function = None
 
+    def accept(self, visitor):
+        visitor.visit_llvm_function_holder(self)
+
     def add_function(self, function: LLVMFunction.LLVMFunction):
         assert isinstance(function, LLVMFunction.LLVMFunction)
         self.functions[function.get_identifier()] = function
