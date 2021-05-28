@@ -242,7 +242,7 @@ class JumpInstruction(UnconditionalJumpInstruction):
         super().__init__(to_jump_to)
 
     def to_mips(self):
-        raise NotImplementedError
+        return f"j {self.to_jump_to.name}"
 
 
 class JumpRegisterInstruction(UnconditionalJumpInstruction):
@@ -251,7 +251,7 @@ class JumpRegisterInstruction(UnconditionalJumpInstruction):
         super().__init__(to_jump_to)
 
     def to_mips(self):
-        raise NotImplementedError
+        return f"jr {self.to_jump_to.get_name()}"
 
 
 class JumpAndLinkInstruction(UnconditionalJumpInstruction):
@@ -260,7 +260,7 @@ class JumpAndLinkInstruction(UnconditionalJumpInstruction):
         super().__init__(to_jump_to)
 
     def to_mips(self):
-        raise NotImplementedError
+        return f"jal {self.to_jump_to.name}"
 
 # ####################### #
 # Comparison Instructions #
