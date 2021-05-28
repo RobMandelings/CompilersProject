@@ -604,7 +604,7 @@ class MipsBuilder:
 
     # Now that all registers have been used, we can start loading in the extra arguments if there are any
 
-    def add_function_body_ending_instructions(self, mips_function: MipsFunction):
+    def add_function_body_ending_instructions(self):
         """
 
         Applied to the current function in the mips builder:
@@ -613,7 +613,7 @@ class MipsBuilder:
         Restoring saved temporary registers, storing return values in registers,... everything to do with the stack frame
         """
 
-        end_basic_block = MipsBasicBlock.MipsBasicBlock(f'{mips_function.get_name()}_end')
+        end_basic_block = MipsBasicBlock.MipsBasicBlock(f'{self.get_current_function().get_name()}_end')
 
         if self.get_current_function().nr_return_values > 1:
             raise NotImplementedError(f'Nr return values greater than 1 not supported yet')
