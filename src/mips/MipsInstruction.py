@@ -38,10 +38,10 @@ class LoadWordInstruction(MipsInstruction):
     This class corresponds to the load word mips instruction
     """
 
-    def __init__(self, register_to_store: MipsValue.MipsRegister, register_address: MipsValue.MipsRegister,
+    def __init__(self, register_to_load_into: MipsValue.MipsRegister, register_address: MipsValue.MipsRegister,
                  offset: int):
         super().__init__()
-        self.register_to_store = register_to_store
+        self.register_to_store = register_to_load_into
         self.register_address = register_address
         self.offset = offset
 

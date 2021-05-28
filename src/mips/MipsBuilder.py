@@ -177,7 +177,7 @@ class Descriptors:
 
 class MipsFunction:
 
-    def __init__(self, name):
+    def __init__(self, name, nr_params: int, nr_return_values: int):
         """
         usage_information: the current usage information of the basic block
         descriptors: contains register and address descriptor
@@ -190,12 +190,17 @@ class MipsFunction:
         self.temporary_registers_used = set()
         self.usage_information = LLVMUsageInformation.LLVMUsageInformation()
         self.descriptors = Descriptors()
-        self.__stack_pointer_offset = 0
+        self.__frame_pointer_offset = 0
         self.basic_blocks = list()
         self.add_mips_basic_block()
+        self.nr_params = nr_params
+        self.nr_return_values = nr_return_values
 
     def get_name(self):
         return self.name
+
+    def get_entry_basic_block(self):
+        return self.basic_blocks[0]
 
     def add_mips_basic_block(self):
         """
@@ -207,14 +212,14 @@ class MipsFunction:
 
         self.basic_blocks.append(MipsBasicBlock.MipsBasicBlock(f'{self.get_name()}_{len(self.basic_blocks)}'))
 
-    def get_stack_pointer_offset(self):
-        return self.__stack_pointer_offset
+    def get_frame_pointer_offset(self):
+        return self.__frame_pointer_offset
 
-    def increase_sp_offset_by_four(self):
+    def increase_fp_offset_by_four(self):
         """
         Increases the stack pointer offset by one word (4) as mips is byte addressed
         """
-        self.__stack_pointer_offset += 4
+        self.__frame_pointer_offset += 4
 
     def refresh_usage_information(self, llvm_basic_block: LLVMBasicBlock.LLVMBasicBlock):
         # TODO implement this
@@ -264,6 +269,9 @@ class MipsBuilder:
         return current_function
 
     def get_current_descriptors(self):
+        """
+        Returns the current descriptors of the current function
+        """
         return self.get_current_function().descriptors
 
     def __get_candidate_register(self, llvm_register: LLVMValue.LLVMRegister):
@@ -279,6 +287,56 @@ class MipsBuilder:
         """
 
         return MipsValue.MipsLiteral(llvm_literal.get_value())
+
+    def get_mips_registers(self, amount: int, saved_temporary_preference: bool):
+        """
+        Retrieves a mips value that can be used to put other values in, spilling the old values into memory if
+        necessary
+
+        amount: the amount of mips registers to retrieve
+        saved_temporary_preference: whether or not to give preference to the save temporary registers or not
+        (only if this is not a valid option, look in the temporary registers)
+        """
+
+        mips_registers_to_choose_from = self.reg_pool.get_saved_registers() if saved_temporary_preference else \
+            self.reg_pool.get_temporary_registers()
+
+        chosen_mips_regs = []
+
+        for mips_reg in mips_registers_to_choose_from:
+
+            if mips_reg in chosen_mips_regs:
+                continue
+
+            # If we have chosen the requested amount, stop here (and return the mips registers)
+            if len(chosen_mips_regs) == amount:
+                break
+
+            if self.get_current_descriptors().is_empty(mips_reg):
+                chosen_mips_regs.append(mips_reg)
+
+        if len(chosen_mips_regs) == amount:
+            return chosen_mips_regs
+
+        # Filter out already chosen mips registers to get the last ones
+        mips_registers_to_choose_from = [mips_reg for mips_reg in mips_registers_to_choose_from if
+                                         not mips_reg in chosen_mips_regs]
+
+        # We know the registers are not empty otherwise
+        for mips_reg in mips_registers_to_choose_from:
+            if mips_reg in chosen_mips_regs:
+                continue
+
+            if len(chosen_mips_regs) == amount:
+                break
+
+            self.store_in_memory(mips_reg)
+
+        assert len(
+            chosen_mips_regs) == amount, "The requested amount of mips registers " \
+                                         "cannot be given at once: too many registers asked"
+
+        return chosen_mips_regs
 
     def get_mips_values(self, llvm_instruction: LLVMInstruction.LLVMInstruction, resulting_reg: LLVMValue.LLVMRegister,
                         operands: list, all_registers=False):
@@ -442,7 +500,7 @@ class MipsBuilder:
                 offset = self.get_current_descriptors().get_address_location(llvm_value)
                 assert offset is not None
 
-                instruction = MipsInstruction.LoadWordInstruction(register_to_store=store_in_reg,
+                instruction = MipsInstruction.LoadWordInstruction(register_to_load_into=store_in_reg,
                                                                   register_address=MipsValue.MipsRegister.STACK_POINTER,
                                                                   offset=offset)
             else:
@@ -484,8 +542,8 @@ class MipsBuilder:
         if offset is None:
             self.get_current_descriptors() \
                 .assign_address_location_to_llvm_reg(assigned_llvm_reg,
-                                                     self.get_current_function().get_stack_pointer_offset())
-            self.get_current_function().increase_sp_offset_by_four()
+                                                     self.get_current_function().get_frame_pointer_offset())
+            self.get_current_function().increase_fp_offset_by_four()
             offset = self.get_current_descriptors().get_address_location(assigned_llvm_reg)
 
         sw_instruction = MipsInstruction.StoreWordInstruction(register_to_store=mips_register,
@@ -493,14 +551,101 @@ class MipsBuilder:
                                                               offset=offset)
         self.get_current_function().add_instruction(sw_instruction)
 
-    def store_saved_registers(self):
-        """
-        Generate the instructions to store the saved temporary instructions into memory.
-        Should be executed whenever the program enters a function (the callees' responsibility)
+    def add_function_body_initial_instructions(self):
         """
 
-    def load_saved_registers(self):
-        pass
+        Applied to the current function in the mips builder:
+
+        Generate the instructions that a function body must contain at the beginning, such as Saving
+        saved temporary registers, loading the arguments in registers,... everything to do with the stack frame
+        """
+
+        entry_basic_block = MipsBasicBlock.MipsBasicBlock(f'{self.get_current_function().get_name()}_entry')
+
+        # Store the old frame pointer in the stack pointer
+        entry_basic_block.add_instruction(
+            MipsInstruction.StoreWordInstruction(register_to_store=MipsValue.MipsRegister.FRAME_POINTER,
+                                                 register_address=MipsValue.MipsRegister.STACK_POINTER,
+                                                 offset=0))
+
+        # The frame pointer now points to the top of the stack
+        entry_basic_block.add_instruction(
+            MipsInstruction.MoveInstruction(register_to_move_in=MipsValue.MipsRegister.FRAME_POINTER,
+                                            register_to_move_from=MipsValue.MipsRegister.STACK_POINTER))
+
+        # Decrease the stack pointer by the maximum fp offset acquired in the function
+        # (this space will be used by the function body to store its mips registers)
+        entry_basic_block.add_instruction(
+            MipsInstruction.ArithmeticBinaryInstruction(first_operand=MipsValue.MipsRegister.STACK_POINTER,
+                                                        second_operand=MipsValue.MipsLiteral(
+                                                            self.get_current_function().get_frame_pointer_offset()),
+                                                        token=ASTTokens.BinaryArithmeticExprToken.SUB,
+                                                        resulting_register=MipsValue.MipsRegister.STACK_POINTER))
+
+        current_fp_offset = -4
+        # Store the return address on the stack
+        entry_basic_block.add_instruction(
+            MipsInstruction.StoreWordInstruction(register_to_store=MipsValue.MipsRegister.RETURN_ADDRESS,
+                                                 register_address=MipsValue.MipsRegister.FRAME_POINTER,
+                                                 offset=current_fp_offset))
+
+        current_fp_offset -= 4
+        # Store the saved registers used to restore it later on
+        for saved_register in self.get_current_function().saved_registers_used:
+            entry_basic_block.add_instruction(MipsInstruction.StoreWordInstruction(register_to_store=saved_register,
+                                                                                   register_address=MipsValue.MipsRegister.FRAME_POINTER,
+                                                                                   offset=current_fp_offset))
+            current_fp_offset -= 4
+
+        # Params that were stored in memory are not loaded here, the descriptors will contain the correct information
+        # To retrieve these arguments correctly (and load them in whenever necessary)
+
+        self.get_current_function().basic_blocks.insert(0, entry_basic_block)
+
+    # Now that all registers have been used, we can start loading in the extra arguments if there are any
+
+    def add_function_body_ending_instructions(self, mips_function: MipsFunction):
+        """
+
+        Applied to the current function in the mips builder:
+
+        Generate the instructions that a function body must contain at the beginning, such as
+        Restoring saved temporary registers, storing return values in registers,... everything to do with the stack frame
+        """
+
+        end_basic_block = MipsBasicBlock.MipsBasicBlock(f'{mips_function.get_name()}_end')
+
+        if self.get_current_function().nr_return_values > 1:
+            raise NotImplementedError(f'Nr return values greater than 1 not supported yet')
+
+        current_fp_offset = self.get_current_function().get_frame_pointer_offset()
+
+        for saved_reg in self.get_current_function().saved_registers_used:
+            end_basic_block.add_instruction(MipsInstruction.LoadWordInstruction(
+                register_to_load_into=saved_reg,
+                register_address=MipsValue.MipsRegister.FRAME_POINTER,
+                offset=current_fp_offset))
+            current_fp_offset += 4
+
+        end_basic_block.add_instruction(MipsInstruction.LoadWordInstruction(
+            register_to_load_into=MipsValue.MipsRegister.RETURN_ADDRESS,
+            register_address=MipsValue.MipsRegister.FRAME_POINTER,
+            offset=current_fp_offset
+        ))
+        current_fp_offset += 4
+
+        # Get old stack pointer from current frame pointer
+        end_basic_block.add_instruction(
+            MipsInstruction.MoveInstruction(register_to_move_in=MipsValue.MipsRegister.STACK_POINTER,
+                                            register_to_move_from=MipsValue.MipsRegister.FRAME_POINTER))
+
+        # Restore the old frame pointer by retrieving it from memory
+        end_basic_block.add_instruction(
+            MipsInstruction.LoadWordInstruction(register_to_load_into=MipsValue.MipsRegister.FRAME_POINTER,
+                                                register_address=MipsValue.MipsRegister.STACK_POINTER,
+                                                offset=current_fp_offset))
+
+        self.get_current_function().basic_blocks.append(end_basic_block)
 
     def store_temporary_registers(self):
         """
@@ -512,4 +657,3 @@ class MipsBuilder:
         """
 
         """
-s
