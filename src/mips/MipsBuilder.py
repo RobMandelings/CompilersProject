@@ -776,3 +776,17 @@ class MipsBuilder:
                                                                 self.get_current_function().temporary_registers_used) * 4),
                                                             token=ASTTokens.BinaryArithmeticExprToken.ADD,
                                                             resulting_register=MipsValue.MipsRegister.STACK_POINTER))
+
+    def to_file(self, filename: str):
+        f = open(filename, "w+")
+        f.write(self.to_mips())
+        f.close()
+
+    def to_mips(self):
+        mips_code = ""
+        for function in self.functions:
+            for basic_block in function.basic_blocks:
+                for instruction in basic_block.instructions:
+                    mips_code += instruction.to_mips() + "\n"
+
+        return mips_code
