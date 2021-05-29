@@ -309,6 +309,8 @@ def from_assignment_expression(cst):
     if isinstance(lhs, ASTDereference) and isinstance(lhs.get_value_to_dereference(), ASTIdentifier):
         lhs = lhs.get_value_to_dereference()
 
+    assignment_operation = cst.children[1].getSymbol().text
+
     return ASTAssignmentExpression(lhs, rhs)
 
 
@@ -469,14 +471,7 @@ def create_ast_scope(cst: CParser.ScopeContext):
     return ast_scope
 
 
-def replace_identifier_expressions(scope: CParser.ScopeContext, scope_child_index: int,
-                                   current_node):
-    """
-    Recursively finds identifiers csts and replaces it with already existing expressions.
-    E.g. i++ becomes i within the expression that it was found, and another expression i + i will be inserted as next
-    statement in the scope (right after the statement which included the increment).
-    """
-
+def replace_identifier_expressions(scope: CParser.ScopeContext, scope_child_index: int, current_node):
     if isinstance(current_node, TerminalNodeImpl):
         return
 
@@ -507,29 +502,85 @@ def replace_identifier_expressions(scope: CParser.ScopeContext, scope_child_inde
                 increment = child.children[0].getSymbol().type == CLexer.INCREMENT
                 after = False
 
-            if after:
-                current_node.children[cur_child_index] = identifier_cst
-                scope.children.insert(scope_child_index + 1, create_identifier_operation_cst(increment, identifier_cst))
+            # Just some custom cst nodes created so they can be used in the conversion later on
+            # Not everything might be initialized just like the parser would do it, but it works
+            literal_token = CommonToken(type=CLexer.INT_LITERAL, start=CLexer.INT_LITERAL, stop=CLexer.INT_LITERAL)
+            literal_token.text = '1'
+            one_cst = TerminalNodeImpl(literal_token)
+
+            assignment_cst = CParser.AssignmentExpressionContext(CParser)
+            assignment_cst.children = []
+
+            assignment_token = CommonToken(type=CLexer.T__0)
+            assignment_token.text = '='
+            assignment_terminal = TerminalNodeImpl(assignment_token)
+
+            operation_cst = create_operation_cst('+' if increment else '-', identifier_cst, one_cst)
+
+            assignment_cst.children.append(identifier_cst)
+            assignment_cst.children.append(assignment_terminal)
+            assignment_cst.children.append(operation_cst)
+
+            current_node.children[cur_child_index] = identifier_cst
+            scope.children.insert(scope_child_index + (1 if after else 0),
+                                  assignment_cst)
+
+
+def replace_expressions(scope: CParser.ScopeContext, scope_child_index: int, current_node):
+    replace_identifier_expressions(scope, scope_child_index, current_node)
+    replace_assignment_expressions(scope, scope_child_index, current_node)
+
+
+def replace_assignment_expressions(scope: CParser.ScopeContext, scope_child_index: int,
+                                   current_node):
+    """
+    Recursively finds identifiers csts and replaces it with already existing expressions.
+    E.g. i++ becomes i within the expression that it was found, and another expression i + i will be inserted as next
+    statement in the scope (right after the statement which included the increment).
+    """
+
+    if isinstance(current_node, TerminalNodeImpl):
+        return
+
+    for cur_child_index in range(len(current_node.children)):
+
+        child = current_node.children[cur_child_index]
+
+        if isinstance(child, CParser.ScopeContext):
+            for sub_scope_child_index in range(len(child.children)):
+                replace_assignment_expressions(child, sub_scope_child_index, child.children[sub_scope_child_index])
+
+        elif isinstance(child, CParser.AssignmentExpressionContext):
+
+            if len(child.children) == 1:
+                replace_assignment_expressions(scope, scope_child_index, current_node.children[cur_child_index])
             else:
-                current_node.children[cur_child_index] = create_identifier_operation_cst(increment, identifier_cst)
+
+                assignment_operation = child.children[1].getSymbol().text
+                if assignment_operation != '=':
+                    # E.g. *= becomes *, += becomes +,...
+                    operation_token_text = assignment_operation[0]
+                    operation_cst = create_operation_cst(operation_token_text, child.children[0], child.children[2])
+                    child.children[2] = operation_cst
+                    child.children[1].getSymbol().text = '='
+
+        else:
+
+            replace_assignment_expressions(scope, scope_child_index, child)
 
 
-def create_identifier_operation_cst(increment, identifier_cst: TerminalNodeImpl):
-    identifier_operation_cst = CParser.AddExpressionContext(CParser)
+def create_operation_cst(operation_token_text: str, identifier_cst: TerminalNodeImpl, rhs_cst):
+    operation_cst = CParser.AddExpressionContext(CParser)
 
-    identifier_operation_cst.children = []
-    identifier_operation_cst.children.append(identifier_cst)
+    operation_cst.children = []
+    operation_cst.children.append(identifier_cst)
     operation_token_type = CLexer.T__0
     operation_token = CommonToken(type=operation_token_type, start=operation_token_type, stop=operation_token_type)
-    operation_token.text = '+' if increment else '-'
-    identifier_operation_cst.children.append(TerminalNodeImpl(operation_token))
+    operation_token.text = operation_token_text
+    operation_cst.children.append(TerminalNodeImpl(operation_token))
 
-    literal_token = CommonToken(type=CLexer.INT_LITERAL, start=CLexer.INT_LITERAL, stop=CLexer.INT_LITERAL)
-    literal_token.text = '1'
-    one_cst = TerminalNodeImpl(literal_token)
-
-    identifier_operation_cst.children.append(one_cst)
-    return identifier_operation_cst
+    operation_cst.children.append(rhs_cst)
+    return operation_cst
 
 
 def __from_program(cst):
@@ -538,7 +589,7 @@ def __from_program(cst):
     Returns the first (global) scope
     """
     for child_index in range(len(cst.children)):
-        replace_identifier_expressions(cst, child_index, cst.children[child_index])
+        replace_expressions(cst, child_index, cst.children[child_index])
 
     ast_scope = create_ast_scope(cst)
     ast_scope.content = 'global scope'

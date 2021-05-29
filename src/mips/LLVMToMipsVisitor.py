@@ -214,7 +214,8 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
         if instruction.operation == ASTTokens.BinaryArithmeticExprToken.DIV:
             mips_division_instruction = MipsInstruction.ArithmeticBinaryInstruction(mips_operands[0], mips_operands[1],
-                                                                                    instruction.operation)
+                                                                                    instruction.operation,
+                                                                                    mips_resulting_register)
             mips_mflo_instruction = MipsInstruction.MoveFromLoInstruction(mips_resulting_register)
 
             current_function.add_instruction(mips_division_instruction)

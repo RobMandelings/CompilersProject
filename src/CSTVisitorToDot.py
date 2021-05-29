@@ -110,6 +110,36 @@ class CSTVisitorToDot(CVisitor):
     def visitValue(self, ctx: CParser.ValueContext):
         self.visit_node(ctx)
 
+    def visitFunctionDefinition(self, ctx: CParser.FunctionDefinitionContext):
+        self.visit_node(ctx)
+
+    def visitIncludeStdio(self, ctx: CParser.IncludeStdioContext):
+        self.visit_node(ctx)
+
+    def visitWhileLoop(self, ctx: CParser.WhileLoopContext):
+        self.visit_node(ctx)
+
+    def visitForLoop(self, ctx: CParser.ForLoopContext):
+        self.visit_node(ctx)
+
+    def visitNormalVarDeclaration(self, ctx: CParser.NormalVarDeclarationContext):
+        self.visit_node(ctx)
+
+    def visitCharTypeDeclaration(self, ctx: CParser.CharTypeDeclarationContext):
+        self.visit_node(ctx)
+
+    def visitNormalVarDeclarationAndInit(self, ctx: CParser.NormalVarDeclarationAndInitContext):
+        self.visit_node(ctx)
+
+    def visitBraceInitializer(self, ctx: CParser.BraceInitializerContext):
+        self.visit_node(ctx)
+
+    def visitIdentifierExpression(self, ctx: CParser.IdentifierExpressionContext):
+        self.visit_node(ctx)
+
+    def visitTypeAttributes(self, ctx: CParser.TypeAttributesContext):
+        self.visit_node(ctx)
+
     def visitTerminal(self, node):
         self.to_dot_current(node)
         super().visitTerminal(node)
