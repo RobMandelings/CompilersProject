@@ -100,20 +100,26 @@ braceInitializer: '{' ((value ',')* value)? '}' ;
  */
 
 expression:
-    assignmentExpression |
     compareExpression |
     accessArrayVarExpression |
     functionCallExpression
     ;
 
 functionCallExpression: ID '(' ((expression ',')* expression)? ')' ;
-assignmentExpression: (ID | accessArrayVarExpression) '=' expression ;
 accessArrayVarExpression: ID '[' INT_LITERAL ']' ;
 
 compareExpression:
-    compareExpression '>' addExpression
-    | compareExpression '<' addExpression
-    | compareExpression '==' addExpression
+    compareExpression '>' assignmentExpression
+    | compareExpression '<' assignmentExpression
+    | compareExpression '==' assignmentExpression
+    | assignmentExpression
+    ;
+assignmentExpression:
+    (ID | accessArrayVarExpression) '=' assignmentExpression
+    | (ID | accessArrayVarExpression) '+=' assignmentExpression
+    | (ID | accessArrayVarExpression) '-=' assignmentExpression
+    | (ID | accessArrayVarExpression) '*=' assignmentExpression
+    | (ID | accessArrayVarExpression) '/=' assignmentExpression
     | addExpression
     ;
 addExpression:
@@ -140,8 +146,15 @@ pointerExpression:
 enclosedExpression: '(' expression ')';
 finalExpression:
     enclosedExpression |
-    value |
+    identifierExpression |
     functionCallExpression ;
+identifierExpression:
+    value |
+    ID INCREMENT |
+    ID DECREMENT |
+    INCREMENT ID |
+    DECREMENT ID
+    ;
 
 /**
  * Value wrappers
@@ -154,6 +167,10 @@ value: ID | CHAR_LITERAL | INT_LITERAL | DOUBLE_LITERAL | STRING;
  * Lexer rules
  */
 // Reserved words
+
+INCREMENT: '++' ;
+DECREMENT: '--' ;
+
 BREAK: 'break';
 CONTINUE: 'continue';
 RETURN: 'return';

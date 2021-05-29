@@ -242,15 +242,6 @@ class CListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CParser#assignmentExpression.
-    def enterAssignmentExpression(self, ctx:CParser.AssignmentExpressionContext):
-        pass
-
-    # Exit a parse tree produced by CParser#assignmentExpression.
-    def exitAssignmentExpression(self, ctx:CParser.AssignmentExpressionContext):
-        pass
-
-
     # Enter a parse tree produced by CParser#accessArrayVarExpression.
     def enterAccessArrayVarExpression(self, ctx:CParser.AccessArrayVarExpressionContext):
         pass
@@ -266,6 +257,15 @@ class CListener(ParseTreeListener):
 
     # Exit a parse tree produced by CParser#compareExpression.
     def exitCompareExpression(self, ctx:CParser.CompareExpressionContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#assignmentExpression.
+    def enterAssignmentExpression(self, ctx:CParser.AssignmentExpressionContext):
+        pass
+
+    # Exit a parse tree produced by CParser#assignmentExpression.
+    def exitAssignmentExpression(self, ctx:CParser.AssignmentExpressionContext):
         pass
 
 
@@ -320,6 +320,15 @@ class CListener(ParseTreeListener):
 
     # Exit a parse tree produced by CParser#finalExpression.
     def exitFinalExpression(self, ctx:CParser.FinalExpressionContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#identifierExpression.
+    def enterIdentifierExpression(self, ctx:CParser.IdentifierExpressionContext):
+        pass
+
+    # Exit a parse tree produced by CParser#identifierExpression.
+    def exitIdentifierExpression(self, ctx:CParser.IdentifierExpressionContext):
         pass
 
 

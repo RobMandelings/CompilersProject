@@ -1,3 +1,4 @@
+from antlr4.Token import CommonToken
 from antlr4.tree.Tree import TerminalNodeImpl
 
 from src.antlr4_gen.CLexer import CLexer
@@ -19,6 +20,15 @@ CONTROL_FLOW_STATEMENTS = {
 }
 
 TYPE_ATTRIBUTES = {CLexer.CONST: TypeAttributeToken.CONST}
+
+
+class CustomTerminalNodeSymbol:
+    """
+    Used if you want to create custom cst nodes
+    """
+
+    def __init__(self, text):
+        self.text = text
 
 
 # TODO fix option to auto dereference
@@ -68,10 +78,13 @@ def get_rule_context_function(rule_context_index):
         CParser.RULE_expression: from_expression,
         CParser.RULE_functionCallExpression: from_function_call_expression,
         CParser.RULE_enclosedExpression: from_enclosed_expression,
+        CParser.RULE_compareExpression: from_compare_expression,
+        # The identifier expressions are filtered out in the create_scope method, as it needs to add
+        # Some nodes at a higher level in order to increment / decrement properly
+        CParser.RULE_identifierExpression: from_identifier_expression,
         CParser.RULE_finalExpression: from_final_expression,
         CParser.RULE_addExpression: from_binary_arithmetic_expression,
         CParser.RULE_multExpression: from_binary_arithmetic_expression,
-        CParser.RULE_compareExpression: from_compare_expression,
         CParser.RULE_pointerExpression: from_pointer_expression,
         CParser.RULE_unaryExpression: from_unary_expression,
 
@@ -90,6 +103,10 @@ def create_ast_from_cst(cst):
         return from_rule_context(cst)
     else:
         return from_terminal_node(cst)
+
+
+def from_identifier_expression(cst):
+    raise NotImplementedError('The identifier expression should already have been replaced within the scope cst')
 
 
 def from_terminal_node(cst: TerminalNodeImpl):
@@ -277,6 +294,9 @@ def from_function_declaration(cst):
 
 
 def from_assignment_expression(cst):
+    if len(cst.children) == 1:
+        return create_ast_from_cst(cst.children[0])
+
     lhs = create_ast_from_cst(cst.children[0])
     rhs = create_ast_from_cst(cst.children[2])
     assert isinstance(lhs, AST) and isinstance(rhs, AST)
@@ -437,7 +457,7 @@ def from_binary_arithmetic_expression(cst):
         return ASTBinaryArithmeticExpression(token, lhs, rhs)
 
 
-def create_ast_scope(cst):
+def create_ast_scope(cst: CParser.ScopeContext):
     ast_scope = ASTScope()
 
     # Skip the curly braces
@@ -449,11 +469,77 @@ def create_ast_scope(cst):
     return ast_scope
 
 
+def replace_identifier_expressions(scope: CParser.ScopeContext, scope_child_index: int,
+                                   current_node):
+    """
+    Recursively finds identifiers csts and replaces it with already existing expressions.
+    E.g. i++ becomes i within the expression that it was found, and another expression i + i will be inserted as next
+    statement in the scope (right after the statement which included the increment).
+    """
+
+    if isinstance(current_node, TerminalNodeImpl):
+        return
+
+    for cur_child_index in range(len(current_node.children)):
+
+        child = current_node.children[cur_child_index]
+
+        if isinstance(child, CParser.ScopeContext):
+            for sub_scope_child_index in range(len(child.children)):
+                replace_identifier_expressions(child, sub_scope_child_index, child.children[sub_scope_child_index])
+
+        elif not isinstance(child, CParser.IdentifierExpressionContext):
+            replace_identifier_expressions(scope, scope_child_index, child)
+        elif len(child.children) == 1:
+            current_node.children[cur_child_index] = child.children[0]
+            replace_identifier_expressions(scope, scope_child_index, current_node.children[cur_child_index])
+        else:
+
+            assert isinstance(child.children[0], TerminalNodeImpl) and isinstance(child.children[1],
+                                                                                  TerminalNodeImpl)
+
+            if child.children[0].getSymbol().type == CLexer.ID:
+                identifier_cst = child.children[0]
+                increment = child.children[1].getSymbol().type == CLexer.INCREMENT
+                after = True
+            else:
+                identifier_cst = child.children[1]
+                increment = child.children[0].getSymbol().type == CLexer.INCREMENT
+                after = False
+
+            if after:
+                current_node.children[cur_child_index] = identifier_cst
+                scope.children.insert(scope_child_index + 1, create_identifier_operation_cst(increment, identifier_cst))
+            else:
+                current_node.children[cur_child_index] = create_identifier_operation_cst(increment, identifier_cst)
+
+
+def create_identifier_operation_cst(increment, identifier_cst: TerminalNodeImpl):
+    identifier_operation_cst = CParser.AddExpressionContext(CParser)
+
+    identifier_operation_cst.children = []
+    identifier_operation_cst.children.append(identifier_cst)
+    operation_token_type = CLexer.T__0
+    operation_token = CommonToken(type=operation_token_type, start=operation_token_type, stop=operation_token_type)
+    operation_token.text = '+' if increment else '-'
+    identifier_operation_cst.children.append(TerminalNodeImpl(operation_token))
+
+    literal_token = CommonToken(type=CLexer.INT_LITERAL, start=CLexer.INT_LITERAL, stop=CLexer.INT_LITERAL)
+    literal_token.text = '1'
+    one_cst = TerminalNodeImpl(literal_token)
+
+    identifier_operation_cst.children.append(one_cst)
+    return identifier_operation_cst
+
+
 def __from_program(cst):
     """
     Creates an AST from the CST ProgramContext.
     Returns the first (global) scope
     """
+    for child_index in range(len(cst.children)):
+        replace_identifier_expressions(cst, child_index, cst.children[child_index])
+
     ast_scope = create_ast_scope(cst)
     ast_scope.content = 'global scope'
     return ast_scope

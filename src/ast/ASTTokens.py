@@ -31,6 +31,11 @@ class IfStatementToken(enum_utils.NamedEnum):
             return None
 
 
+class IdentifierExprToken(enum_utils.NamedEnum):
+    INCREMENT = '++'
+    DECREMENT = '--'
+
+
 class UnaryArithmeticExprToken(enum_utils.NamedEnum):
     PLUS = '+'
     MINUS = '-'

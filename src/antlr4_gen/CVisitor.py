@@ -139,11 +139,6 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#assignmentExpression.
-    def visitAssignmentExpression(self, ctx:CParser.AssignmentExpressionContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CParser#accessArrayVarExpression.
     def visitAccessArrayVarExpression(self, ctx:CParser.AccessArrayVarExpressionContext):
         return self.visitChildren(ctx)
@@ -151,6 +146,11 @@ class CVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CParser#compareExpression.
     def visitCompareExpression(self, ctx:CParser.CompareExpressionContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#assignmentExpression.
+    def visitAssignmentExpression(self, ctx:CParser.AssignmentExpressionContext):
         return self.visitChildren(ctx)
 
 
@@ -181,6 +181,11 @@ class CVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CParser#finalExpression.
     def visitFinalExpression(self, ctx:CParser.FinalExpressionContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#identifierExpression.
+    def visitIdentifierExpression(self, ctx:CParser.IdentifierExpressionContext):
         return self.visitChildren(ctx)
 
 

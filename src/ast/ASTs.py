@@ -198,6 +198,29 @@ class ASTExpression(AST):
         raise NotImplementedError
 
 
+class ASTIdentifierExpression(ASTExpression):
+    """
+    The identifier expression is only a temporary AST that is used in the conversion from CST To AST.
+    After each scope has been made,
+    """
+
+    def accept(self, visitor: IASTVisitor):
+        pass
+
+    def __init__(self, token: IdentifierExprToken, id_applied_to: ASTIdentifier):
+        super().__init__(token.token_name)
+        self.token = token
+        self.id_applied_to = id_applied_to
+
+    def get_token(self):
+        assert isinstance(self.token, IdentifierExprToken)
+        return self.token
+
+    def get_id_applied_to(self):
+        assert isinstance(self.id_applied_to, ASTIdentifier)
+        return self.id_applied_to
+
+
 class ASTUnaryExpression(ASTExpression):
 
     def __init__(self, content: str, value_applied_to: AST):
