@@ -297,7 +297,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
             if declared_data_type.get_pointer_level() == resulting_data_type.get_pointer_level():
 
                 if DataType.DataTypeToken.is_richer_than(resulting_data_type.get_token(),
-                                                         declared_data_type.get_token()):
+                                                         declared_data_type.get_token()) and (
+                        not resulting_data_type == DataType.NORMAL_DOUBLE and declared_data_type == DataType.NORMAL_FLOAT):
                     raise SemanticError(
                         "The result would be narrowed, and we do not yet support explicit or implicit casting")
             else:
