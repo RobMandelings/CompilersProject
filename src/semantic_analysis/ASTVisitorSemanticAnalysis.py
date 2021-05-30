@@ -440,8 +440,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
             data_type = self.check_resulting_data_type(ast.get_left())
 
-            if not data_type.is_pointer():
-                raise SemanticError('Cannot assign value: too many dereferences')
+            # if not data_type.is_pointer():
+            #     raise SemanticError('Cannot assign value: too many dereferences')
 
     def visit_ast_var_declaration(self, ast: ASTVarDeclaration):
         assert isinstance(ast, ASTVarDeclaration)

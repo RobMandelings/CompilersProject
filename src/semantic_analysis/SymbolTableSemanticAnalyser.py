@@ -42,7 +42,6 @@ class ArraySymbol(Symbol, DataType.IHasDataType):
 
     def __init__(self, symbol_name: str, data_type: DataType.DataType, size: int):
         super().__init__(symbol_name)
-        assert data_type.is_array()
         self.data_type = data_type
         self.size = size
 

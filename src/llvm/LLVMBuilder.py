@@ -213,7 +213,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             register_with_element_ptr,
             str(
                 ast.get_index_accessed().get_value()),
-            array_symbol.get_array_size(),
+            array_symbol.get_size(),
             array_element_register)
         self.get_current_function().add_instruction(instruction)
         register_to_return = self.get_current_function().get_new_register(

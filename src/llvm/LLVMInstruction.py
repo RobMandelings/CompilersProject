@@ -154,11 +154,8 @@ class LLVMStoreInstruction(LLVMInstruction):
         value_to_store: either an LLVMLiteral or LLVMRegister which value will be stored in the LLVMRegister
         """
         super().__init__()
-        assert (
-                put_in_register.get_data_type().get_pointer_level() ==
-                value_to_store.get_data_type().get_pointer_level() + 1), \
-            "The value to store must be one pointer level lower than the" \
-            "register to store it in"
+        if put_in_register.get_data_type().get_pointer_level() != value_to_store.get_data_type().get_pointer_level() + 1:
+            raise AssertionError("The value to store must be one pointer level lower than the register to store it in")
 
         self.resulting_reg = put_in_register
         self.value_to_store = value_to_store
@@ -611,3 +608,16 @@ class LLVMMemcpyInstruction(LLVMInstruction):
 
     def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
         visitor.visit_llvm_memcpy_instruction(self)
+
+
+class LLVMFpextInstruction(LLVMInstruction):
+
+    def __init__(self, old_datatype: DataType, new_datatype: DataType, old_register: LLVMValue.LLVMRegister, new_register: LLVMValue.LLVMRegister):
+        super().__init__()
+        self.old_datatype = old_datatype
+        self.new_datatype = new_datatype
+        self.old_register = old_register
+        self.new_register = new_register
+
+    def to_llvm(self):
+        return f'{self.new_register} = fpext {self.old_datatype.get_llvm_name()} {self.old_register} to {self.new_datatype.get_llvm_name()}'
