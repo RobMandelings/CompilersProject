@@ -222,15 +222,27 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
     def visit_llvm_printf_instruction(self, instruction: LLVMInstruction.LLVMPrintfInstruction):
         super().visit_llvm_printf_instruction(instruction)
 
-        string_key = ""
+        string_key = instruction.get_string_to_print()
+
         data_segment = self.get_mips_builder().get_data_segment()
-        printf_strings = data_segment.printf_strings[string_key]
+        printf_strings = data_segment.get_printf_string(string_key)
 
-        load_printf_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0, MipsValue.MipsLiteral(4))
+        for i in range(0, len(printf_strings)):
+            string_element = printf_strings[i]
+            if not string_element == '%':
+                if not i == len(printf_strings) - 1:
+                    identifier = data_segment.add_ascii_data(string_element)
+                else:
+                    identifier = data_segment.add_ascii_data(string_element, True)
 
-
-
-
+                load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0, MipsValue.MipsLiteral(4))
+                load_data_instruction = MipsInstruction.LoadAddressInstruction(MipsValue.MipsRegister.A0, identifier)
+                syscall_instruction = MipsInstruction.SyscallInstruction()
+                self.get_mips_builder().get_current_function().add_instruction(load_syscall_instruction)
+                self.get_mips_builder().get_current_function().add_instruction(load_data_instruction)
+                self.get_mips_builder().get_current_function().add_instruction(syscall_instruction)
+            else:
+                pass
 
     def visit_llvm_compare_instruction(self, instruction: LLVMInstruction.LLVMCompareInstruction):
         super().visit_llvm_compare_instruction(instruction)

@@ -106,14 +106,13 @@ class LoadAddressInstruction(MipsInstruction):
     This class corresponds to the load address mips instruction
     """
 
-    def __init__(self, register_to_load: MipsValue.MipsRegister, label):
-        assert isinstance(label, MipsBasicBlock.MipsBasicBlock)
+    def __init__(self, register_to_load: MipsValue.MipsRegister, identifier: str):
         super().__init__()
         self.register_to_load = register_to_load
-        self.label = label
+        self.identifier = identifier
 
     def to_mips(self):
-        return f"la {self.register_to_load},{self.label}"
+        return f"la {self.register_to_load},{self.identifier}"
 
 
 class LoadImmediateInstruction(MipsInstruction):
