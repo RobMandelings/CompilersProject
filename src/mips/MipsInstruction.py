@@ -165,9 +165,20 @@ class MoveInstruction(MipsInstruction):
         super().__init__()
         self.register_to_move_in = register_to_move_in
         self.register_to_move_from = register_to_move_from
+        self.move_operation = self.get_move_operation()
+
+    def get_move_operation(self):
+        assert MipsValue.MipsRegister.is_floating_point_register(
+            self.register_to_move_in) == MipsValue.MipsRegister.is_floating_point_register(
+            self.register_to_move_from), "Registers must be of same type to move"
+
+        if MipsValue.MipsRegister.is_floating_point_register(self.register_to_move_in):
+            return "mov.s"
+        else:
+            return "move"
 
     def to_mips(self):
-        return f"move {self.register_to_move_in}, {self.register_to_move_from}"
+        return f"{self.move_operation} {self.register_to_move_in}, {self.register_to_move_from}"
 
 
 # ####################### #
