@@ -64,8 +64,13 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         printf_strings = llvm_global_container.global_strings
 
         for printf_string in printf_strings:
-            result = re.search('c\"(.*)\",', printf_string).group(1)
-
+            type_string = re.search('c\"(.*)\",', printf_string).group(1)
+            list_of_substrings = re.split('%[dcs]', type_string)
+            list_of_type_strings = list()
+            for i in range(0, len(list_of_substrings)):
+                list_of_type_strings.append(list_of_substrings[i])
+                if i != len(list_of_substrings) - 1:
+                    list_of_type_strings.append('%')
 
     def visit_llvm_defined_function(self, llvm_defined_function: LLVMFunction.LLVMDefinedFunction):
 
