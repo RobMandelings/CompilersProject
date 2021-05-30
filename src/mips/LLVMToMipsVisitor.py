@@ -242,9 +242,9 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
             else:
                 arg_type = llvm_args[percent_counter].get_data_type().get_token()
 
-                if isinstance(mips_args[percent_counter], MipsValue.MipsRegister):
+                if isinstance(mips_args[percent_counter], MipsValue.MipsRegister) and isinstance(llvm_args[percent_counter], LLVMValue.LLVMRegister):
                     set_data_instruction = MipsInstruction.MoveInstruction(MipsValue.MipsRegister.A0, mips_args[percent_counter])
-                elif isinstance(mips_args[percent_counter, MipsValue.MipsLiteral]):
+                elif isinstance(mips_args[percent_counter], MipsValue.MipsLiteral) and isinstance(llvm_args[percent_counter], LLVMValue.LLVMLiteral):
                     set_data_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.A0, mips_args[percent_counter])
                 else:
                     raise NotImplementedError
