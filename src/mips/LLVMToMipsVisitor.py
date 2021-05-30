@@ -59,20 +59,20 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
     def visit_llvm_global_container(self, llvm_global_container: LLVMGlobalContainer.LLVMGlobalContainer):
         super().visit_llvm_global_container(llvm_global_container)
 
-        printf_strings = llvm_global_container.global_strings
+        call_f_strings = llvm_global_container.global_strings
         data_segment = self.get_mips_builder().get_data_segment()
 
-        for printf_key, printf_string in printf_strings.items():
+        for call_f_key, call_f_string in call_f_strings.items():
             pattern = "c\"(.*)"
             pattern += "\\\\"
-            type_string = re.search(pattern, printf_string).group(1)
+            type_string = re.search(pattern, call_f_string).group(1)
             list_of_substrings = re.split('%[dcsf]', type_string)
             list_of_type_strings = list()
             for i in range(0, len(list_of_substrings)):
                 list_of_type_strings.append(list_of_substrings[i])
                 if i != len(list_of_substrings) - 1:
                     list_of_type_strings.append('%')
-            data_segment.add_printf_string(printf_key, list_of_type_strings)
+            data_segment.add_call_f_string(call_f_key, list_of_type_strings)
 
     def visit_llvm_defined_function(self, llvm_defined_function: LLVMFunction.LLVMDefinedFunction):
 
@@ -207,7 +207,7 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
         string_key = instruction.get_string_to_print()
         data_segment = self.get_mips_builder().get_data_segment()
-        printf_elements = data_segment.get_printf_string(string_key)
+        printf_elements = data_segment.get_call_f_string(string_key)
 
         llvm_args = instruction.get_llvm_args()
 
@@ -267,6 +267,56 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
     def visit_llvm_scanf_instruction(self, instruction: LLVMInstruction.LLVMScanfInstruction):
         super().visit_llvm_scanf_instruction(instruction)
+
+        string_key = instruction.get_string_to_print()
+        data_segment = self.get_mips_builder().get_data_segment()
+        scanf_elements = data_segment.get_call_f_string(string_key)
+
+        llvm_args = instruction.get_llvm_args()
+
+        all_registers = False
+        for llvm_arg in llvm_args:
+            if llvm_arg.get_data_type().get_token() == DataType.DataTypeToken.FLOAT:
+                # Floats can't be used for immediate operations
+                # TODO improve so that only the float llvm values will get float mips registers instead of all
+                all_registers = True
+
+        mips = self.get_mips_builder().get_mips_values(instruction, None, llvm_args, all_registers=all_registers)
+        mips_args = mips[1]
+
+        percent_counter = 0
+        for i in range(0, len(scanf_elements)):
+            string_element = scanf_elements[i]
+            if not string_element == '%':
+                if not i == len(scanf_elements) - 1:
+                    identifier = data_segment.add_ascii_data(string_element)
+                else:
+                    identifier = data_segment.add_ascii_data(string_element, True)
+
+                load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0,
+                                                                                    MipsValue.MipsLiteral(4))
+                set_data_instruction = MipsInstruction.LoadAddressInstruction(MipsValue.MipsRegister.A0, identifier)
+                self.get_mips_builder().get_current_function().add_instruction(set_data_instruction)
+                self.get_mips_builder().get_current_function().add_instruction(load_syscall_instruction)
+                syscall_instruction = MipsInstruction.SyscallInstruction()
+                self.get_mips_builder().get_current_function().add_instruction(syscall_instruction)
+            else:
+                arg_type = llvm_args[percent_counter].get_data_type().get_token()
+                if arg_type == DataType.DataTypeToken.INT:
+                    load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0, MipsValue.MipsLiteral(5))
+                    syscall_instruction = MipsInstruction.SyscallInstruction()
+                    move_instruction = MipsInstruction.MoveInstruction(mips_args[percent_counter], MipsValue.MipsRegister.V0)
+                elif arg_type == DataType.DataTypeToken.FLOAT:
+                    load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0, MipsValue.MipsLiteral(6))
+                    syscall_instruction = MipsInstruction.SyscallInstruction()
+                    move_instruction = MipsInstruction.MoveInstruction(mips_args[percent_counter], MipsValue.MipsRegister.F0)
+                else:
+                    raise NotImplementedError
+
+                self.get_mips_builder().get_current_function().add_instruction(load_syscall_instruction)
+                self.get_mips_builder().get_current_function().add_instruction(syscall_instruction)
+                self.get_mips_builder().get_current_function().add_instruction(move_instruction)
+                percent_counter += 1
 
     def visit_llvm_compare_instruction(self, instruction: LLVMInstruction.LLVMCompareInstruction):
         super().visit_llvm_compare_instruction(instruction)
