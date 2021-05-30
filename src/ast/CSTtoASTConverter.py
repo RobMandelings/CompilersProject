@@ -499,16 +499,15 @@ def replace_identifier_expressions(scope, scope_child_index: int, current_node):
             replace_identifier_expressions(scope, scope_child_index, current_node.children[cur_child_index])
         else:
 
-            assert isinstance(child.children[0], TerminalNodeImpl) and isinstance(child.children[1],
-                                                                                  TerminalNodeImpl)
-
-            if child.children[0].getSymbol().type == CLexer.ID:
-                identifier_cst = child.children[0]
-                increment = child.children[1].getSymbol().type == CLexer.INCREMENT
-                after = True
-            else:
+            if isinstance(child.children[0], TerminalNodeImpl) and \
+                    child.children[0].getSymbol().type == CLexer.INCREMENT or \
+                    child.children[0].getSymbol().type == CLexer.DECREMENT:
                 identifier_cst = child.children[1]
                 increment = child.children[0].getSymbol().type == CLexer.INCREMENT
+                after = True
+            else:
+                identifier_cst = child.children[0]
+                increment = child.children[1].getSymbol().type == CLexer.INCREMENT
                 after = False
 
             # Just some custom cst nodes created so they can be used in the conversion later on

@@ -150,10 +150,10 @@ finalExpression:
     functionCallExpression ;
 identifierExpression:
     value |
-    ID INCREMENT |
-    ID DECREMENT |
-    INCREMENT ID |
-    DECREMENT ID
+    (ID | enclosedExpression) INCREMENT |
+    (ID | enclosedExpression) DECREMENT |
+    INCREMENT (ID | enclosedExpression) |
+    DECREMENT (ID | enclosedExpression)
     ;
 
 /**
