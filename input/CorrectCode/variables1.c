@@ -8,3 +8,5 @@ int main(){
     char c = 'c';
     printf("%d; %f; %c", x, y, c);
 }
+
+// Prints float wrong
