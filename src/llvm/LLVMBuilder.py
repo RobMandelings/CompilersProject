@@ -245,7 +245,12 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
                     resulting_reg = LLVMValue.LLVMRegister(DataType.DataType(DataType.DataTypeToken.DOUBLE,
                                                                              pointer_level=current_arg.get_data_type().get_pointer_level()))
                     self.get_current_function().add_instruction(
-                        # FPEX
+                        LLVMInstructions.LLVMFpextInstruction(
+                            old_datatype=current_arg.get_data_type(),
+                            new_datatype=resulting_reg.get_data_type(),
+                            old_register=current_arg,
+                            new_register=resulting_reg
+                        )
                     )
                     args_llvm_value[i] = resulting_reg
 
