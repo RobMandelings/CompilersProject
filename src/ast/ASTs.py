@@ -389,7 +389,6 @@ class ASTConditionalStatement(AST):
         raise NotImplementedError
 
     def get_condition(self):
-        assert isinstance(self.condition, AST)
         return self.condition
 
     def get_execution_body(self):

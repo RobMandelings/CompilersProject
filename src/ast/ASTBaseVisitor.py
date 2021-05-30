@@ -107,21 +107,19 @@ class ASTBaseVisitor(IASTVisitor):
         assert isinstance(ast, ASTIfStatement)
         if ast.get_condition() is not None:
             ast.get_condition().accept(self)
-        ast.get_execution_body().accept(self)
+        self.visit_conditional_statement(ast)
         if ast.get_else_statement() is not None:
             ast.get_else_statement().accept(self)
-        self.visit_conditional_statement(ast)
 
     def visit_ast_while_loop(self, ast: ASTWhileLoop):
         assert isinstance(ast, ASTWhileLoop)
         ast.get_condition().accept(self)
-        ast.get_execution_body().accept(self)
+        self.visit_conditional_statement(ast)
         if ast.get_update_step() is not None:
             ast.get_update_step().accept(self)
-        self.visit_conditional_statement(ast)
 
     def visit_conditional_statement(self, ast: ASTConditionalStatement):
-        pass
+        ast.get_execution_body().accept(self)
 
     def visit_ast_function_call(self, ast: ASTFunctionCall):
         for param in ast.get_arguments():

@@ -20,8 +20,15 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
     """
 
     def __init__(self):
+        """
+        while_loop_basic_blocks: dictionary which holds as a key the instance of an ASTWhileLoop, and as values the following basic blocks:
+            - basic block of condition
+            - after while loop basic block (outside the body)
+        """
         self.builder = LLVMBuilder.LLVMBuilder()
         self.current_basic_block = None
+
+        self.while_loop_basic_blocks = dict()
 
     def get_builder(self):
         return self.builder
@@ -50,28 +57,16 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
         while_loop_body_basic_block = LLVMBasicBlock.LLVMBasicBlock()
         after_while_loop_basic_block = LLVMBasicBlock.LLVMBasicBlock()
 
+        self.while_loop_basic_blocks[while_loop_ast] = {
+            "basic_block_of_condition": basic_block_of_condition,
+            "after_while_loop_basic_block": after_while_loop_basic_block
+        }
+
         # Add the basic block to the function so that it becomes the current basic block
         self.get_current_function().add_basic_block(while_loop_body_basic_block)
 
         for child in while_loop_ast.get_execution_body().children:
-            if not isinstance(child, ASTs.ASTControlFlowStatement):
-                child.accept(self)
-            else:
-                if child.control_flow_token == ASTTokens.ControlFlowToken.CONTINUE:
-                    # For-loops only: make sure that the update step is executed before branching to the condition again
-                    if while_loop_ast.get_update_step() is not None:
-                        while_loop_ast.get_update_step().accept(self)
-                    self.get_current_basic_block().add_instruction(
-                        LLVMInstructions.LLVMUnconditionalBranchInstruction(basic_block_of_condition))
-
-                    # Add a basic block to continue writing instructions
-                    self.get_current_function().add_basic_block(LLVMBasicBlock.LLVMBasicBlock())
-                elif child.control_flow_token == ASTTokens.ControlFlowToken.BREAK:
-                    self.get_current_basic_block().add_instruction(
-                        LLVMInstructions.LLVMUnconditionalBranchInstruction(after_while_loop_basic_block))
-                    self.get_current_function().add_basic_block(LLVMBasicBlock.LLVMBasicBlock())
-                else:
-                    raise NotImplementedError
+            child.accept(self)
 
         # Only used in the for loop, the update step is different from the execution body itself
         if while_loop_ast.get_update_step() is not None:
@@ -87,6 +82,39 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
                                                               after_while_loop_basic_block))
 
         self.get_current_function().add_basic_block(after_while_loop_basic_block)
+
+    def visit_ast_control_flow_statement(self, ast: ASTControlFlowStatement):
+
+        while_loop = None
+        current_node = ast
+        while while_loop is None and current_node.parent is not None:
+            current_node = current_node.parent
+            if isinstance(current_node, ASTs.ASTWhileLoop):
+                while_loop = current_node
+
+        assert while_loop is not None, "No while loop was found!"
+
+        while_loop_basic_blocks = self.while_loop_basic_blocks[while_loop]
+        basic_block_of_condition = while_loop_basic_blocks['basic_block_of_condition']
+        after_while_loop_basic_block = while_loop_basic_blocks['after_while_loop_basic_block']
+
+        if ast.control_flow_token == ASTTokens.ControlFlowToken.CONTINUE:
+            # For-loops only: make sure that the update step is executed before branching to the condition again
+            if while_loop.get_update_step() is not None:
+                while_loop.get_update_step().accept(self)
+            self.get_current_basic_block().add_instruction(
+                LLVMInstructions.LLVMUnconditionalBranchInstruction(basic_block_of_condition))
+
+            # Add a basic block to continue writing instructions
+            self.get_current_function().add_basic_block(LLVMBasicBlock.LLVMBasicBlock())
+        elif ast.control_flow_token == ASTTokens.ControlFlowToken.BREAK:
+            self.get_current_basic_block().add_instruction(
+                LLVMInstructions.LLVMUnconditionalBranchInstruction(after_while_loop_basic_block))
+            self.get_current_function().add_basic_block(LLVMBasicBlock.LLVMBasicBlock())
+        else:
+            raise NotImplementedError
+
+        super().visit_ast_control_flow_statement(ast)
 
     def build_if_statement_execution(self, if_statement_ast: ASTs.ASTIfStatement, if_statement_ending_basic_blocks):
         """

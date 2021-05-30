@@ -543,7 +543,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
     def visit_conditional_statement(self, ast: ASTConditionalStatement):
         condition_ast = ast.get_condition()
 
-        if not isinstance(condition_ast, ASTRelationalExpression):
+        if not isinstance(condition_ast, ASTRelationalExpression) and condition_ast is not None:
 
             condition_resulting_data_type = self.check_resulting_data_type(condition_ast)
             if condition_resulting_data_type != DataType.NORMAL_BOOL:
