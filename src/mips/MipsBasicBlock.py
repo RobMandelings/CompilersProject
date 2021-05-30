@@ -44,6 +44,6 @@ class MipsBasicBlock(BasicBlock.BasicBlock):
         mips_code = f"{self.name}:\n"
 
         for instruction in self.instructions:
-            mips_code += f"  {instruction.to_mips()}\n"
+            mips_code += f"    {instruction.to_mips()}\n"
 
         return mips_code

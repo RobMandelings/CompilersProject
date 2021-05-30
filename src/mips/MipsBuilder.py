@@ -671,11 +671,15 @@ class MipsBuilder:
 
         elif isinstance(llvm_value, LLVMValue.LLVMLiteral):
 
-            mips_literal = self.convert_to_mips_literal(llvm_value)
-            instruction = MipsInstruction.ArithmeticBinaryInstruction(first_operand=MipsValue.MipsRegister.ZERO,
-                                                                      second_operand=mips_literal,
-                                                                      token=ASTTokens.BinaryArithmeticExprToken.ADD,
-                                                                      resulting_register=store_in_reg)
+            if llvm_value.get_data_type().get_token() != DataType.DataTypeToken.FLOAT:
+                mips_literal = self.convert_to_mips_literal(llvm_value)
+                instruction = MipsInstruction.LoadImmediateInstruction(register_to_load=store_in_reg,
+                                                                       immediate=mips_literal)
+            else:
+
+                floating_point_data = self.get_data_segment().add_floating_point_number(llvm_value.get_value())
+                instruction = MipsInstruction.LoadWordCoProcInstruction(register_to_load_into=store_in_reg,
+                                                                        floating_point_data=floating_point_data)
         else:
 
             raise NotImplementedError('Should either be literal or register')
@@ -874,10 +878,15 @@ class MipsBuilder:
         f.close()
 
     def to_mips(self):
+
         mips_code = ""
+
+        mips_code += self.get_data_segment().to_mips()
+
+        mips_code += ".text\n\n"
         for function in self.functions:
             for basic_block in function.basic_blocks:
-                mips_code += basic_block.to_mips()
+                mips_code += f"  {basic_block.to_mips()}"
 
             mips_code += "\n\n"
 
