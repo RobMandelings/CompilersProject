@@ -364,7 +364,7 @@ class MipsBuilder:
         Simply converts the llvm literal instance into an instance of mips literal
         """
 
-        if llvm_literal.get_data_type().get_token() == DataType.DataTypeToken.FLOAT:
+        if llvm_literal.get_data_type().is_floating_point():
             raise AssertionError(
                 "Mips can't handle floating point literals! These must values must be placed in RAM (.data segment)")
 
