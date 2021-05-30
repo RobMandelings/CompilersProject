@@ -18,9 +18,9 @@ class DataSegment:
     def add_ascii_data(self, string_element: str, last_element: bool = False):
         identifier = f'ascii_word{len(self.ascii_data)}'
         if last_element:
-            self.ascii_data.append(f'{identifier}: .asciiz {string_element}')
+            self.ascii_data.append(f'{identifier}: .asciiz \"{string_element}\"')
         else:
-            self.ascii_data.append(f'{identifier}: .ascii {string_element}')
+            self.ascii_data.append(f'{identifier}: .ascii \"{string_element}\"')
         return identifier
 
     def add_floating_point_number(self, value: float):
