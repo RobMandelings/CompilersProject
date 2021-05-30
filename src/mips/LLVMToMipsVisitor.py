@@ -63,9 +63,9 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         printf_strings = llvm_global_container.global_strings
         data_segment = self.get_mips_builder().get_data_segment()
 
-        for printf_key, printf_string in printf_strings:
+        for printf_key, printf_string in printf_strings.items():
             type_string = re.search('c\"(.*)\",', printf_string).group(1)
-            list_of_substrings = re.split('%[dcs]', type_string)
+            list_of_substrings = re.split('%[dcsf]', type_string)
             list_of_type_strings = list()
             for i in range(0, len(list_of_substrings)):
                 list_of_type_strings.append(list_of_substrings[i])
@@ -238,7 +238,15 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         printf_elements = data_segment.get_printf_string(string_key)
 
         llvm_args = instruction.get_llvm_args()
-        mips = self.get_mips_builder().get_mips_values(instruction, None, llvm_args)
+
+        all_registers = False
+        for llvm_arg in llvm_args:
+            if llvm_arg.get_data_type().get_token() == DataType.DataTypeToken.FLOAT:
+                # Floats can't be used for immediate operations
+                # TODO improve so that only the float llvm values will get float mips registers instead of all
+                all_registers = True
+
+        mips = self.get_mips_builder().get_mips_values(instruction, None, llvm_args, all_registers=all_registers)
         mips_args = mips[1]
 
         percent_counter = 0
@@ -256,12 +264,14 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
             else:
                 arg_type = llvm_args[percent_counter].get_data_type().get_token()
 
-                if isinstance(mips_args[percent_counter], MipsValue.MipsRegister) and isinstance(
-                        llvm_args[percent_counter], LLVMValue.LLVMRegister):
-                    set_data_instruction = MipsInstruction.MoveInstruction(MipsValue.MipsRegister.A0,
+                if isinstance(mips_args[percent_counter], MipsValue.MipsRegister):
+
+                    argument_register = MipsValue.MipsRegister.F12 if MipsValue.MipsRegister.is_floating_point_register(
+                        mips_args[percent_counter]) else MipsValue.MipsRegister.A0
+
+                    set_data_instruction = MipsInstruction.MoveInstruction(argument_register,
                                                                            mips_args[percent_counter])
-                elif isinstance(mips_args[percent_counter], MipsValue.MipsLiteral) and isinstance(
-                        llvm_args[percent_counter], LLVMValue.LLVMLiteral):
+                elif isinstance(mips_args[percent_counter], MipsValue.MipsLiteral):
                     set_data_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.A0,
                                                                                     mips_args[percent_counter])
                 else:
