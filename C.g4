@@ -115,11 +115,11 @@ compareExpression:
     | assignmentExpression
     ;
 assignmentExpression:
-    (ID | accessArrayVarExpression) '=' assignmentExpression
-    | (ID | accessArrayVarExpression) '+=' assignmentExpression
-    | (ID | accessArrayVarExpression) '-=' assignmentExpression
-    | (ID | accessArrayVarExpression) '*=' assignmentExpression
-    | (ID | accessArrayVarExpression) '/=' assignmentExpression
+    (pointerExpression | ID | accessArrayVarExpression) '=' assignmentExpression
+    | (pointerExpression | ID | accessArrayVarExpression) '+=' assignmentExpression
+    | (pointerExpression | ID | accessArrayVarExpression) '-=' assignmentExpression
+    | (pointerExpression | ID | accessArrayVarExpression) '*=' assignmentExpression
+    | (pointerExpression | ID | accessArrayVarExpression) '/=' assignmentExpression
     | addExpression
     ;
 addExpression:

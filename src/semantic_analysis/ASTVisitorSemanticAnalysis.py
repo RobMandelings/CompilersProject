@@ -406,7 +406,6 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         ast.get_left().accept(self)
         ast.get_right().accept(self)
 
-        # A single dereference to a variable means that you just need to put the value into that variable
         if isinstance(ast.get_left(), ASTIdentifier):
             symbol = symbol_table.lookup_variable(ast.get_left().get_content())
 
@@ -438,7 +437,11 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                 ast.get_right())
 
         else:
-            raise NotImplementedError
+
+            data_type = self.check_resulting_data_type(ast.get_left())
+
+            if not data_type.is_pointer():
+                raise SemanticError('Cannot assign value: too many dereferences')
 
     def visit_ast_var_declaration(self, ast: ASTVarDeclaration):
         assert isinstance(ast, ASTVarDeclaration)

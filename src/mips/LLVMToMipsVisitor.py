@@ -276,6 +276,9 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
                 elif arg_type == DataType.DataTypeToken.FLOAT:
                     load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0,
                                                                                         MipsValue.MipsLiteral(2))
+                elif arg_type == DataType.DataTypeToken.CHAR:
+                    load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0,
+                                                                                        MipsValue.MipsLiteral(11))
                 else:
                     raise NotImplementedError
 

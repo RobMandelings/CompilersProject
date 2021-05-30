@@ -306,7 +306,7 @@ def from_assignment_expression(cst):
     # More (for example: int a; a = 5 -> a will be stored as a pointer, and when you want to STORE
     # value 5 into a, you want to store the literal 'int' value into the variable of type int*
 
-    if isinstance(lhs, ASTDereference) and isinstance(lhs.get_value_to_dereference(), ASTIdentifier):
+    if isinstance(lhs, ASTDereference):
         lhs = lhs.get_value_to_dereference()
 
     assignment_operation = cst.children[1].getSymbol().text
