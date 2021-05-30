@@ -371,6 +371,10 @@ class MipsBuilder:
         Simply converts the llvm literal instance into an instance of mips literal
         """
 
+        if llvm_literal.get_data_type().get_token() == DataType.DataTypeToken.FLOAT:
+            raise AssertionError(
+                "Mips can't handle floating point literals! These must values must be placed in RAM (.data segment)")
+
         return MipsValue.MipsLiteral(llvm_literal.get_value())
 
     def get_mips_registers(self, amount: int, saved_temporary_preference: bool):

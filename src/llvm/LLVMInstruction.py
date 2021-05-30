@@ -498,27 +498,22 @@ class LLVMGetElementPtrInstruction(LLVMAssignInstruction):
         visitor.visit_llvm_get_elementptr_instruction(self)
 
 
-class LLVMPrintfInstruction(LLVMAssignInstruction):
+class LLVMPrintfInstruction(LLVMRawAssignInstruction):
 
-    def __init__(self, register_to_print: LLVMValue.LLVMRegister,
-                 string_to_print_name: str):
+    def __init__(self, resulting_reg, instruction_parts: list, string_to_print: str, llvm_args: list):
         """
-        Creates a PrintfInstructions string
-        result_register: the register where the result of the function goes in (the number of chars printed)
-        type_to_print: the type to print (most likely a global constant you have defined)
-        string_to_print_name: the global variable which contains the string to print (e.g. @.str.0)
+        string_to_print: the string you want to print (e.g. @.str.0)
+        llvm_arguments: list of LLVMValue instances, either LLVMRegister or LLVMLiteral
         """
-        super().__init__(LLVMValue.LLVMRegister(DataType.NORMAL_INT))
+        super().__init__(resulting_reg, instruction_parts, terminator=False)
+        self.string_to_print = string_to_print
+        self.llvm_args = llvm_args
 
-        self.register_to_print = register_to_print
-        self.string_to_print_name = string_to_print_name
+    def get_string_to_print(self):
+        return self.string_to_print
 
-    def is_terminator(self):
-        return False
-
-    def to_llvm(self):
-        # TODO must be customized to be able to print completely custom names
-        return super().to_llvm() + f"call i32 (i8*, ...) @printf(i8* getelementptr inbounds([3 x i8], [3 x i8]* {self.string_to_print_name}, i64 0, i64 0), i32 {self.register_to_print})"
+    def get_llvm_args(self):
+        return self.llvm_args
 
     def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
         visitor.visit_llvm_printf_instruction(self)

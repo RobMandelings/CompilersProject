@@ -113,9 +113,11 @@ class MipsRegister(MipsValue, enum.Enum):
         return [MipsRegister.F0, MipsRegister.F1, MipsRegister.F2, MipsRegister.F3, MipsRegister.F4, MipsRegister.F5,
                 MipsRegister.F6, MipsRegister.F7, MipsRegister.F8, MipsRegister.F9, MipsRegister.F10, MipsRegister.F11,
                 MipsRegister.F12,
-                MipsRegister.F13, MipsRegister.F14, MipsRegister.F15, MipsRegister.F16, MipsRegister.F17, MipsRegister.F18,
+                MipsRegister.F13, MipsRegister.F14, MipsRegister.F15, MipsRegister.F16, MipsRegister.F17,
+                MipsRegister.F18,
                 MipsRegister.F19,
-                MipsRegister.F20, MipsRegister.F21, MipsRegister.F22, MipsRegister.F23, MipsRegister.F24, MipsRegister.F25,
+                MipsRegister.F20, MipsRegister.F21, MipsRegister.F22, MipsRegister.F23, MipsRegister.F24,
+                MipsRegister.F25,
                 MipsRegister.F26,
                 MipsRegister.F27, MipsRegister.F28, MipsRegister.F29, MipsRegister.F30, MipsRegister.F31]
 
@@ -141,6 +143,9 @@ class MipsRegister(MipsValue, enum.Enum):
 class MipsLiteral(MipsValue):
     def __init__(self, value):
         super().__init__(value)
+
+    def __str__(self):
+        return f"{self.content}"
 
     def get_value(self):
         return self.content

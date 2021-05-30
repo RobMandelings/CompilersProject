@@ -46,8 +46,6 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
                         if isinstance(instruction.to_jump_to, LLVMBasicBlock.LLVMBasicBlock):
                             instruction.to_jump_to = self.basic_block_mapper[instruction.to_jump_to]
 
-
-
     def get_mips_builder(self):
         assert isinstance(self.mips_builder, MipsBuilder.MipsBuilder)
         return self.mips_builder
@@ -143,22 +141,50 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
     def visit_llvm_store_instruction(self, instruction: LLVMInstruction.LLVMStoreInstruction):
 
-        mips_values = self.get_mips_builder().get_mips_values(instruction, instruction.resulting_reg,
-                                                              [instruction.value_to_store])
-        mips_resulting_register = mips_values[0]
-        mips_operands = mips_values[1]
+        if isinstance(instruction.value_to_store, LLVMValue.LLVMLiteral):
 
-        token = ASTTokens.BinaryArithmeticExprToken.ADD
+            resulting_reg, operands = self.get_mips_builder().get_mips_values(instruction, instruction.resulting_reg,
+                                                                              [])
 
-        mips_instruction = MipsInstruction.ArithmeticBinaryInstruction(MipsValue.MipsRegister.ZERO, mips_operands[0],
-                                                                       token, mips_resulting_register)
+            self.get_mips_builder().get_current_descriptors().assign_to_mips_reg(instruction.resulting_reg,
+                                                                                 resulting_reg)
 
-        # Don't forget to update the descriptor properly
-        self.get_mips_builder().get_current_descriptors().assign_to_mips_reg(instruction.resulting_reg,
-                                                                             mips_resulting_register)
+            if MipsValue.MipsRegister.is_floating_point_register(resulting_reg):
 
-        # Creation of mips instruction is done, now adding the instruction to the current function
-        self.get_mips_builder().get_current_function().add_instruction(mips_instruction)
+                # Constant added to the data segment which would be placed in the RAM. Necessary for floating point numbers
+                floating_point_data = self.get_mips_builder().get_data_segment().add_floating_point_number(
+                    instruction.value_to_store.get_value())
+
+                self.get_mips_builder().get_current_function().add_instruction(
+                    MipsInstruction.LoadWordCoProcInstruction(resulting_reg, floating_point_data)
+                )
+
+            else:
+
+                mips_operand = self.get_mips_builder().convert_to_mips_literal(instruction.value_to_store)
+
+                self.get_mips_builder().get_current_function().add_instruction(
+                    MipsInstruction.LoadImmediateInstruction(resulting_reg, mips_operand)
+                )
+
+        else:
+            mips_values = self.get_mips_builder().get_mips_values(instruction, instruction.resulting_reg,
+                                                                  [instruction.value_to_store])
+            mips_resulting_register = mips_values[0]
+            mips_operands = mips_values[1]
+
+            token = ASTTokens.BinaryArithmeticExprToken.ADD
+
+            mips_instruction = MipsInstruction.ArithmeticBinaryInstruction(MipsValue.MipsRegister.ZERO,
+                                                                           mips_operands[0],
+                                                                           token, mips_resulting_register)
+
+            # Don't forget to update the descriptor properly
+            self.get_mips_builder().get_current_descriptors().assign_to_mips_reg(instruction.resulting_reg,
+                                                                                 mips_resulting_register)
+
+            # Creation of mips instruction is done, now adding the instruction to the current function
+            self.get_mips_builder().get_current_function().add_instruction(mips_instruction)
 
     def visit_llvm_conditional_branch_instruction(self, instruction: LLVMInstruction.LLVMConditionalBranchInstruction):
         super().visit_llvm_conditional_branch_instruction(instruction)
@@ -194,7 +220,6 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
     def visit_llvm_printf_instruction(self, instruction: LLVMInstruction.LLVMPrintfInstruction):
         super().visit_llvm_printf_instruction(instruction)
 
-
     def visit_llvm_compare_instruction(self, instruction: LLVMInstruction.LLVMCompareInstruction):
         super().visit_llvm_compare_instruction(instruction)
 
@@ -212,10 +237,13 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
     def visit_llvm_binary_arithmetic_instruction(self, instruction: LLVMInstruction.LLVMBinaryArithmeticInstruction):
         super().visit_llvm_binary_arithmetic_instruction(instruction)
 
-        if isinstance(instruction.operand1, LLVMValue.LLVMLiteral) and isinstance(instruction.operand2,
-                                                                                  LLVMValue.LLVMLiteral):
+        if instruction.get_operation_type() == 'float' or (
+                isinstance(instruction.operand1, LLVMValue.LLVMLiteral) and isinstance(instruction.operand2,
+                                                                                       LLVMValue.LLVMLiteral)):
             # Mips can't handle multiple literals in arithmetic instruction, so if the instruction has two literal operands,
             # 2 Mips registers will be returned instead of two literals
+
+            # With floating points, this must always be 'all registers' as there is no immediate option for this
             all_registers = True
         else:
 
@@ -372,5 +400,3 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         self.get_mips_builder().get_current_function().add_return_instruction_point()
 
         super().visit_llvm_return_instruction(instruction)
-
-

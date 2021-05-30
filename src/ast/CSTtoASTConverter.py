@@ -7,7 +7,7 @@ from src.ast.ASTs import *
 
 LITERALS = {CLexer.CHAR_LITERAL: DataType.NORMAL_CHAR,
             CLexer.INT_LITERAL: DataType.NORMAL_INT,
-            CLexer.DOUBLE_LITERAL: DataType.NORMAL_DOUBLE}
+            CLexer.DOUBLE_LITERAL: DataType.NORMAL_FLOAT}
 
 DATA_TYPES = {CLexer.CHAR: DataType.DataTypeToken.CHAR,
               CLexer.INT: DataType.DataTypeToken.INT,
