@@ -321,7 +321,8 @@ def from_access_array_var_expression(cst):
     var_accessed = var_accessed.get_value_to_dereference()
 
     size = create_ast_from_cst(cst.children[2])
-    return ASTAccessArrayVarExpression(var_accessed, size)
+
+    return ASTDereference(ASTAccessArrayVarExpression(var_accessed, size))
 
 
 def from_control_flow_statement(cst):

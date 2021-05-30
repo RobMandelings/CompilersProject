@@ -189,7 +189,7 @@ class LLVMLoadInstruction(LLVMAssignInstruction):
 
     def to_llvm(self):
         llvm_data_type_to_load = self.resulting_reg.get_data_type().get_llvm_name()
-        return super().to_llvm() + f"load {llvm_data_type_to_load}, {llvm_data_type_to_load}* {self.load_from_reg}, align 4"
+        return super().to_llvm() + f"load {llvm_data_type_to_load}, {self.load_from_reg.get_data_type().get_llvm_name()} {self.load_from_reg}, align 4"
 
     def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
         visitor.visit_llvm_load_instruction(self)
@@ -625,7 +625,7 @@ class LLVMFpextInstruction(LLVMAssignInstruction):
         self.old_register = old_register
 
     def to_llvm(self):
-        return f'fpext {self.old_datatype.get_llvm_name()} {self.old_register} to {self.new_datatype.get_llvm_name()}'
+        return super().to_llvm() + f'fpext {self.old_datatype.get_llvm_name()} {self.old_register} to {self.new_datatype.get_llvm_name()}'
 
     def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
         visitor.visit_llvm_fpext_instruction(self)
@@ -638,7 +638,7 @@ class LLVMSextInstruction(LLVMAssignInstruction):
         self.old_register = old_register
 
     def to_llvm(self):
-        return f'sext i32 {self.old_register} to i64'
+        return super().to_llvm() + f'sext i32 {self.old_register} to i64'
 
     def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
         visitor.visit_llvm_sext_instruction(self)

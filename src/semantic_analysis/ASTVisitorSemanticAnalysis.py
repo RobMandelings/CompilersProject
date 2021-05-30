@@ -89,7 +89,7 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
         result_data_type = sub_visitor.get_resulting_data_type()
 
         if not result_data_type.is_pointer():
-            raise SemanticError(f"Indirection requires pointer operand ('{result_data_type.get_name()}' invalid)")
+            raise SemanticError(f"Cannot dereference a non-pointer ('{result_data_type.get_name()}' invalid)")
 
         self.update_current_data_type(
             DataType.DataType(result_data_type.get_token(), result_data_type.get_pointer_level() - 1))
@@ -481,8 +481,11 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                 print(
                     f"[SemanticAnalysis] Warning: declaration of '{var_name}'"
                     f" shadows a local variable. You might want to rename it")
+            # Pointer level + 1 because its stored internally as a pointer
             symbol_table.insert_symbol(var_name,
-                                       ArraySymbol(var_name, ast.get_data_type(), ast.get_array_size().get_content()))
+                                       ArraySymbol(var_name, DataType.DataType(ast.get_data_type().get_token(),
+                                                                               ast.get_data_type().get_pointer_level() + 1),
+                                                   ast.get_array_size().get_content()))
         else:
             raise SemanticError(
                 f"Array with name '{var_name}' has already been declared in this scope!"

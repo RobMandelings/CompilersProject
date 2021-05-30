@@ -207,22 +207,29 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         symbol_table = self.get_last_symbol_table()
         array_symbol = symbol_table.get_array_symbol(ast.get_variable_accessed().get_content())
         register_with_element_ptr = self.get_current_function().get_new_register(
-            DataType.DataType(array_element_register.get_data_type().get_token(), 1))
-        index_llvm_value = self.compute_expression(ast.get_index_accessed())
+            DataType.DataType(array_element_register.get_data_type().get_token(),
+                              array_element_register.get_data_type().get_pointer_level()))
+        computed_index = self.compute_expression(ast.get_index_accessed())
+
+        if isinstance(computed_index, LLVMValue.LLVMRegister):
+            index_llvm_value = LLVMValue.LLVMRegister()
+
+            self.get_current_function().add_instruction(
+                LLVMInstructions.LLVMSextInstruction(
+                    old_register=computed_index,
+                    new_register=index_llvm_value
+                )
+            )
+            computed_index = index_llvm_value
+
         instruction = getElementPtr_instruction = LLVMInstructions.LLVMGetElementPtrInstruction(
             register_with_element_ptr,
-            str(
-                ast.get_index_accessed().get_value()),
+            computed_index,
             array_symbol.get_size(),
             array_element_register)
         self.get_current_function().add_instruction(instruction)
-        register_to_return = self.get_current_function().get_new_register(
-            DataType.DataType(array_element_register.get_data_type().get_token(),
-                              array_element_register.get_data_type().get_pointer_level()))
 
-        self.get_current_function().add_instruction(
-            LLVMInstructions.LLVMLoadInstruction(register_to_return, register_with_element_ptr))
-        return register_to_return
+        return register_with_element_ptr
 
     def __compute_function_call(self, ast: ASTs.ASTFunctionCall):
         """
