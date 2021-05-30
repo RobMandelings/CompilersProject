@@ -252,7 +252,7 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
         all_registers = False
         for llvm_arg in llvm_args:
-            if llvm_arg.get_data_type().get_token() == DataType.DataTypeToken.FLOAT:
+            if llvm_arg.get_data_type().is_floating_point():
                 # Floats can't be used for immediate operations
                 # TODO improve so that only the float llvm values will get float mips registers instead of all
                 all_registers = True
@@ -336,7 +336,7 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
                         register_address=MipsValue.MipsRegister.FRAME_POINTER,
                         offset=fp_offset)
 
-                elif arg_type == DataType.DataTypeToken.FLOAT:
+                elif arg_type == DataType.DataTypeToken.FLOAT or arg_type == DataType.DataTypeToken.DOUBLE:
                     load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0,
                                                                                         MipsValue.MipsLiteral(6))
                     syscall_instruction = MipsInstruction.SyscallInstruction()
@@ -534,4 +534,6 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         resulting_reg, old_reg = self.get_mips_builder().get_mips_values(instruction, instruction.get_resulting_register(), [instruction.old_register])
 
         old_reg = old_reg[0]
+
+        self.get_mips_builder().get_current_function().add_instruction(MipsInstruction.MoveInstruction(resulting_reg, old_reg))
 
