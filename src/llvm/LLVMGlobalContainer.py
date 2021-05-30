@@ -15,7 +15,7 @@ class LLVMGlobalContainer(LLVMInterfaces.IToLLVM):
         visitor.visit_llvm_global_container(self)
 
     def __init__(self):
-        self.global_strings = list()
+        self.global_strings = dict()
         self.global_declaration_instructions = list()
         self.global_array_declaration_instructions = list()
         self.__printf_type_strings = dict()
@@ -43,9 +43,7 @@ class LLVMGlobalContainer(LLVMInterfaces.IToLLVM):
 
     def add_global_string(self, length, string):
         string_created = f"@.str.{len(self.global_strings)}"
-        self.global_strings.append(
-            f"{string_created} = "
-            f"private unnamed_addr constant [{length} x i8] c\"{string}\", align 1")
+        self.global_strings[string_created] = f"{string_created} = private unnamed_addr constant [{length} x i8] c\"{string}\", align 1"
         return string_created
 
     def has_printf_type_string(self):
@@ -95,7 +93,7 @@ class LLVMGlobalContainer(LLVMInterfaces.IToLLVM):
 
     def to_llvm(self):
         string_to_return = ''
-        for global_string in self.global_strings:
+        for global_string in self.global_strings.values():
             string_to_return += global_string + "\n"
         for global_declaration in self.global_declaration_instructions:
             string_to_return += global_declaration + "\n"

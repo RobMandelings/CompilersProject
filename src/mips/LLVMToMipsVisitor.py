@@ -60,8 +60,9 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         super().visit_llvm_global_container(llvm_global_container)
 
         printf_strings = llvm_global_container.global_strings
+        data_segment = self.get_mips_builder().get_data_segment()
 
-        for printf_string in printf_strings:
+        for printf_key, printf_string in printf_strings:
             type_string = re.search('c\"(.*)\",', printf_string).group(1)
             list_of_substrings = re.split('%[dcs]', type_string)
             list_of_type_strings = list()
@@ -69,6 +70,7 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
                 list_of_type_strings.append(list_of_substrings[i])
                 if i != len(list_of_substrings) - 1:
                     list_of_type_strings.append('%')
+            data_segment.add_printf_string(printf_key, list_of_type_strings)
 
     def visit_llvm_defined_function(self, llvm_defined_function: LLVMFunction.LLVMDefinedFunction):
 
