@@ -45,6 +45,8 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
                         if isinstance(instruction.to_jump_to, LLVMBasicBlock.LLVMBasicBlock):
                             instruction.to_jump_to = self.basic_block_mapper[instruction.to_jump_to]
 
+
+
     def get_mips_builder(self):
         assert isinstance(self.mips_builder, MipsBuilder.MipsBuilder)
         return self.mips_builder
@@ -53,6 +55,7 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         self.mips_builder = MipsBuilder.MipsBuilder()
         super().visit_llvm_code(llvm_code)
         self.update_basic_block_references()
+        self.get_mips_builder().get_current_function().add_mips_basic_block()
 
     def visit_llvm_defined_function(self, llvm_defined_function: LLVMFunction.LLVMDefinedFunction):
 
