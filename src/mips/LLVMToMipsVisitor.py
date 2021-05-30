@@ -141,6 +141,19 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
         super().visit_llvm_basic_block(llvm_basic_block)
 
+    def visit_llvm_load_instruction(self, instruction: LLVMInstruction.LLVMLoadInstruction):
+
+        # Only when loading into actual memory locations we need to use the 'load address' command.
+        # In cases where we 'load in value of a register' in llvm,
+        # we can just use the value of the corresponding register in mips
+        if instruction.get_resulting_register().get_data_type().is_pointer():
+            resulting_reg, operand = self.get_mips_builder().get_mips_values(instruction,
+                                                                             instruction.get_resulting_register(),
+                                                                             [instruction.load_from_reg])
+
+            operand = operand[0]
+            super().visit_llvm_load_instruction(instruction)
+
     def visit_llvm_store_instruction(self, instruction: LLVMInstruction.LLVMStoreInstruction):
 
         if isinstance(instruction.value_to_store, LLVMValue.LLVMLiteral):
@@ -232,7 +245,8 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
                 else:
                     identifier = data_segment.add_ascii_data(string_element, True)
 
-                load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0, MipsValue.MipsLiteral(4))
+                load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0,
+                                                                                    MipsValue.MipsLiteral(4))
                 load_data_instruction = MipsInstruction.LoadAddressInstruction(MipsValue.MipsRegister.A0, identifier)
                 syscall_instruction = MipsInstruction.SyscallInstruction()
                 self.get_mips_builder().get_current_function().add_instruction(load_syscall_instruction)

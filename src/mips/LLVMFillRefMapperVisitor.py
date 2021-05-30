@@ -18,4 +18,8 @@ class LLVMFillRefMapperVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         self.ref_mapper = dict()
 
     def visit_llvm_load_instruction(self, instruction: LLVMInstruction.LLVMLoadInstruction):
-        self.ref_mapper[instruction.get_resulting_register()] = instruction.load_from_reg
+        # In mips we have a smart way of putting the values into variables: we don't need to load the values anymore
+        # To put the values in a register. However, this only applies to loads into 'literal values',
+        # not into pointers of a lower level (because these are actually memory locations)
+        if not instruction.resulting_reg.get_data_type().is_pointer():
+            self.ref_mapper[instruction.get_resulting_register()] = instruction.load_from_reg
