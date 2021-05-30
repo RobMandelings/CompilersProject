@@ -67,8 +67,6 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
             result = re.search('c\"(.*)\",', printf_string).group(1)
 
 
-
-
     def visit_llvm_defined_function(self, llvm_defined_function: LLVMFunction.LLVMDefinedFunction):
 
         ref_mapper_visitor = LLVMFillRefMapperVisitor.LLVMFillRefMapperVisitor()

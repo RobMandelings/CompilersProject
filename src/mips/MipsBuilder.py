@@ -10,6 +10,7 @@ import src.mips.LLVMUsageInformation as LLVMUsageInformation
 import src.mips.MipsBasicBlock as MipsBasicBlock
 import src.mips.MipsInstruction as MipsInstruction
 import src.mips.MipsValue as MipsValue
+import src.mips.DataSegment as DataSegment
 
 
 class RegisterPool:
@@ -319,6 +320,7 @@ class MipsBuilder:
         """
         self.functions = list()
         self.reg_pool = RegisterPool()
+        self.data_segment = DataSegment.DataSegment()
 
     def get_current_ref_mapper(self):
         """
