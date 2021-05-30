@@ -237,6 +237,18 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
                 resulting_llvm_value = self.compute_expression(arg)
                 args_llvm_value.append(resulting_llvm_value)
 
+            for i in range(0, len(args_llvm_value)):
+
+                current_arg = args_llvm_value[i]
+
+                if current_arg.get_data_type().get_token() == DataType.DataTypeToken.FLOAT:
+                    resulting_reg = LLVMValue.LLVMRegister(DataType.DataType(DataType.DataTypeToken.DOUBLE,
+                                                                             pointer_level=current_arg.get_data_type().get_pointer_level()))
+                    self.get_current_function().add_instruction(
+                        # FPEX
+                    )
+                    args_llvm_value[i] = resulting_reg
+
             array_init = ast.get_arguments()[0]
             size = len(array_init.get_values()) + 1
             string = self.get_string_from_char_array(array_init)

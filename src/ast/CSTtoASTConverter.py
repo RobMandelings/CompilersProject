@@ -500,8 +500,8 @@ def replace_identifier_expressions(scope, scope_child_index: int, current_node):
         else:
 
             if isinstance(child.children[0], TerminalNodeImpl) and \
-                    child.children[0].getSymbol().type == CLexer.INCREMENT or \
-                    child.children[0].getSymbol().type == CLexer.DECREMENT:
+                    (child.children[0].getSymbol().type == CLexer.INCREMENT or \
+                     child.children[0].getSymbol().type == CLexer.DECREMENT):
                 identifier_cst = child.children[1]
                 increment = child.children[0].getSymbol().type == CLexer.INCREMENT
                 after = True
