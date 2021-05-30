@@ -89,6 +89,9 @@ class LLVMBaseVisitor(ILLVMVisitor.ILLVMVisitor):
     def visit_llvm_printf_instruction(self, instruction: LLVMInstruction.LLVMPrintfInstruction):
         pass
 
+    def visit_llvm_scanf_instruction(self, instruction: LLVMInstruction.LLVMScanfInstruction):
+        pass
+
     def visit_llvm_call_instruction(self, instruction: LLVMInstruction.LLVMCallInstruction):
         pass
 

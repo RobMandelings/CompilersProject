@@ -279,7 +279,8 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
                 instruction = LLVMInstructions.LLVMPrintfInstruction(LLVMValues.LLVMRegister(), instruction_parts,
                                                                      global_string_created, args_llvm_value)
             else:
-                instruction = LLVMInstructions.LLVMRawAssignInstruction(LLVMValues.LLVMRegister(), instruction_parts)
+                instruction = LLVMInstructions.LLVMScanfInstruction(LLVMValues.LLVMRegister(), instruction_parts,
+                                                                    args_llvm_value)
             self.get_current_function().add_instruction(instruction)
 
         else:

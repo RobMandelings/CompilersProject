@@ -519,6 +519,27 @@ class LLVMPrintfInstruction(LLVMRawAssignInstruction):
         visitor.visit_llvm_printf_instruction(self)
 
 
+class LLVMScanfInstruction(LLVMRawAssignInstruction):
+
+    def __init__(self, resulting_reg, instruction_parts: list, string_to_print: str, llvm_args: list):
+        """
+        string_to_print: the string you want to print (e.g. @.str.0)
+        llvm_arguments: list of LLVMValue instances, either LLVMRegister or LLVMLiteral
+        """
+        super().__init__(resulting_reg, instruction_parts, terminator=False)
+        self.string_to_print = string_to_print
+        self.llvm_args = llvm_args
+
+    def get_string_to_print(self):
+        return self.string_to_print
+
+    def get_llvm_args(self):
+        return self.llvm_args
+
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_scanf_instruction(self)
+
+
 class LLVMCallInstruction(LLVMAssignInstruction):
 
     def __init__(self, function_to_call, args: list, infinity_params=False):

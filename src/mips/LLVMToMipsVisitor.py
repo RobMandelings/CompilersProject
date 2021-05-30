@@ -295,6 +295,9 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
             syscall_instruction = MipsInstruction.SyscallInstruction()
             self.get_mips_builder().get_current_function().add_instruction(syscall_instruction)
 
+    def visit_llvm_scanf_instruction(self, instruction: LLVMInstruction.LLVMScanfInstruction):
+        super().visit_llvm_scanf_instruction(instruction)
+
     def visit_llvm_compare_instruction(self, instruction: LLVMInstruction.LLVMCompareInstruction):
         super().visit_llvm_compare_instruction(instruction)
 

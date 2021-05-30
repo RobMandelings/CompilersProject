@@ -75,6 +75,9 @@ class ILLVMVisitor(abc.ABC):
     def visit_llvm_printf_instruction(self, instruction):
         pass
 
+    def visit_llvm_scanf_instruction(self, instruction):
+        pass
+
     def visit_llvm_call_instruction(self, instruction):
         pass
 
