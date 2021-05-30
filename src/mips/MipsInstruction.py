@@ -227,6 +227,7 @@ class ArithmeticBinaryInstruction(ArithmeticInstruction):
                     second_operand), "Floating point types must match don't match"
 
     def to_mips(self):
+
         operation_string = ""
         if self.token == ASTTokens.BinaryArithmeticExprToken.ADD:
             if isinstance(self.second_register, MipsValue.MipsRegister):
@@ -245,6 +246,11 @@ class ArithmeticBinaryInstruction(ArithmeticInstruction):
             return operation_string + f" {self.resulting_register.get_name()}, {self.first_register.get_name()}"
         else:
             raise NotImplementedError
+
+        # We have asserted before that if the first register is floating point, the second must be as well
+        # So its enough to check the first register. We add '.s' to the instruction
+        if MipsValue.MipsRegister.is_floating_point_register(self.first_register):
+            operation_string += '.s'
 
         return operation_string + f" {self.resulting_register.get_name()}, {self.first_register.get_name()}, {self.second_register.get_content()}"
 
