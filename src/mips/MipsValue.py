@@ -129,6 +129,11 @@ class MipsRegister(MipsValue, enum.Enum):
         assert isinstance(mips_register, MipsRegister)
         return mips_register in MipsRegister.get_saved_temporary_registers()
 
+    @staticmethod
+    def is_floating_point_register(mips_register):
+        assert isinstance(mips_register, MipsRegister)
+        return mips_register in MipsRegister.get_floating_point_registers()
+
     def get_name(self):
         return self.content
 
