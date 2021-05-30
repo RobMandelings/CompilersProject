@@ -5,9 +5,10 @@ import src.mips.MipsBuilder as MipsBuilder
 import src.mips.LLVMFillRefMapperVisitor as LLVMFillRefMapperVisitor
 import src.mips.LLVMFillUsageTableVisitor as FillUsageTableVisitor
 from src.llvm import LLVMFunction as LLVMFunction, LLVMCode as LLVMCode, LLVMBasicBlock as LLVMBasicBlock, \
-    LLVMInstruction as LLVMInstruction
+    LLVMInstruction as LLVMInstruction, LLVMGlobalContainer as LLVMGlobalContainer
 import src.mips.MipsInstruction as MipsInstruction
 import src.ast.ASTTokens as ASTTokens
+import re
 
 
 class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
@@ -53,6 +54,17 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         self.mips_builder = MipsBuilder.MipsBuilder()
         super().visit_llvm_code(llvm_code)
         self.update_basic_block_references()
+
+    def visit_llvm_global_container(self, llvm_global_container: LLVMGlobalContainer.LLVMGlobalContainer):
+        super().visit_llvm_global_container(llvm_global_container)
+
+        printf_strings = llvm_global_container.global_strings
+
+        for printf_string in printf_strings:
+            result = re.search('c\"(.*)\",', printf_string).group(1)
+
+
+
 
     def visit_llvm_defined_function(self, llvm_defined_function: LLVMFunction.LLVMDefinedFunction):
 
@@ -175,6 +187,7 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
     def visit_llvm_printf_instruction(self, instruction: LLVMInstruction.LLVMPrintfInstruction):
         super().visit_llvm_printf_instruction(instruction)
+
 
     def visit_llvm_compare_instruction(self, instruction: LLVMInstruction.LLVMCompareInstruction):
         super().visit_llvm_compare_instruction(instruction)
@@ -353,3 +366,5 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         self.get_mips_builder().get_current_function().add_return_instruction_point()
 
         super().visit_llvm_return_instruction(instruction)
+
+
