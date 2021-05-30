@@ -437,3 +437,12 @@ class CompareInstruction(MipsInstruction):
             raise NotImplementedError
 
         return f"{operation_string} {self.resulting_register.get_name()},{self.first_operand.get_name()},{self.second_operand.get_content()}"
+
+
+class SyscallInstruction(MipsInstruction):
+
+    def __init__(self):
+        super().__init__()
+
+    def to_mips(self):
+        return f"syscall"

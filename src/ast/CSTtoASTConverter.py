@@ -471,7 +471,7 @@ def create_ast_scope(cst: CParser.ScopeContext):
     return ast_scope
 
 
-def replace_identifier_expressions(scope: CParser.ScopeContext, scope_child_index: int, current_node):
+def replace_identifier_expressions(scope, scope_child_index: int, current_node):
     if isinstance(current_node, TerminalNodeImpl):
         return
 
@@ -482,7 +482,16 @@ def replace_identifier_expressions(scope: CParser.ScopeContext, scope_child_inde
         if isinstance(child, CParser.ScopeContext):
             for sub_scope_child_index in range(len(child.children)):
                 replace_identifier_expressions(child, sub_scope_child_index, child.children[sub_scope_child_index])
-
+        elif isinstance(child, CParser.ForLoopContext):
+            # For loops have a special case, as the update step is different from the function body
+            # This is for compatibility with the continue control flow statement, so that the update step
+            # Gets executed properly
+            replace_identifier_expressions(scope, scope_child_index, child.children[2])
+            replace_identifier_expressions(scope, scope_child_index, child.children[4])
+            # This is a special case: the current scope at which to add the instruction children
+            # Is the loop context itself, not the body this loop is defined in
+            replace_identifier_expressions(child, 8, child.children[8])
+            replace_identifier_expressions(child, 6, child.children[6])
         elif not isinstance(child, CParser.IdentifierExpressionContext):
             replace_identifier_expressions(scope, scope_child_index, child)
         elif len(child.children) == 1:
@@ -610,10 +619,32 @@ def __create_ast_while_loop(cst):
 def __create_ast_for_loop(cst: CParser.LoopContext):
     start = create_ast_from_cst(cst.children[2])
     condition = create_ast_from_cst(cst.children[4])
-    end = create_ast_from_cst(cst.children[6])
-    execution_body = create_ast_from_cst(cst.children[8])
 
-    while_loop = ASTWhileLoop(condition, execution_body, end)
+    # Might be multiple statements in case of ++ or -- within an expression
+    # for example (is split up into an assignment and then the expression in which the identifier is used)
+    update_step_asts = list()
+
+    current_update_step_cst_index = 6
+    current_update_step_cst = cst.children[current_update_step_cst_index]
+    end_of_update_step_reached = False
+    while not end_of_update_step_reached:
+
+        update_step_ast = create_ast_from_cst(current_update_step_cst)
+        if update_step_ast is not None:
+            update_step_asts.append(update_step_ast)
+
+        current_update_step_cst_index += 1
+        current_update_step_cst = cst.children[current_update_step_cst_index]
+        if isinstance(current_update_step_cst, TerminalNodeImpl) and current_update_step_cst.getSymbol().text == ')':
+            end_of_update_step_reached = True
+
+    update_step = ASTInternal('update step')
+    for update_step_ast in update_step_asts:
+        update_step.add_child(update_step_ast)
+
+    execution_body = create_ast_from_cst(cst.children[current_update_step_cst_index + 1])
+
+    while_loop = ASTWhileLoop(condition, execution_body, update_step)
     condition.set_parent(while_loop)
     execution_body.set_parent(while_loop)
 

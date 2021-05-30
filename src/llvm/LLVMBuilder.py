@@ -238,7 +238,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
                 args_llvm_value.append(resulting_llvm_value)
 
             array_init = ast.get_arguments()[0]
-            size = len(array_init.get_mips_values()) + 1
+            size = len(array_init.get_values()) + 1
             string = self.get_string_from_char_array(array_init)
             string += '\\00'
 
@@ -397,7 +397,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             string = self.get_string_from_char_array(ast.get_array_init())
 
             # Fill up with null termination characters if there are less values initialized than the size of the array
-            for i in range(len(ast.get_array_init().get_mips_values()), ast.get_array_size().get_value()):
+            for i in range(len(ast.get_array_init().get_values()), ast.get_array_size().get_value()):
                 string += '\\00'
 
             global_var_created = self.get_global_container().add_global_string(ast.get_array_size(), string)
