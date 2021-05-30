@@ -9,12 +9,18 @@ class DataSegment:
         self.floating_point_data = list()
         self.printf_strings = dict()
 
+    def get_printf_string(self, key):
+        return self.printf_strings[key]
+
     def add_printf_string(self, key, value: list):
-        """
-        Adds a ascii word to the data, and returns the identifier of the added data
-        """
-        identifier = f"ascii_word_{len(self.ascii_data)}"
         self.printf_strings[key] = value
+
+    def add_ascii_data(self, string_element: str, last_element: bool = False):
+        identifier = f'ascii_word{len(self.ascii_data)}'
+        if last_element:
+            self.ascii_data.append(f'{identifier}: .asciiz {string_element}')
+        else:
+            self.ascii_data.append(f'{identifier}: .ascii {string_element}')
         return identifier
 
     def add_floating_point_number(self, value: float):
