@@ -194,6 +194,16 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
     def visit_llvm_printf_instruction(self, instruction: LLVMInstruction.LLVMPrintfInstruction):
         super().visit_llvm_printf_instruction(instruction)
 
+        string_key = ""
+        data_segment = self.get_mips_builder().get_data_segment()
+        printf_strings = data_segment.printf_strings[string_key]
+
+        load_printf_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0, MipsValue.MipsLiteral(4))
+
+
+
+
+
     def visit_llvm_compare_instruction(self, instruction: LLVMInstruction.LLVMCompareInstruction):
         super().visit_llvm_compare_instruction(instruction)
 
