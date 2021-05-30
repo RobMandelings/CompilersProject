@@ -14,7 +14,7 @@ class LLVMValueToken(Enum):
 
 class LLVMValue(LLVMInterfaces.IToLLVM, src.DataType.IHasDataType, ABC):
 
-    def __init__(self, value, data_type):
+    def __init__(self, value, data_type: DataType.DataType):
         self.data_type = data_type
         self.value = value
 
