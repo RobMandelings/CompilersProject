@@ -5,6 +5,7 @@ import src.llvm.LLVMCode as LLVMCode
 import src.llvm.LLVMFunction as LLVMFunction
 import src.mips.FPOffset as FPOffset
 import src.ast.ASTTokens as ASTTokens
+import src.DataType as DataType
 import src.mips.LLVMFillRefMapperVisitor as LLVMFillRefMapperVisitor
 import src.mips.LLVMUsageInformation as LLVMUsageInformation
 import src.mips.MipsBasicBlock as MipsBasicBlock
@@ -322,6 +323,10 @@ class MipsBuilder:
         self.reg_pool = RegisterPool()
         self.data_segment = DataSegment.DataSegment()
 
+    def get_data_segment(self):
+        assert isinstance(self.data_segment, DataSegment.DataSegment)
+        return self.data_segment
+
     def get_current_ref_mapper(self):
         """
         Retrieves the ref mapper of the current function
@@ -480,7 +485,6 @@ class MipsBuilder:
             # Bool indicating whether its a register for operand or not
             is_operand = pair[1]
 
-            # TODO Use reference mapper to map the llvm register to its allocated llvm register to get rid of
             # The load and store operations from llvm (not required anymore)
 
             if self.get_current_function().descriptors.has_register_location(llvm_value):
@@ -494,10 +498,14 @@ class MipsBuilder:
             # an allocated llvm register is used (corresponding to variables) or not (temporary values that were calculated)
             # TODO implement 'as preference' meaning that t registers may be used for allocated llvm registers as well
             # if necessary and vice versa, but make sure that the saving into memory is done properly in function calls
-            mips_registers_to_choose_from = self.reg_pool.get_saved_registers() if \
-                isinstance(llvm_value,
-                           LLVMValue.LLVMRegister) and self.get_current_function().descriptors.is_allocated(
-                    llvm_value) else self.reg_pool.get_temporary_registers()
+
+            if llvm_value.get_data_type().get_token() == DataType.DataTypeToken.FLOAT:
+                mips_registers_to_choose_from = MipsValue.MipsRegister.get_floating_point_registers()
+            else:
+                mips_registers_to_choose_from = self.reg_pool.get_saved_registers() if \
+                    isinstance(llvm_value,
+                               LLVMValue.LLVMRegister) and self.get_current_function().descriptors.is_allocated(
+                        llvm_value) else self.reg_pool.get_temporary_registers()
 
             mips_registers_to_choose_from = [mips_reg for mips_reg in
                                              mips_registers_to_choose_from if mips_reg not in chosen_values]
