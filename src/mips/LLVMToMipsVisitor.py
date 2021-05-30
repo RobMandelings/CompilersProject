@@ -287,7 +287,20 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         percent_counter = 0
         for i in range(0, len(scanf_elements)):
             string_element = scanf_elements[i]
-            if string_element == '%':
+            if not string_element == '%':
+                if not i == len(scanf_elements) - 1:
+                    identifier = data_segment.add_ascii_data(string_element)
+                else:
+                    identifier = data_segment.add_ascii_data(string_element, True)
+
+                load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0,
+                                                                                    MipsValue.MipsLiteral(4))
+                set_data_instruction = MipsInstruction.LoadAddressInstruction(MipsValue.MipsRegister.A0, identifier)
+                self.get_mips_builder().get_current_function().add_instruction(set_data_instruction)
+                self.get_mips_builder().get_current_function().add_instruction(load_syscall_instruction)
+                syscall_instruction = MipsInstruction.SyscallInstruction()
+                self.get_mips_builder().get_current_function().add_instruction(syscall_instruction)
+            else:
                 arg_type = llvm_args[percent_counter].get_data_type().get_token()
                 if arg_type == DataType.DataTypeToken.INT:
                     load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0, MipsValue.MipsLiteral(5))
