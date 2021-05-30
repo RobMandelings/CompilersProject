@@ -610,17 +610,16 @@ class LLVMMemcpyInstruction(LLVMInstruction):
         visitor.visit_llvm_memcpy_instruction(self)
 
 
-class LLVMFpextInstruction(LLVMInstruction):
+class LLVMFpextInstruction(LLVMAssignInstruction):
 
     def __init__(self, old_datatype: DataType, new_datatype: DataType, old_register: LLVMValue.LLVMRegister, new_register: LLVMValue.LLVMRegister):
-        super().__init__()
+        super().__init__(new_register)
         self.old_datatype = old_datatype
         self.new_datatype = new_datatype
         self.old_register = old_register
-        self.new_register = new_register
 
     def to_llvm(self):
-        return f'{self.new_register} = fpext {self.old_datatype.get_llvm_name()} {self.old_register} to {self.new_datatype.get_llvm_name()}'
+        return f'fpext {self.old_datatype.get_llvm_name()} {self.old_register} to {self.new_datatype.get_llvm_name()}'
 
     def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
         visitor.visit_llvm_fpext_instruction(self)

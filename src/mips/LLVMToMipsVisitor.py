@@ -289,7 +289,7 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
                 if arg_type == DataType.DataTypeToken.INT:
                     load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0,
                                                                                         MipsValue.MipsLiteral(1))
-                elif arg_type == DataType.DataTypeToken.FLOAT:
+                elif arg_type == DataType.DataTypeToken.FLOAT or arg_type == DataType.DataTypeToken.DOUBLE:
                     load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0,
                                                                                         MipsValue.MipsLiteral(2))
                 elif arg_type == DataType.DataTypeToken.CHAR:
@@ -526,3 +526,10 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         self.get_mips_builder().get_current_function().add_return_instruction_point()
 
         super().visit_llvm_return_instruction(instruction)
+
+    def visit_llvm_fpext_instruction(self, instruction: LLVMInstruction.LLVMFpextInstruction):
+
+        resulting_reg, old_reg = self.get_mips_builder().get_mips_values(instruction, instruction.get_resulting_register(), [instruction.old_register])
+
+        old_reg = old_reg[0]
+

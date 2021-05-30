@@ -486,7 +486,7 @@ class MipsBuilder:
             # TODO implement 'as preference' meaning that t registers may be used for allocated llvm registers as well
             # if necessary and vice versa, but make sure that the saving into memory is done properly in function calls
 
-            if llvm_value.get_data_type().get_token() == DataType.DataTypeToken.FLOAT:
+            if llvm_value.get_data_type().is_floating_point():
                 mips_registers_to_choose_from = MipsValue.MipsRegister.get_floating_point_registers()
                 # F12 is reserved for syscalls
                 mips_registers_to_choose_from.remove(MipsValue.MipsRegister.F12)
