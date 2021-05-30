@@ -129,8 +129,6 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         self.get_mips_builder().get_current_function().replace_return_instruction_point_with_actual_instructions(
             self.get_mips_builder().get_current_function().get_current_basic_block())
 
-        print('hi')
-
     def visit_llvm_basic_block(self, llvm_basic_block: LLVMBasicBlock.LLVMBasicBlock):
         mips_basic_block = self.get_mips_builder().get_current_function().add_mips_basic_block()
         self.basic_block_mapper[llvm_basic_block] = mips_basic_block
@@ -274,16 +272,6 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
         llvm_args = instruction.get_llvm_args()
 
-        all_registers = False
-        for llvm_arg in llvm_args:
-            if llvm_arg.get_data_type().get_token() == DataType.DataTypeToken.FLOAT:
-                # Floats can't be used for immediate operations
-                # TODO improve so that only the float llvm values will get float mips registers instead of all
-                all_registers = True
-
-        mips = self.get_mips_builder().get_mips_values(instruction, None, llvm_args, all_registers=all_registers)
-        mips_args = mips[1]
-
         percent_counter = 0
         for i in range(0, len(scanf_elements)):
             string_element = scanf_elements[i]
@@ -301,21 +289,37 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
                 syscall_instruction = MipsInstruction.SyscallInstruction()
                 self.get_mips_builder().get_current_function().add_instruction(syscall_instruction)
             else:
-                arg_type = llvm_args[percent_counter].get_data_type().get_token()
+
+                llvm_arg = llvm_args[percent_counter]
+
+                arg_type = llvm_arg.get_data_type().get_token()
+
+                fp_offset = self.get_mips_builder().get_current_descriptors().get_address_location(llvm_arg)
+
                 if arg_type == DataType.DataTypeToken.INT:
-                    load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0, MipsValue.MipsLiteral(5))
+                    load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0,
+                                                                                        MipsValue.MipsLiteral(5))
                     syscall_instruction = MipsInstruction.SyscallInstruction()
-                    move_instruction = MipsInstruction.MoveInstruction(mips_args[percent_counter], MipsValue.MipsRegister.V0)
+                    store_instruction = MipsInstruction.StoreWordInstruction(
+                        register_to_store=MipsValue.MipsRegister.V0,
+                        register_address=MipsValue.MipsRegister.FRAME_POINTER,
+                        offset=fp_offset)
+
                 elif arg_type == DataType.DataTypeToken.FLOAT:
-                    load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0, MipsValue.MipsLiteral(6))
+                    load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0,
+                                                                                        MipsValue.MipsLiteral(6))
                     syscall_instruction = MipsInstruction.SyscallInstruction()
-                    move_instruction = MipsInstruction.MoveInstruction(mips_args[percent_counter], MipsValue.MipsRegister.F0)
+                    store_instruction = MipsInstruction.StoreWordInstruction(
+                        register_to_store=MipsValue.MipsRegister.F0,
+                        register_address=MipsValue.MipsRegister.FRAME_POINTER,
+                        offset=fp_offset)
+
                 else:
                     raise NotImplementedError
 
                 self.get_mips_builder().get_current_function().add_instruction(load_syscall_instruction)
                 self.get_mips_builder().get_current_function().add_instruction(syscall_instruction)
-                self.get_mips_builder().get_current_function().add_instruction(move_instruction)
+                self.get_mips_builder().get_current_function().add_instruction(store_instruction)
                 percent_counter += 1
 
     def visit_llvm_compare_instruction(self, instruction: LLVMInstruction.LLVMCompareInstruction):
