@@ -14,7 +14,7 @@ def log(file, log_string):
     f.close()
 
 
-def run_benchmark(filename: str):
+def run_benchmark(filename: str, optimized: bool):
     """
     filename: the filename you need to enter to run the script
     to_llvm: true if compiling to llvm, false if compiling to mips
@@ -42,7 +42,7 @@ def run_benchmark(filename: str):
             ast.accept(ast_visitor_dot)
             ast_visitor_dot.graph.render(f'{filename}_ast.gv', view=False)
 
-            ast_visitor_semantic_analysis = ASTVisitorSemanticAnalysis(optimize=False)
+            ast_visitor_semantic_analysis = ASTVisitorSemanticAnalysis(optimize=optimized)
             ast.accept(ast_visitor_semantic_analysis)
 
             ast_visitor_dot.reset()
@@ -74,7 +74,14 @@ def run_benchmark(filename: str):
 
 def main(argv):
     filename = argv[1]
-    run_benchmark(filename)
+    optimized = argv[2]
+
+    if optimized is None:
+        optimized = False
+    else:
+        optimized = optimized == 'true'
+
+    run_benchmark(filename, optimized)
 
 
 if __name__ == '__main__':

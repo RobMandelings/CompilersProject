@@ -156,6 +156,12 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
             ast.right = self.do_constant_propagation(ast.right)
         elif isinstance(ast, ASTUnaryExpression):
             ast.value_applied_to = self.do_constant_propagation(ast.value_applied_to)
+        elif isinstance(ast, ASTDereference):
+            propagated_ast = self.do_constant_propagation(ast.get_value_to_dereference())
+            if isinstance(propagated_ast, ASTLiteral):
+                return propagated_ast
+            else:
+                return ast
         elif isinstance(ast, ASTIdentifier):
             variable = self.last_symbol_table.lookup_variable(ast.get_content())
             # The variable in the symbol table still has a reaching definition, so we can
@@ -180,7 +186,8 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
 
             if isinstance(ast.left, ASTLiteral) and isinstance(ast.right, ASTLiteral):
 
-                resulting_data_type = DataType.DataType.get_resulting_data_type(ast.left, ast.right)
+                resulting_data_type = DataType.DataType.get_resulting_data_type(ast.left.get_data_type(),
+                                                                                ast.right.get_data_type())
 
                 left_value = ast.left.get_content_depending_on_data_type()
                 right_value = ast.right.get_content_depending_on_data_type()
@@ -192,7 +199,7 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
                     elif ast.get_token() == BinaryArithmeticExprToken.SUB:
                         result = left_value - right_value
                     elif ast.get_token() == BinaryArithmeticExprToken.DIV:
-                        if resulting_data_type == DataType.DataTypeToken.CHAR or resulting_data_type == DataType.DataTypeToken.INT:
+                        if resulting_data_type == DataType.NORMAL_CHAR or resulting_data_type == DataType.NORMAL_INT:
                             result = int(left_value / right_value)
                         else:
                             result = float(left_value / right_value)
@@ -226,7 +233,7 @@ class ASTVisitorOptimizer(ASTBaseVisitor):
                 else:
                     raise NotImplementedError
 
-                return ASTLiteral(ast.value_applied_to.get_data_type_token(),
+                return ASTLiteral(ast.value_applied_to.get_data_type(),
                                   str(
                                       factor * ast.value_applied_to.get_content_depending_on_data_type())).set_parent(
                     ast.parent)

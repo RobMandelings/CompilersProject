@@ -88,6 +88,7 @@ class DataType:
             return data_type2
 
     def __eq__(self, other):
+        assert isinstance(other, DataType)
         return self.get_token() == other.get_token() and self.get_pointer_level() == other.get_pointer_level() \
                and self.is_array() == other.is_array()
 

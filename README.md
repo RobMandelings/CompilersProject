@@ -1,38 +1,30 @@
-# CompilersProject
+# Testing our code
 
-## TODO
+Run the main.py script using the following command: python main.py "input file". Our compiler will automatically produce
+the following:
 
-### Dereferencing node
+- Parsed Concrete Syntax Tree pdf
+- Converted Abstract Syntax Tree pdf
+- LLVM Output (.ll extension)
+- MIPS Output (.asm extension)
 
-From the slides, it will be easier to compiler into llvm
+## Features
 
-#### y = x
+We have implemented everything of the mandatory features, except support for arrays in MIPS. Due to lack of time,
+considering we had the deadline on the 30th of may whilst also having the Computer Networking exam two days later, we
+were not able to implement this final feature.
 
-#### *y = x
+We have however, implemented some optional features from before which work both for MIPS and LLVM. These optional
+features are:
 
-#### *y = &x
+- Constant Folding (see optimizations)
+- Constant Propagation (see optimizations)
+- Identifier Expressions (i++, --i,...)
 
-(for example)
+### Optimization
 
-### Implement char data type
+In order to facilitate the optimization feature, run the previous command but with a true after the filename.
 
-## TO FIX
+The command would look like this:
 
-### Error 1
-
-This gives an assertion error: char c = 'a';
-
-### Error 2
-
-If you put this in the inputfile.txt, the compiler says there is a token recognition error but continues anyway:
-
-int i = 6;
-
-const int a = 28.999; char c = 'a';
-
-Improved semantic analysing on scopes: variables may be redeclared in another (deeper) scope, just not in the exact same
-scope. Do a lookup_lookal instead of lookup to find the redeclaration of a variable
-
-# Fixessss
-
-Already declared errors with for loops event though not already declared
+python main.py "input file" true
