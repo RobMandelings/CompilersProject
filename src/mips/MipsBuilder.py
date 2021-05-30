@@ -323,8 +323,7 @@ class MipsBuilder:
         self.reg_pool = RegisterPool()
         self.data_segment = DataSegment.DataSegment()
 
-    def get_data_segment(self):
-        assert isinstance(self.data_segment, DataSegment.DataSegment)
+    def get_data_segment(self) -> DataSegment.DataSegment:
         return self.data_segment
 
     def get_current_ref_mapper(self):
