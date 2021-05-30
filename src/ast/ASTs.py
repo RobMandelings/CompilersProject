@@ -286,8 +286,7 @@ class ASTAccessArrayVarExpression(ASTLeaf):
         return self.variable_accessed
 
     def get_index_accessed(self):
-        assert isinstance(self.index_accessed, ASTLiteral) and \
-               self.index_accessed.get_data_type() == DataType.NORMAL_INT
+        assert isinstance(self.index_accessed, ASTLiteral)
         return self.index_accessed
 
     def get_content(self):

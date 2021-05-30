@@ -208,7 +208,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         array_symbol = symbol_table.get_array_symbol(ast.get_variable_accessed().get_content())
         register_with_element_ptr = self.get_current_function().get_new_register(
             DataType.DataType(array_element_register.get_data_type().get_token(), 1))
-        index = ast.get_index_accessed()
+        index_llvm_value = self.compute_expression(ast.get_index_accessed())
         instruction = getElementPtr_instruction = LLVMInstructions.LLVMGetElementPtrInstruction(
             register_with_element_ptr,
             str(
@@ -217,7 +217,8 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             array_element_register)
         self.get_current_function().add_instruction(instruction)
         register_to_return = self.get_current_function().get_new_register(
-            DataType.DataType(array_element_register.get_data_type().get_token(), 0))
+            DataType.DataType(array_element_register.get_data_type().get_token(),
+                              array_element_register.get_data_type().get_pointer_level()))
 
         self.get_current_function().add_instruction(
             LLVMInstructions.LLVMLoadInstruction(register_to_return, register_with_element_ptr))

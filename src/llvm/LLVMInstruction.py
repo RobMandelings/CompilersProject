@@ -475,21 +475,26 @@ class LLVMUnaryArithmeticInstruction(LLVMAssignInstruction):
 
 class LLVMGetElementPtrInstruction(LLVMAssignInstruction):
 
-    def __init__(self, resulting_register: LLVMValue.LLVMRegister, index: str, size: LLVMValue.LLVMLiteral,
+    def __init__(self, resulting_register: LLVMValue.LLVMRegister, index: str or LLVMValue.LLVMValue,
+                 size: LLVMValue.LLVMLiteral,
                  array_register: LLVMValue.LLVMRegister):
         super().__init__(resulting_register)
         self.index = index
         self.size = size
         self.array_register = array_register
-        assert isinstance(index, str)
         assert isinstance(size, LLVMValue.LLVMLiteral)
         assert isinstance(array_register, LLVMValue.LLVMRegister)
 
     def to_llvm(self):
+        if isinstance(self.index, LLVMValue.LLVMValue):
+            index = self.index.to_llvm()
+        else:
+            index = self.index
+
         datatype = DataType.DataType(self.array_register.get_data_type().get_token(),
                                      self.array_register.get_data_type().get_pointer_level() - 1)
         return super().to_llvm() + f'getelementptr inbounds [{self.size.get_value()} x {datatype.get_llvm_name()}], ' \
-                                   f'[{self.size.get_value()} x {datatype.get_llvm_name()}]* {self.array_register.to_llvm()}, i64 0, i64 {self.index}'
+                                   f'[{self.size.get_value()} x {datatype.get_llvm_name()}]* {self.array_register.to_llvm()}, i64 0, i64 {index}'
 
     def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
         visitor.visit_llvm_get_elementptr_instruction(self)
@@ -612,7 +617,8 @@ class LLVMMemcpyInstruction(LLVMInstruction):
 
 class LLVMFpextInstruction(LLVMAssignInstruction):
 
-    def __init__(self, old_datatype: DataType, new_datatype: DataType, old_register: LLVMValue.LLVMRegister, new_register: LLVMValue.LLVMRegister):
+    def __init__(self, old_datatype: DataType, new_datatype: DataType, old_register: LLVMValue.LLVMRegister,
+                 new_register: LLVMValue.LLVMRegister):
         super().__init__(new_register)
         self.old_datatype = old_datatype
         self.new_datatype = new_datatype

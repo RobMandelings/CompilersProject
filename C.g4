@@ -106,7 +106,7 @@ expression:
     ;
 
 functionCallExpression: ID '(' ((expression ',')* expression)? ')' ;
-accessArrayVarExpression: ID '[' INT_LITERAL ']' ;
+accessArrayVarExpression: ID '[' expression ']' ;
 
 compareExpression:
     compareExpression '>' assignmentExpression
