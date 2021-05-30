@@ -621,3 +621,6 @@ class LLVMFpextInstruction(LLVMInstruction):
 
     def to_llvm(self):
         return f'{self.new_register} = fpext {self.old_datatype.get_llvm_name()} {self.old_register} to {self.new_datatype.get_llvm_name()}'
+
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_fpext_instruction(self)
