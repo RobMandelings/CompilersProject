@@ -537,3 +537,7 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
         self.get_mips_builder().get_current_function().add_instruction(MipsInstruction.MoveInstruction(resulting_reg, old_reg))
 
+    def visit_llvm_sext_instruction(self, instruction: LLVMInstruction.LLVMSextInstruction):
+        pass
+
+

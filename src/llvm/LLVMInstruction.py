@@ -623,3 +623,16 @@ class LLVMFpextInstruction(LLVMAssignInstruction):
 
     def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
         visitor.visit_llvm_fpext_instruction(self)
+
+
+class LLVMSextInstruction(LLVMAssignInstruction):
+
+    def __init__(self, old_register: LLVMValue.LLVMRegister, new_register: LLVMValue.LLVMRegister):
+        super().__init__(new_register)
+        self.old_register = old_register
+
+    def to_llvm(self):
+        return f'sext i32 {self.old_register} to i64'
+
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_sext_instruction(self)
