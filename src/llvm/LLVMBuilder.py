@@ -248,9 +248,12 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             instruction_parts = list()
 
             if ast.get_function_called_id() == 'printf':
+
+                printf_instruction = True
                 called_io_function = 'printf'
                 self.get_global_container().add_printf_declaration()
             else:
+                printf_instruction = False
                 called_io_function = '__isoc99_scanf'
                 self.get_global_container().add_scanf_declaration()
 
@@ -272,7 +275,11 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
             instruction_parts.append(')')
 
-            instruction = LLVMInstructions.LLVMRawAssignInstruction(LLVMValues.LLVMRegister(), instruction_parts)
+            if printf_instruction:
+                instruction = LLVMInstructions.LLVMPrintfInstruction(LLVMValues.LLVMRegister(), instruction_parts,
+                                                                     global_string_created, args_llvm_value)
+            else:
+                instruction = LLVMInstructions.LLVMRawAssignInstruction(LLVMValues.LLVMRegister(), instruction_parts)
             self.get_current_function().add_instruction(instruction)
 
         else:

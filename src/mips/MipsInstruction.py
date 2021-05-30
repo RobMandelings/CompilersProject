@@ -54,6 +54,23 @@ class LoadWordInstruction(MipsInstruction):
         return f"lw {self.register_to_store}, {self.offset.get_value()}({self.register_address})"
 
 
+class LoadWordCoProcInstruction(MipsInstruction):
+
+    def __init__(self, register_to_load_into: MipsValue.MipsRegister, floating_point_data: str):
+        """
+        register_to_load_into: one of the floating point registers
+        floating_point_data: identifier which links to one of the data placed in the .data segment
+        """
+        super().__init__()
+        assert MipsValue.MipsRegister.is_floating_point_register(
+            register_to_load_into), "Should only be used with floating point numbers"
+        self.register_to_load_into = register_to_load_into
+        self.floating_point_data = floating_point_data
+
+    def to_mips(self):
+        return f"lwc1 {self.register_to_load_into} {self.floating_point_data}"
+
+
 class StoreWordInstruction(MipsInstruction):
     """
     This class corresponds to the store word mips instruction
@@ -110,7 +127,7 @@ class LoadImmediateInstruction(MipsInstruction):
         self.immediate = immediate
 
     def to_mips(self):
-        return f"li {self.register_to_load},{self.immediate}"
+        return f"li {self.register_to_load}, {self.immediate} "
 
 
 class MoveFromHiInstruction(MipsInstruction):
@@ -184,6 +201,19 @@ class ArithmeticBinaryInstruction(ArithmeticInstruction):
         assert isinstance(resulting_register, MipsValue.MipsRegister)
         super().__init__(first_operand, second_operand, resulting_register)
         self.token = token
+        if MipsValue.MipsRegister.is_floating_point_register(
+                first_operand):
+            if not isinstance(second_operand, MipsValue.MipsRegister):
+                raise AssertionError(
+                    'First operand is a floating point register but second operand is a literal. With floating points, all must be registers')
+            else:
+                assert MipsValue.MipsRegister.is_floating_point_register(
+                    first_operand) and MipsValue.MipsRegister.is_floating_point_register(
+                    second_operand), "Floating point types must match don't match"
+        else:
+            if isinstance(second_operand, MipsValue.MipsRegister):
+                assert not MipsValue.MipsRegister.is_floating_point_register(
+                    second_operand), "Floating point types must match don't match"
 
     def to_mips(self):
         operation_string = ""
