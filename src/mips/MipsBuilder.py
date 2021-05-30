@@ -504,6 +504,8 @@ class MipsBuilder:
 
             if llvm_value.get_data_type().get_token() == DataType.DataTypeToken.FLOAT:
                 mips_registers_to_choose_from = MipsValue.MipsRegister.get_floating_point_registers()
+                # F12 is reserved for syscalls
+                mips_registers_to_choose_from.remove(MipsValue.MipsRegister.F12)
             else:
                 mips_registers_to_choose_from = self.reg_pool.get_saved_registers() if \
                     isinstance(llvm_value,
