@@ -46,15 +46,15 @@ class LoadWordInstruction(MipsInstruction):
     def __init__(self, register_to_load_into: MipsValue.MipsRegister, register_address: MipsValue.MipsRegister,
                  offset: FPOffset.FPOffset or int):
         super().__init__()
-        self.register_to_store = register_to_load_into
+        self.register_to_load_into = register_to_load_into
         self.register_address = register_address
         self.offset = offset
 
     def to_mips(self):
-        return f"lw {self.register_to_store}, {self.offset.get_value() if isinstance(self.offset, FPOffset.FPOffset) else self.offset}({self.register_address})"
+        return f"{'lw' if not MipsValue.MipsRegister.is_floating_point_register(self.register_to_load_into) else 'lwc1'} {self.register_to_load_into}, {self.offset.get_value() if isinstance(self.offset, FPOffset.FPOffset) else self.offset}({self.register_address})"
 
 
-class LoadWordCoProcInstruction(MipsInstruction):
+class LoadWordCoProcDataInstruction(MipsInstruction):
 
     def __init__(self, register_to_load_into: MipsValue.MipsRegister, floating_point_data: str):
         """
@@ -90,7 +90,7 @@ class StoreWordInstruction(MipsInstruction):
         else:
             offset = self.offset
 
-        return f"sw {self.register_to_store}, {offset}({self.register_address})"
+        return f"{'sw' if not MipsValue.MipsRegister.is_floating_point_register(self.register_to_store) else 'swc1'} {self.register_to_store}, {offset}({self.register_address})"
 
 
 class LoadUpperImmediateInstruction(MipsInstruction):

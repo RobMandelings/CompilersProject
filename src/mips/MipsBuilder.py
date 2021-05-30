@@ -486,7 +486,7 @@ class MipsBuilder:
             # TODO implement 'as preference' meaning that t registers may be used for allocated llvm registers as well
             # if necessary and vice versa, but make sure that the saving into memory is done properly in function calls
 
-            if llvm_value.get_data_type().is_floating_point():
+            if llvm_value.get_data_type().is_floating_point() and not llvm_value.get_data_type().is_pointer():
                 mips_registers_to_choose_from = MipsValue.MipsRegister.get_floating_point_registers()
                 # F12 is reserved for syscalls
                 mips_registers_to_choose_from.remove(MipsValue.MipsRegister.F12)
@@ -680,8 +680,8 @@ class MipsBuilder:
             else:
 
                 floating_point_data = self.get_data_segment().add_floating_point_number(llvm_value.get_value())
-                instruction = MipsInstruction.LoadWordCoProcInstruction(register_to_load_into=store_in_reg,
-                                                                        floating_point_data=floating_point_data)
+                instruction = MipsInstruction.LoadWordCoProcDataInstruction(register_to_load_into=store_in_reg,
+                                                                            floating_point_data=floating_point_data)
         else:
 
             raise NotImplementedError('Should either be literal or register')
