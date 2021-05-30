@@ -878,10 +878,15 @@ class MipsBuilder:
         f.close()
 
     def to_mips(self):
+
         mips_code = ""
+
+        mips_code += self.get_data_segment().to_mips()
+
+        mips_code += ".text\n\n"
         for function in self.functions:
             for basic_block in function.basic_blocks:
-                mips_code += basic_block.to_mips()
+                mips_code += f"  {basic_block.to_mips()}"
 
             mips_code += "\n\n"
 

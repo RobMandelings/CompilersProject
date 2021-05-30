@@ -24,3 +24,16 @@ class DataSegment:
         identifier = f"floating_point{len(self.floating_point_data)}"
         self.floating_point_data.append(f'{identifier}: .float {value}')
         return identifier
+
+    def to_mips(self):
+        mips_code = ".data\n\n"
+
+        for current_line in self.ascii_data:
+            mips_code += f"  {current_line}\n"
+
+        for current_line in self.floating_point_data:
+            mips_code += f"  {current_line}\n"
+
+        mips_code += "\n"
+
+        return mips_code
