@@ -64,7 +64,9 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         data_segment = self.get_mips_builder().get_data_segment()
 
         for printf_key, printf_string in printf_strings:
-            type_string = re.search('c\"(.*)\",', printf_string).group(1)
+            pattern = "c\"(.*)"
+            pattern += "\\"
+            type_string = re.search(pattern, printf_string).group(1)
             list_of_substrings = re.split('%[dcs]', type_string)
             list_of_type_strings = list()
             for i in range(0, len(list_of_substrings)):
