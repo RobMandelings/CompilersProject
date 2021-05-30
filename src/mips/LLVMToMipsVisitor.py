@@ -46,8 +46,6 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
                         if isinstance(instruction.to_jump_to, LLVMBasicBlock.LLVMBasicBlock):
                             instruction.to_jump_to = self.basic_block_mapper[instruction.to_jump_to]
 
-
-
     def get_mips_builder(self):
         assert isinstance(self.mips_builder, MipsBuilder.MipsBuilder)
         return self.mips_builder
@@ -62,6 +60,7 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         super().visit_llvm_global_container(llvm_global_container)
 
         printf_strings = llvm_global_container.global_strings
+        data_segment = self.get_mips_builder().get_data_segment()
 
         for printf_string in printf_strings:
             type_string = re.search('c\"(.*)\",', printf_string).group(1)
@@ -71,6 +70,8 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
                 list_of_type_strings.append(list_of_substrings[i])
                 if i != len(list_of_substrings) - 1:
                     list_of_type_strings.append('%')
+
+
 
     def visit_llvm_defined_function(self, llvm_defined_function: LLVMFunction.LLVMDefinedFunction):
 
@@ -193,7 +194,6 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
     def visit_llvm_printf_instruction(self, instruction: LLVMInstruction.LLVMPrintfInstruction):
         super().visit_llvm_printf_instruction(instruction)
-
 
     def visit_llvm_compare_instruction(self, instruction: LLVMInstruction.LLVMCompareInstruction):
         super().visit_llvm_compare_instruction(instruction)

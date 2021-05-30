@@ -10,7 +10,12 @@ class DataSegment:
         self.printf_strings = dict()
 
     def add_printf_string(self, key, value: list):
+        """
+        Adds a ascii word to the data, and returns the identifier of the added data
+        """
+        identifier = f"ascii_word_{len(self.ascii_data)}"
         self.printf_strings[key] = value
+        return identifier
 
     def add_floating_point_number(self, value: float):
         """
