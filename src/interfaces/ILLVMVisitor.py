@@ -89,3 +89,7 @@ class ILLVMVisitor(abc.ABC):
 
     def visit_llvm_fpext_instruction(self, instruction):
         pass
+
+    def visit_llvm_sext_instruction(self, instruction):
+        pass
+
