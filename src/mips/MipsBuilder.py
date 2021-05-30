@@ -6,7 +6,6 @@ import src.llvm.LLVMFunction as LLVMFunction
 import src.mips.FPOffset as FPOffset
 import src.ast.ASTTokens as ASTTokens
 import src.DataType as DataType
-import src.mips.LLVMFillRefMapperVisitor as LLVMFillRefMapperVisitor
 import src.mips.LLVMUsageInformation as LLVMUsageInformation
 import src.mips.MipsBasicBlock as MipsBasicBlock
 import src.mips.MipsInstruction as MipsInstruction
@@ -194,7 +193,7 @@ class Descriptors:
 
 class MipsFunction:
 
-    def __init__(self, name, nr_params: int, nr_return_values: int, ref_mapper: dict):
+    def __init__(self, name, nr_params: int, nr_return_values: int):
         """
         usage_information: the current usage information of the basic block
         descriptors: contains register and address descriptor
@@ -205,7 +204,6 @@ class MipsFunction:
         saved_registers_fp_offsets_index: the latest index in the list that contributes to saving registers on the stack
         (these are initial instructions every function has to restore the used registers later on). This is used
         to correctly load from the correct frame pointer offsets when restoring the data.
-        ref_mapper: maps loaded llvm registers to their corresponding 'allocated' registers from which they were loaded.
         """
         self.name = name
         self.saved_temporary_registers_used = list()
@@ -218,8 +216,9 @@ class MipsFunction:
         self.current_after_init_fp_offset_index: int = 0
         self.init_fp_offsets = list()
         self.nr_return_values = nr_return_values
-        # Look in the docs of LLVMFillRefMapper to see why its necessary
-        self.ref_mapper = ref_mapper
+
+    def add_allocated_register(self, llvm_register: LLVMValue.LLVMRegister):
+        self.descriptors.add_allocated_register(llvm_register, self.get_new_fp_offset(initial_instructions=False))
 
     def add_return_instruction_point(self):
         """
@@ -325,12 +324,6 @@ class MipsBuilder:
 
     def get_data_segment(self) -> DataSegment.DataSegment:
         return self.data_segment
-
-    def get_current_ref_mapper(self):
-        """
-        Retrieves the ref mapper of the current function
-        """
-        return self.get_current_function().ref_mapper
 
     def add_function(self, mips_function: MipsFunction):
         """
@@ -461,15 +454,6 @@ class MipsBuilder:
         for is_operand in operands:
             assert isinstance(is_operand, LLVMValue.LLVMValue)
             llvm_values.append((is_operand, True))
-
-        # Everywhere were a 'loaded llvm register' is used, map it to the corresponding 'allocated llvm register'
-        # As the load instruction from llvm is not necessary anymore
-        for i in range(0, len(llvm_values)):
-
-            llvm_value = llvm_values[i][0]
-            if isinstance(llvm_value, LLVMValue.LLVMRegister):
-                if llvm_value in self.get_current_ref_mapper():
-                    llvm_values[i] = (self.get_current_ref_mapper()[llvm_value], llvm_values[i][1])
 
         for pair in llvm_values:
 
@@ -648,23 +632,39 @@ class MipsBuilder:
             current_mips_reg = self.get_current_descriptors().get_mips_reg_for_llvm_reg(llvm_value)
 
             if current_mips_reg is None:
-                address_location = self.get_current_descriptors().get_address_location(llvm_value)
 
-                if address_location is None:
+                if llvm_value.get_data_type().is_pointer():
 
-                    print(
-                        f'LLVMRegister {llvm_value} not found in either the address or register descriptor. Initializing with value 0')
+                    fp_offset = self.get_current_descriptors().get_address_location(llvm_value)
+                    assert fp_offset is not None, "The offset to load from must already be assigned"
 
-                    instruction = MipsInstruction.ArithmeticBinaryInstruction(first_operand=MipsValue.MipsRegister.ZERO,
-                                                                              second_operand=MipsValue.MipsRegister.ZERO,
-                                                                              token=ASTTokens.BinaryArithmeticExprToken.ADD,
-                                                                              resulting_register=store_in_reg)
+                    instruction = MipsInstruction \
+                        .LoadAddressWithOffsetInstruction(register_to_load=store_in_reg,
+                                                          register_address=MipsValue.MipsRegister.FRAME_POINTER,
+                                                          fp_offset=fp_offset)
 
                 else:
 
-                    instruction = MipsInstruction.LoadWordInstruction(register_to_load_into=store_in_reg,
-                                                                      register_address=MipsValue.MipsRegister.STACK_POINTER,
-                                                                      offset=address_location)
+                    address_location = self.get_current_descriptors().get_address_location(llvm_value)
+
+                    if address_location is None:
+
+                        print(
+                            f'LLVMRegister {llvm_value} not found in either the address or register descriptor. Initializing with value 0')
+
+                        instruction = MipsInstruction.ArithmeticBinaryInstruction(
+                            first_operand=MipsValue.MipsRegister.ZERO,
+                            second_operand=MipsValue.MipsRegister.ZERO,
+                            token=ASTTokens.BinaryArithmeticExprToken.ADD,
+                            resulting_register=store_in_reg)
+
+                    else:
+
+                        instruction = MipsInstruction.LoadWordInstruction(register_to_load_into=store_in_reg,
+                                                                          register_address=MipsValue.MipsRegister.STACK_POINTER,
+                                                                          offset=address_location)
+
+
 
             else:
 

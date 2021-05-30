@@ -2,7 +2,6 @@ import src.llvm.visitors.LLVMBaseVisitor as LLVMBaseVisitor
 import src.mips.MipsValue as MipsValue
 import src.llvm.LLVMValue as LLVMValue
 import src.mips.MipsBuilder as MipsBuilder
-import src.mips.LLVMFillRefMapperVisitor as LLVMFillRefMapperVisitor
 import src.mips.LLVMFillUsageTableVisitor as FillUsageTableVisitor
 from src.llvm import LLVMFunction as LLVMFunction, LLVMCode as LLVMCode, LLVMBasicBlock as LLVMBasicBlock, \
     LLVMInstruction as LLVMInstruction, LLVMGlobalContainer as LLVMGlobalContainer
@@ -77,17 +76,15 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
     def visit_llvm_defined_function(self, llvm_defined_function: LLVMFunction.LLVMDefinedFunction):
 
-        ref_mapper_visitor = LLVMFillRefMapperVisitor.LLVMFillRefMapperVisitor()
-        llvm_defined_function.accept(ref_mapper_visitor)
-        ref_mapper = ref_mapper_visitor.ref_mapper
-
         mips_function = MipsBuilder.MipsFunction(llvm_defined_function.get_identifier(),
-                                                 nr_params=len(llvm_defined_function.params), nr_return_values=1,
-                                                 ref_mapper=ref_mapper)
+                                                 nr_params=len(llvm_defined_function.params), nr_return_values=1)
 
         for alloca_instruction in llvm_defined_function.get_alloca_instructions():
             assert isinstance(alloca_instruction, LLVMInstruction.LLVMAllocaInstruction)
             mips_function.descriptors.add_allocated_register(alloca_instruction.get_resulting_register())
+            mips_function.descriptors.assign_address_location_to_llvm_reg(alloca_instruction.get_resulting_register(),
+                                                                          mips_function.get_new_fp_offset(
+                                                                              initial_instructions=False))
 
         self.get_mips_builder().add_function(mips_function)
 
@@ -146,60 +143,33 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
     def visit_llvm_load_instruction(self, instruction: LLVMInstruction.LLVMLoadInstruction):
 
-        # Only when loading into actual memory locations we need to use the 'load address' command.
-        # In cases where we 'load in value of a register' in llvm,
-        # we can just use the value of the corresponding register in mips
-        if instruction.get_resulting_register().get_data_type().is_pointer():
-            resulting_reg, operand = self.get_mips_builder().get_mips_values(instruction,
-                                                                             instruction.get_resulting_register(),
-                                                                             [instruction.load_from_reg])
+        resulting_reg, operand = self.get_mips_builder().get_mips_values(instruction,
+                                                                         instruction.get_resulting_register(),
+                                                                         [instruction.load_from_reg])
 
-            operand = operand[0]
-            super().visit_llvm_load_instruction(instruction)
+        operand = operand[0]
+
+        self.get_mips_builder().get_current_function().add_instruction(
+            MipsInstruction.LoadWordInstruction(register_to_load_into=resulting_reg, register_address=operand, offset=0)
+        )
+
+        super().visit_llvm_load_instruction(instruction)
 
     def visit_llvm_store_instruction(self, instruction: LLVMInstruction.LLVMStoreInstruction):
 
-        if isinstance(instruction.value_to_store, LLVMValue.LLVMLiteral):
+        # First convert the literal into a register as we cannot store it otherwise
+        value_to_store_mips_reg = self.get_mips_builder().get_mips_values(instruction, None,
+                                                                          [instruction.value_to_store],
+                                                                          all_registers=True)
 
-            resulting_reg, operands = self.get_mips_builder().get_mips_values(instruction, instruction.resulting_reg,
-                                                                              [])
+        value_to_store_mips_reg = value_to_store_mips_reg[1][0]
 
-            self.get_mips_builder().get_current_descriptors().assign_to_mips_reg(instruction.resulting_reg,
-                                                                                 resulting_reg)
-
-            if MipsValue.MipsRegister.is_floating_point_register(resulting_reg):
-
-                # Constant added to the data segment which would be placed in the RAM. Necessary for floating point numbers
-                floating_point_data = self.get_mips_builder().get_data_segment().add_floating_point_number(
-                    instruction.value_to_store.get_value())
-
-                self.get_mips_builder().get_current_function().add_instruction(
-                    MipsInstruction.LoadWordCoProcInstruction(resulting_reg, floating_point_data)
-                )
-
-            else:
-
-                mips_operand = self.get_mips_builder().convert_to_mips_literal(instruction.value_to_store)
-
-                self.get_mips_builder().get_current_function().add_instruction(
-                    MipsInstruction.LoadImmediateInstruction(resulting_reg, mips_operand)
-                )
-
-        else:
-            mips_values = self.get_mips_builder().get_mips_values(instruction, instruction.resulting_reg,
-                                                                  [instruction.value_to_store])
-            mips_resulting_register = mips_values[0]
-            mips_operands = mips_values[1]
-
-            mips_instruction = MipsInstruction.MoveInstruction(register_to_move_in=mips_resulting_register,
-                                                               register_to_move_from=mips_operands[0])
-
-            # Don't forget to update the descriptor properly
-            self.get_mips_builder().get_current_descriptors().assign_to_mips_reg(instruction.resulting_reg,
-                                                                                 mips_resulting_register)
-
-            # Creation of mips instruction is done, now adding the instruction to the current function
-            self.get_mips_builder().get_current_function().add_instruction(mips_instruction)
+        self.get_mips_builder().get_current_function().add_instruction(
+            MipsInstruction.StoreWordInstruction(register_to_store=value_to_store_mips_reg,
+                                                 register_address=MipsValue.MipsRegister.FRAME_POINTER,
+                                                 offset=self.get_mips_builder().get_current_descriptors() \
+                                                 .get_address_location(instruction.resulting_reg))
+        )
 
     def visit_llvm_conditional_branch_instruction(self, instruction: LLVMInstruction.LLVMConditionalBranchInstruction):
         super().visit_llvm_conditional_branch_instruction(instruction)
@@ -380,11 +350,6 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
             current_mips_reg = MipsValue.MipsRegister.get_arg_registers()[i]
 
             if isinstance(llvm_arg, LLVMValue.LLVMRegister):
-
-                # Map the loaded value to its allocated register if this is the case (loading isn't used the same
-                # way in mips
-                if llvm_arg in self.get_mips_builder().get_current_ref_mapper():
-                    llvm_arg = self.get_mips_builder().get_current_ref_mapper()[llvm_arg]
 
                 # Make sure to save the currently assigned register in case its used within the function
                 current_assigned_llvm_reg = self.get_mips_builder().get_current_descriptors() \

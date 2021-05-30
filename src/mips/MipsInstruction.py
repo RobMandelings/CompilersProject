@@ -44,14 +44,14 @@ class LoadWordInstruction(MipsInstruction):
     """
 
     def __init__(self, register_to_load_into: MipsValue.MipsRegister, register_address: MipsValue.MipsRegister,
-                 offset: FPOffset.FPOffset):
+                 offset: FPOffset.FPOffset or int):
         super().__init__()
         self.register_to_store = register_to_load_into
         self.register_address = register_address
         self.offset = offset
 
     def to_mips(self):
-        return f"lw {self.register_to_store}, {self.offset.get_value()}({self.register_address})"
+        return f"lw {self.register_to_store}, {self.offset.get_value() if isinstance(self.offset, FPOffset.FPOffset) else self.offset}({self.register_address})"
 
 
 class LoadWordCoProcInstruction(MipsInstruction):
@@ -106,13 +106,26 @@ class LoadAddressInstruction(MipsInstruction):
     This class corresponds to the load address mips instruction
     """
 
-    def __init__(self, register_to_load: MipsValue.MipsRegister, identifier: str):
+    def __init__(self, register_to_load: MipsValue.MipsRegister, identifier):
         super().__init__()
         self.register_to_load = register_to_load
         self.identifier = identifier
 
     def to_mips(self):
         return f"la {self.register_to_load},{self.identifier}"
+
+
+class LoadAddressWithOffsetInstruction(MipsInstruction):
+
+    def __init__(self, register_to_load: MipsValue.MipsRegister, register_address: MipsValue.MipsRegister,
+                 fp_offset: FPOffset.FPOffset):
+        super().__init__()
+        self.register_to_load = register_to_load
+        self.register_address = register_address
+        self.fp_offset = fp_offset
+
+    def to_mips(self):
+        return f"la {self.register_to_load},{self.fp_offset.get_value()}({self.register_address})"
 
 
 class LoadImmediateInstruction(MipsInstruction):
