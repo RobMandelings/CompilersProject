@@ -8,6 +8,7 @@ from src.llvm import LLVMFunction as LLVMFunction, LLVMCode as LLVMCode, LLVMBas
     LLVMInstruction as LLVMInstruction, LLVMGlobalContainer as LLVMGlobalContainer
 import src.mips.MipsInstruction as MipsInstruction
 import src.ast.ASTTokens as ASTTokens
+import src.DataType as DataType
 import re
 
 
@@ -233,27 +234,52 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         super().visit_llvm_printf_instruction(instruction)
 
         string_key = instruction.get_string_to_print()
-
         data_segment = self.get_mips_builder().get_data_segment()
-        printf_strings = data_segment.get_printf_string(string_key)
+        printf_elements = data_segment.get_printf_string(string_key)
 
-        for i in range(0, len(printf_strings)):
-            string_element = printf_strings[i]
+        llvm_args = instruction.get_llvm_args()
+        mips = self.get_mips_builder().get_mips_values(instruction, None, llvm_args)
+        mips_args = mips[1]
+
+        percent_counter = 0
+        for i in range(0, len(printf_elements)):
+            string_element = printf_elements[i]
             if not string_element == '%':
-                if not i == len(printf_strings) - 1:
+                if not i == len(printf_elements) - 1:
                     identifier = data_segment.add_ascii_data(string_element)
                 else:
                     identifier = data_segment.add_ascii_data(string_element, True)
 
                 load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0,
                                                                                     MipsValue.MipsLiteral(4))
-                load_data_instruction = MipsInstruction.LoadAddressInstruction(MipsValue.MipsRegister.A0, identifier)
-                syscall_instruction = MipsInstruction.SyscallInstruction()
-                self.get_mips_builder().get_current_function().add_instruction(load_syscall_instruction)
-                self.get_mips_builder().get_current_function().add_instruction(load_data_instruction)
-                self.get_mips_builder().get_current_function().add_instruction(syscall_instruction)
+                set_data_instruction = MipsInstruction.LoadAddressInstruction(MipsValue.MipsRegister.A0, identifier)
             else:
-                pass
+                arg_type = llvm_args[percent_counter].get_data_type().get_token()
+
+                if isinstance(mips_args[percent_counter], MipsValue.MipsRegister):
+                    set_data_instruction = MipsInstruction.MoveInstruction(MipsValue.MipsRegister.A0,
+                                                                           mips_args[percent_counter])
+                elif isinstance(mips_args[percent_counter, MipsValue.MipsLiteral]):
+                    set_data_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.A0,
+                                                                                    mips_args[percent_counter])
+                else:
+                    raise NotImplementedError
+
+                if arg_type == DataType.DataTypeToken.INT:
+                    load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0,
+                                                                                        MipsValue.MipsLiteral(1))
+                elif arg_type == DataType.DataTypeToken.FLOAT:
+                    load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0,
+                                                                                        MipsValue.MipsLiteral(2))
+                else:
+                    raise NotImplementedError
+
+                percent_counter += 1
+
+            self.get_mips_builder().get_current_function().add_instruction(set_data_instruction)
+            self.get_mips_builder().get_current_function().add_instruction(load_syscall_instruction)
+            syscall_instruction = MipsInstruction.SyscallInstruction()
+            self.get_mips_builder().get_current_function().add_instruction(syscall_instruction)
 
     def visit_llvm_compare_instruction(self, instruction: LLVMInstruction.LLVMCompareInstruction):
         super().visit_llvm_compare_instruction(instruction)
