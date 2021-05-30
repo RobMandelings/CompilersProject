@@ -50,11 +50,31 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         assert isinstance(self.mips_builder, MipsBuilder.MipsBuilder)
         return self.mips_builder
 
+    def create_entry_basic_blocks(self, main_function: MipsBuilder.MipsFunction):
+
+        entry_function = MipsBuilder.MipsFunction('entry',
+                                                  nr_params=0, nr_return_values=0)
+
+        entry_function.add_mips_basic_block()
+        entry_function.get_current_basic_block().add_instruction(
+            MipsInstruction.JumpAndLinkInstruction(main_function.get_entry_basic_block())
+        )
+
+        entry_function.add_mips_basic_block()
+        entry_function.get_current_basic_block().add_instruction(
+            MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0, MipsValue.MipsLiteral(10))
+        )
+        entry_function.get_current_basic_block().add_instruction(
+            MipsInstruction.SyscallInstruction()
+        )
+
+        self.get_mips_builder().functions.insert(0, entry_function)
+
     def visit_llvm_code(self, llvm_code: LLVMCode.LLVMCode):
+
         self.mips_builder = MipsBuilder.MipsBuilder()
         super().visit_llvm_code(llvm_code)
         self.update_basic_block_references()
-        self.get_mips_builder().get_current_function().add_mips_basic_block()
 
     def visit_llvm_global_container(self, llvm_global_container: LLVMGlobalContainer.LLVMGlobalContainer):
         super().visit_llvm_global_container(llvm_global_container)
@@ -128,6 +148,9 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
         self.get_mips_builder().get_current_function().replace_return_instruction_point_with_actual_instructions(
             self.get_mips_builder().get_current_function().get_current_basic_block())
+
+        if llvm_defined_function.get_identifier() == 'main':
+            self.create_entry_basic_blocks(mips_function)
 
     def visit_llvm_basic_block(self, llvm_basic_block: LLVMBasicBlock.LLVMBasicBlock):
         mips_basic_block = self.get_mips_builder().get_current_function().add_mips_basic_block()
