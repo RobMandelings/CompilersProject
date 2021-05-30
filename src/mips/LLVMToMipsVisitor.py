@@ -179,18 +179,34 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
     def visit_llvm_store_instruction(self, instruction: LLVMInstruction.LLVMStoreInstruction):
 
         # First convert the literal into a register as we cannot store it otherwise
-        value_to_store_mips_reg = self.get_mips_builder().get_mips_values(instruction, None,
-                                                                          [instruction.value_to_store],
-                                                                          all_registers=True)
+        address_reg, value_to_store_mips_reg = self.get_mips_builder().get_mips_values(instruction,
+                                                                                       instruction.resulting_reg,
+                                                                                       [instruction.value_to_store],
+                                                                                       all_registers=True,
+                                                                                       auto_assign_result_reg_in_descriptor=False)
 
-        value_to_store_mips_reg = value_to_store_mips_reg[1][0]
+        # First load the address in the mips register if it isn't already
+        if not self.get_mips_builder().get_current_descriptors().loaded_in_mips_reg(instruction.resulting_reg,
+                                                                                    address_reg):
+            address_location = self.get_mips_builder().get_current_descriptors().get_address_location(
+                instruction.resulting_reg)
+
+            assert address_location is not None, "Should either be in a register or have a location"
+
+            self.get_mips_builder().get_current_function().add_instruction(
+                MipsInstruction.LoadAddressWithOffsetInstruction(register_to_load=address_reg,
+                                                                 register_address=MipsValue.MipsRegister.FRAME_POINTER,
+                                                                 fp_offset=address_location)
+            )
+
+            self.get_mips_builder().get_current_descriptors().assign_to_mips_reg(instruction.resulting_reg, address_reg)
+
+        value_to_store_mips_reg = value_to_store_mips_reg[0]
 
         self.get_mips_builder().get_current_function().add_instruction(
             MipsInstruction.StoreWordInstruction(register_to_store=value_to_store_mips_reg,
-                                                 register_address=MipsValue.MipsRegister.FRAME_POINTER,
-                                                 offset=self.get_mips_builder().get_current_descriptors() \
-                                                 .get_address_location(instruction.resulting_reg))
-        )
+                                                 register_address=address_reg,
+                                                 offset=0))
 
     def visit_llvm_conditional_branch_instruction(self, instruction: LLVMInstruction.LLVMConditionalBranchInstruction):
         super().visit_llvm_conditional_branch_instruction(instruction)

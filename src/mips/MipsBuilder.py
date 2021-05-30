@@ -422,7 +422,7 @@ class MipsBuilder:
 
     def get_mips_values(self, llvm_instruction: LLVMInstruction.LLVMInstruction,
                         resulting_reg: LLVMValue.LLVMRegister or None,
-                        operands: list, all_registers=False, ):
+                        operands: list, all_registers=False, auto_assign_result_reg_in_descriptor=True):
         """
 
         Returns the corresponding mips registers and values from the given instruction with resulting register
@@ -583,7 +583,7 @@ class MipsBuilder:
                 # We only need to update information if it has to be updated
                 if is_operand and not self.get_current_descriptors().loaded_in_mips_reg(llvm_value, mips_value):
                     self.load_in_reg(llvm_value, store_in_reg=mips_value)
-                elif not is_operand:
+                elif not is_operand and auto_assign_result_reg_in_descriptor:
                     # If its not an operand, this means its a register for result. Update the descriptor accordingly
                     # So that the 'result' llvm register gets assigned to the mips register
                     self.get_current_function().descriptors.assign_to_mips_reg(llvm_value, mips_value)

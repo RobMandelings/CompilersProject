@@ -77,14 +77,20 @@ class StoreWordInstruction(MipsInstruction):
     """
 
     def __init__(self, register_to_store: MipsValue.MipsRegister, register_address: MipsValue.MipsRegister,
-                 offset: FPOffset.FPOffset):
+                 offset: FPOffset.FPOffset or int):
         super().__init__()
         self.register_to_store = register_to_store
         self.register_address = register_address
         self.offset = offset
+        assert offset is not None
 
     def to_mips(self):
-        return f"sw {self.register_to_store}, {self.offset.get_value()}({self.register_address})"
+        if isinstance(self.offset, FPOffset.FPOffset):
+            offset = self.offset.get_value()
+        else:
+            offset = self.offset
+
+        return f"sw {self.register_to_store}, {offset}({self.register_address})"
 
 
 class LoadUpperImmediateInstruction(MipsInstruction):
