@@ -7,13 +7,13 @@ class DataSegment:
         """
         self.ascii_data = list()
         self.floating_point_data = list()
-        self.printf_strings = dict()
+        self.call_f_strings = dict()
 
-    def get_printf_string(self, key):
-        return self.printf_strings[key]
+    def get_call_f_string(self, key):
+        return self.call_f_strings[key]
 
-    def add_printf_string(self, key, value: list):
-        self.printf_strings[key] = value
+    def add_call_f_string(self, key, value: list):
+        self.call_f_strings[key] = value
 
     def add_ascii_data(self, string_element: str, last_element: bool = False):
         identifier = f'ascii_word{len(self.ascii_data)}'
