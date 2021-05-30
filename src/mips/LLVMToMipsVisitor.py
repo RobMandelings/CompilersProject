@@ -176,6 +176,8 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
         super().visit_llvm_load_instruction(instruction)
 
+
+
     def visit_llvm_store_instruction(self, instruction: LLVMInstruction.LLVMStoreInstruction):
 
         # First convert the literal into a register as we cannot store it otherwise

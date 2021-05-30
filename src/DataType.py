@@ -132,6 +132,9 @@ class DataType:
         assert self.__pointer_level >= 0, "Pointer level must be at least 0"
         return self.__pointer_level
 
+    def is_floating_point(self):
+        return self.get_token() == DataTypeToken.FLOAT or self.get_token() == DataTypeToken.DOUBLE
+
     def is_pointer(self):
         return self.get_pointer_level() > 0
 
