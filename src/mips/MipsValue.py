@@ -109,6 +109,17 @@ class MipsRegister(MipsValue, enum.Enum):
                 MipsRegister.T6, MipsRegister.T7, MipsRegister.T8, MipsRegister.T9]
 
     @staticmethod
+    def get_floating_point_registers():
+        return [MipsRegister.F0, MipsRegister.F1, MipsRegister.F2, MipsRegister.F3, MipsRegister.F4, MipsRegister.F5,
+                MipsRegister.F6, MipsRegister.F7, MipsRegister.F8, MipsRegister.F9, MipsRegister.F10, MipsRegister.F11,
+                MipsRegister.F12,
+                MipsRegister.F13, MipsRegister.F14, MipsRegister.F15, MipsRegister.F16, MipsRegister.F17, MipsRegister.F18,
+                MipsRegister.F19,
+                MipsRegister.F20, MipsRegister.F21, MipsRegister.F22, MipsRegister.F23, MipsRegister.F24, MipsRegister.F25,
+                MipsRegister.F26,
+                MipsRegister.F27, MipsRegister.F28, MipsRegister.F29, MipsRegister.F30, MipsRegister.F31]
+
+    @staticmethod
     def is_temporary_register(mips_register):
         assert isinstance(mips_register, MipsRegister)
         return mips_register in MipsRegister.get_temporary_registers()
