@@ -745,18 +745,6 @@ class MipsBuilder:
             MipsInstruction.MoveInstruction(register_to_move_in=MipsValue.MipsRegister.FRAME_POINTER,
                                             register_to_move_from=MipsValue.MipsRegister.STACK_POINTER))
 
-        # Decrease the stack pointer by the maximum fp offset acquired in the function
-        # (this space will be used by the function body to store its mips registers)
-
-        stack_pointer_decrease_amount = (len(self.get_current_function().saved_temporary_registers_used) + 1) * 4
-
-        entry_basic_block.add_instruction(
-            MipsInstruction.ArithmeticBinaryInstruction(first_operand=MipsValue.MipsRegister.STACK_POINTER,
-                                                        second_operand=MipsValue.MipsLiteral(
-                                                            stack_pointer_decrease_amount),
-                                                        token=ASTTokens.BinaryArithmeticExprToken.SUB,
-                                                        resulting_register=MipsValue.MipsRegister.STACK_POINTER))
-
         # Store the return address on the stack
         entry_basic_block.add_instruction(
             MipsInstruction.StoreWordInstruction(register_to_store=MipsValue.MipsRegister.RETURN_ADDRESS,
@@ -773,6 +761,17 @@ class MipsBuilder:
 
         # Params that were stored in memory are not loaded here, the descriptors will contain the correct information
         # To retrieve these arguments correctly (and load them in whenever necessary)
+
+        # All offsets that were used in the current function make up the total stack pointer amount to decrase
+        stack_pointer_decrease_amount = ((len(self.get_current_function().after_init_fp_offsets) + len(
+            self.get_current_function().init_fp_offsets))) * 4
+
+        entry_basic_block.add_instruction(
+            MipsInstruction.ArithmeticBinaryInstruction(first_operand=MipsValue.MipsRegister.STACK_POINTER,
+                                                        second_operand=MipsValue.MipsLiteral(
+                                                            stack_pointer_decrease_amount),
+                                                        token=ASTTokens.BinaryArithmeticExprToken.SUB,
+                                                        resulting_register=MipsValue.MipsRegister.STACK_POINTER))
 
         self.get_current_function().basic_blocks.insert(0, entry_basic_block)
 
