@@ -112,6 +112,9 @@ compareExpression:
     compareExpression '>' assignmentExpression
     | compareExpression '<' assignmentExpression
     | compareExpression '==' assignmentExpression
+    | compareExpression '>=' assignmentExpression
+    | compareExpression '<=' assignmentExpression
+    | compareExpression '!=' assignmentExpression
     | assignmentExpression
     ;
 assignmentExpression:
