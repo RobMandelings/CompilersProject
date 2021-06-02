@@ -524,7 +524,7 @@ def reorganize_assignment_expressions(current_scope, scope_child_index: int, cur
             reorganize_assignment_expressions(current_scope, scope_child_index, current_node.children[cur_child_index])
 
 
-def replace_identifier_expressions(scope, scope_child_index: int, current_node):
+def replace_identifier_expressions(scope, scope_child_index: int, current_node, always_before: bool = False):
     """
     Recursively finds identifiers csts and replaces it with already existing expressions.
     E.g. i++ becomes i within the expression that it was found, and another expression i + i will be inserted as next
@@ -539,22 +539,32 @@ def replace_identifier_expressions(scope, scope_child_index: int, current_node):
 
         if isinstance(child, CParser.ScopeContext):
             for sub_scope_child_index in range(len(child.children)):
-                replace_identifier_expressions(child, sub_scope_child_index, child.children[sub_scope_child_index])
+                replace_identifier_expressions(child, sub_scope_child_index, child.children[sub_scope_child_index],
+                                               always_before=False)
         elif isinstance(child, CParser.ForLoopContext):
             # For loops have a special case, as the update step is different from the function body
             # This is for compatibility with the continue control flow statement, so that the update step
             # Gets executed properly
-            replace_identifier_expressions(scope, scope_child_index, child.children[2])
-            replace_identifier_expressions(scope, scope_child_index, child.children[4])
+            replace_identifier_expressions(scope, scope_child_index, child.children[2], always_before)
+            replace_identifier_expressions(child, 4, child.children[4], always_before)
+            replace_identifier_expressions(child, 6, child.children[6], always_before)
+
             # This is a special case: the current scope at which to add the instruction children
             # Is the loop context itself, not the body this loop is defined in
-            replace_identifier_expressions(child, 8, child.children[8])
-            replace_identifier_expressions(child, 6, child.children[6])
+            replace_identifier_expressions(child, 8, child.children[8], always_before)
+        elif isinstance(child, CParser.WhileLoopContext):
+
+            # Special case: the condition here that is checked must be updated accordingly each time
+            # So this must identifier expression must be placed within the body of the while loop
+            # The seemingly 'random' indices come from the children of the tree from the grammar
+            replace_identifier_expressions(child.children[2], 1, child.children[1], always_before=True)
+            replace_identifier_expressions(child, 0, child.children[2], always_before)
         elif not isinstance(child, CParser.IdentifierExpressionContext):
-            replace_identifier_expressions(scope, scope_child_index, child)
+            replace_identifier_expressions(scope, scope_child_index, child, always_before)
         elif len(child.children) == 1:
             current_node.children[cur_child_index] = child.children[0]
-            replace_identifier_expressions(scope, scope_child_index, current_node.children[cur_child_index])
+            replace_identifier_expressions(scope, scope_child_index, current_node.children[cur_child_index],
+                                           always_before)
         else:
 
             if isinstance(child.children[0], TerminalNodeImpl) and \
@@ -588,7 +598,14 @@ def replace_identifier_expressions(scope, scope_child_index: int, current_node):
             assignment_cst.children.append(operation_cst)
 
             current_node.children[cur_child_index] = identifier_cst
-            scope.children.insert(scope_child_index + (1 if after else 0),
+
+            # Sometimes (such as in while loops) you always want to execute at an absolute given index (scope index)
+            # Disregarding before / after increment
+            index_to_insert_at = scope_child_index
+            if not always_before and after:
+                index_to_insert_at += 1
+
+            scope.children.insert(index_to_insert_at,
                                   assignment_cst)
 
 
