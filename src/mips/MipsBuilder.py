@@ -745,7 +745,6 @@ class MipsBuilder:
             MipsInstruction.MoveInstruction(register_to_move_in=MipsValue.MipsRegister.FRAME_POINTER,
                                             register_to_move_from=MipsValue.MipsRegister.STACK_POINTER))
 
-
         # Store the return address on the stack
         entry_basic_block.add_instruction(
             MipsInstruction.StoreWordInstruction(register_to_store=MipsValue.MipsRegister.RETURN_ADDRESS,
@@ -794,7 +793,7 @@ class MipsBuilder:
 
         current_fp_offset_index = len(self.get_current_function().init_fp_offsets) - 1
 
-        for saved_reg in self.get_current_function().saved_temporary_registers_used:
+        for saved_reg in reversed(self.get_current_function().saved_temporary_registers_used):
             end_basic_block.add_instruction(MipsInstruction.LoadWordInstruction(
                 register_to_load_into=saved_reg,
                 register_address=MipsValue.MipsRegister.FRAME_POINTER,
