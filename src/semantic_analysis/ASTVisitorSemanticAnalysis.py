@@ -424,7 +424,19 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         ast.get_left().accept(self)
         ast.get_right().accept(self)
 
-        self.check_resulting_data_type(ast)
+        self.check_r_value_assignment(ast)
+
+        left_data_type = self.check_resulting_data_type(ast.left)
+        right_data_type = self.check_resulting_data_type(ast.right)
+
+        if left_data_type.get_token() != right_data_type.get_token():
+            raise SemanticError(
+                f'Cannot perform assignment: fundamental data types (not looking at pointers or arrays) '
+                f'are incompatible ({left_data_type}, {right_data_type})')
+
+        if left_data_type.is_array() != right_data_type.is_array():
+            raise SemanticError(
+                f'Cannot perform assignment: array and not arrays are incompatible ({left_data_type}, {right_data_type})')
 
         if isinstance(ast.get_left(), ASTIdentifier):
             symbol = symbol_table.lookup_variable(ast.get_left().get_content())
@@ -455,10 +467,6 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
             self.check_for_narrowing_result(
                 DataType.DataType(symbol.data_type.get_token(), symbol.get_data_type().get_pointer_level() - 1),
                 ast.get_right())
-
-        else:
-
-            self.check_r_value_assignment(ast)
 
     def visit_ast_var_declaration(self, ast: ASTVarDeclaration):
         assert isinstance(ast, ASTVarDeclaration)
