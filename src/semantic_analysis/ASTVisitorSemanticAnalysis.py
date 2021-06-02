@@ -424,6 +424,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         ast.get_left().accept(self)
         ast.get_right().accept(self)
 
+        self.check_resulting_data_type(ast)
+
         if isinstance(ast.get_left(), ASTIdentifier):
             symbol = symbol_table.lookup_variable(ast.get_left().get_content())
 
