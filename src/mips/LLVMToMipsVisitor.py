@@ -22,17 +22,11 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         basic block as well as some other useful information
         mips_builder: the builder used to generate mips code
         basic_block_mapper: maps LLVMBasicBlocks to their corresponding MipsBasicBocks
-<<<<<<< Updated upstream
-        """
-        self.mips_builder = None
-        self.basic_block_mapper = dict()
-=======
         function_basic_block_mapper: maps the name of the Function to an actual basic block
-        """
+                """
         self.mips_builder = None
         self.basic_block_mapper = dict()
         self.function_basic_block_entry_mapper = dict()
->>>>>>> Stashed changes
 
     def update_basic_block_references(self):
         """
@@ -51,17 +45,12 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
                     elif isinstance(instruction,
                                     MipsInstruction.UnconditionalJumpInstruction):
-<<<<<<< Updated upstream
-                        if isinstance(instruction.to_jump_to, LLVMBasicBlock.LLVMBasicBlock):
-                            instruction.to_jump_to = self.basic_block_mapper[instruction.to_jump_to]
-=======
 
                         if isinstance(instruction, MipsInstruction.JumpAndLinkInstruction):
                             instruction.to_jump_to = self.function_basic_block_entry_mapper[instruction.to_jump_to]
                         else:
                             if isinstance(instruction.to_jump_to, LLVMBasicBlock.LLVMBasicBlock):
                                 instruction.to_jump_to = self.basic_block_mapper[instruction.to_jump_to]
->>>>>>> Stashed changes
 
     def get_mips_builder(self):
         assert isinstance(self.mips_builder, MipsBuilder.MipsBuilder)
@@ -74,11 +63,7 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
         entry_function.add_mips_basic_block()
         entry_function.get_current_basic_block().add_instruction(
-<<<<<<< Updated upstream
-            MipsInstruction.JumpAndLinkInstruction(main_function.get_entry_basic_block())
-=======
             MipsInstruction.JumpAndLinkInstruction(main_function.get_name())
->>>>>>> Stashed changes
         )
 
         entry_function.add_mips_basic_block()
@@ -170,12 +155,9 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         self.get_mips_builder().get_current_function().replace_return_instruction_point_with_actual_instructions(
             self.get_mips_builder().get_current_function().get_current_basic_block())
 
-<<<<<<< Updated upstream
-=======
         self.function_basic_block_entry_mapper[
             llvm_defined_function.get_identifier()] = self.get_mips_builder().get_current_function().get_entry_basic_block()
 
->>>>>>> Stashed changes
         if llvm_defined_function.get_identifier() == 'main':
             self.create_entry_basic_blocks(mips_function)
 
@@ -520,11 +502,7 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
         self.get_mips_builder().get_current_function().add_instruction(
             MipsInstruction.JumpAndLinkInstruction(
-<<<<<<< Updated upstream
-                self.get_mips_builder().get_function_entry_block(instruction.function_to_call.get_identifier()))
-=======
                 instruction.function_to_call.get_identifier())
->>>>>>> Stashed changes
         )
 
         self.get_mips_builder().load_temporary_registers()

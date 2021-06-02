@@ -453,12 +453,6 @@ class JumpAndLinkInstruction(UnconditionalJumpInstruction):
     This class corresponds to the jump and link mips instruction
     """
 
-<<<<<<< Updated upstream
-    def __init__(self, to_jump_to):
-        super().__init__(to_jump_to)
-
-    def to_mips(self):
-=======
     def __init__(self, to_jump_to: str):
         """
         String of the basic block to jump to, will later be replaced with an actual basic block after
@@ -470,7 +464,6 @@ class JumpAndLinkInstruction(UnconditionalJumpInstruction):
         assert isinstance(self.to_jump_to,
                           MipsBasicBlock.MipsBasicBlock), \
             "The function name should now be replaced with an actual Mips Basic Block"
->>>>>>> Stashed changes
         return f"jal {self.to_jump_to.name}"
 
     def is_terminator(self):
