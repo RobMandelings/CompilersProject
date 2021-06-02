@@ -277,9 +277,11 @@ class ASTBinaryExpression(ASTExpression, IHasToken):
 class ASTAccessArrayVarExpression(ASTLeaf):
 
     def __init__(self, variable_accessed: ASTIdentifier, index_accessed: AST):
-        super().__init__(f'{variable_accessed}[{index_accessed}]')
+        super().__init__(f'access[]')
         self.variable_accessed = variable_accessed
         self.index_accessed = index_accessed
+        self.variable_accessed.parent = self
+        self.index_accessed.parent = self
 
     def get_variable_accessed(self):
         assert isinstance(self.variable_accessed, ASTIdentifier)

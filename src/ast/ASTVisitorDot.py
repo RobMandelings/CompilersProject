@@ -4,7 +4,8 @@ import src.DataType as DataType
 from src.ast.ASTBaseVisitor import ASTBaseVisitor
 from src.ast.ASTs import ASTPrintfInstruction, ASTUnaryExpression, ASTLiteral, ASTControlFlowStatement, \
     ASTFunctionDeclaration, ASTArrayVarDeclaration, ASTArrayInit, ASTReturnStatement, ASTFunctionCall, \
-    ASTVarDeclaration, ASTIdentifier, ASTFunctionDefinition, ASTArrayVarDeclarationAndInit, ASTDereference
+    ASTVarDeclaration, ASTIdentifier, ASTFunctionDefinition, ASTArrayVarDeclarationAndInit, ASTDereference, \
+    ASTAccessArrayVarExpression
 
 
 class ASTVisitorDot(ASTBaseVisitor):
@@ -107,3 +108,7 @@ class ASTVisitorDot(ASTBaseVisitor):
     def visit_ast_return_statement(self, ast: ASTReturnStatement):
         super().visit_ast_return_statement(ast)
         self.add_to_dot_node(ast)
+
+    def visit_ast_access_element(self, ast: ASTAccessArrayVarExpression):
+        super().visit_ast_access_element(ast)
+        self.add_to_dot_node(ast, content='access[]')

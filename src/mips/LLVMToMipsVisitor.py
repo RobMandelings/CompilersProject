@@ -176,8 +176,6 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
         super().visit_llvm_load_instruction(instruction)
 
-
-
     def visit_llvm_store_instruction(self, instruction: LLVMInstruction.LLVMStoreInstruction):
 
         # First convert the literal into a register as we cannot store it otherwise
@@ -193,7 +191,8 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
             address_location = self.get_mips_builder().get_current_descriptors().get_address_location(
                 instruction.resulting_reg)
 
-            assert address_location is not None, "Should either be in a register or have a location"
+            assert address_location is not None, "Should either be in a register or have a location. " \
+                                                 "An allocated LLVMRegister might not have been initialized in the beginning"
 
             self.get_mips_builder().get_current_function().add_instruction(
                 MipsInstruction.LoadAddressWithOffsetInstruction(register_to_load=address_reg,
@@ -531,13 +530,14 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
     def visit_llvm_fpext_instruction(self, instruction: LLVMInstruction.LLVMFpextInstruction):
 
-        resulting_reg, old_reg = self.get_mips_builder().get_mips_values(instruction, instruction.get_resulting_register(), [instruction.old_register])
+        resulting_reg, old_reg = self.get_mips_builder().get_mips_values(instruction,
+                                                                         instruction.get_resulting_register(),
+                                                                         [instruction.old_register])
 
         old_reg = old_reg[0]
 
-        self.get_mips_builder().get_current_function().add_instruction(MipsInstruction.MoveInstruction(resulting_reg, old_reg))
+        self.get_mips_builder().get_current_function().add_instruction(
+            MipsInstruction.MoveInstruction(resulting_reg, old_reg))
 
     def visit_llvm_sext_instruction(self, instruction: LLVMInstruction.LLVMSextInstruction):
         pass
-
-
