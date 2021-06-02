@@ -100,9 +100,7 @@ braceInitializer: '{' ((value ',')* value)? '}' ;
  */
 
 expression:
-    compareExpression |
-    accessArrayVarExpression |
-    functionCallExpression
+    compareExpression
     ;
 
 functionCallExpression: ID '(' ((expression ',')* expression)? ')' ;
@@ -118,11 +116,11 @@ compareExpression:
     | assignmentExpression
     ;
 assignmentExpression:
-    (pointerExpression | ID | accessArrayVarExpression) '=' assignmentExpression
-    | (pointerExpression | ID | accessArrayVarExpression) '+=' assignmentExpression
-    | (pointerExpression | ID | accessArrayVarExpression) '-=' assignmentExpression
-    | (pointerExpression | ID | accessArrayVarExpression) '*=' assignmentExpression
-    | (pointerExpression | ID | accessArrayVarExpression) '/=' assignmentExpression
+    assignmentExpression '=' addExpression
+    | assignmentExpression '+=' addExpression
+    | assignmentExpression '-=' addExpression
+    | assignmentExpression '*=' addExpression
+    | assignmentExpression '/=' addExpression
     | addExpression
     ;
 addExpression:
@@ -150,7 +148,9 @@ enclosedExpression: '(' expression ')';
 finalExpression:
     enclosedExpression |
     identifierExpression |
-    functionCallExpression ;
+    accessArrayVarExpression |
+    functionCallExpression
+    ;
 identifierExpression:
     value |
     (ID | enclosedExpression) INCREMENT |

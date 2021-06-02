@@ -53,7 +53,7 @@ class ASTBaseVisitor(IASTVisitor):
         assert isinstance(ast, ASTBinaryArithmeticExpression)
         self.visit_ast_binary_expression(ast)
 
-    def visit_ast_binary_compare_expression(self, ast: ASTRelationalExpression):
+    def visit_ast_relational_expression(self, ast: ASTRelationalExpression):
         assert isinstance(ast, ASTRelationalExpression)
         self.visit_ast_binary_expression(ast)
 

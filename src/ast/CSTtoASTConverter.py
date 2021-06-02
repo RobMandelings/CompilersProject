@@ -472,7 +472,61 @@ def create_ast_scope(cst: CParser.ScopeContext):
     return ast_scope
 
 
+def reorganize_assignment_expressions(current_scope, scope_child_index: int, current_node):
+    """
+    Recursively iterates through the tree and finds combined assignments (e.g. a = b = 5)
+    It reorganizes the structure so that each assignment can be evaluated individually
+
+    current_scope: ParseRule that currently represents the scope to add children to
+    scope child index: the current 'child' index of the scope so that you can add statements in the correct place
+    current_node: the current node you are evaluating
+    """
+
+    if isinstance(current_node, TerminalNodeImpl):
+        # Base case
+        return
+
+    elif isinstance(current_node, CParser.ScopeContext):
+        for sub_scope_child_index in range(len(current_node.children)):
+            reorganize_assignment_expressions(current_node, sub_scope_child_index,
+                                              current_node.children[sub_scope_child_index])
+    elif isinstance(current_node, CParser.AssignmentExpressionContext):
+
+        if isinstance(current_node.children[0], CParser.AssignmentExpressionContext) and isinstance(
+                current_node.children[0].children[0], CParser.AssignmentExpressionContext):
+            # This is where we need to adjust the structure of the tree a bit
+            # It means that the assignment is build up out of more than one assignment.
+            # E.g. a = b = 5 creates this kind of structure
+            # We'll make it so that a = b = 5 is seen as two individual statements a = 5 and b = 5
+
+            child_assignment = current_node.children[0]
+            child_assignment_rhs = child_assignment.children[2]
+            this_assignment_rhs = current_node.children[2]
+
+            # This is making a = 5
+            child_assignment.children[2] = this_assignment_rhs
+
+            # This is making b = 5
+            current_node.children[0] = child_assignment_rhs
+
+            # Now recursively call the child assignment as well in case it has another assignment
+            reorganize_assignment_expressions(current_scope, scope_child_index, child_assignment)
+
+            # And finally add the newly created child assignment to the current scope at current index
+            current_scope.children.insert(scope_child_index, child_assignment)
+
+    else:
+
+        for cur_child_index in range(len(current_node.children)):
+            reorganize_assignment_expressions(current_scope, scope_child_index, current_node.children[cur_child_index])
+
+
 def replace_identifier_expressions(scope, scope_child_index: int, current_node):
+    """
+    Recursively finds identifiers csts and replaces it with already existing expressions.
+    E.g. i++ becomes i within the expression that it was found, and another expression i + i will be inserted as next
+    statement in the scope (right after the statement which included the increment).
+    """
     if isinstance(current_node, TerminalNodeImpl):
         return
 
@@ -537,17 +591,12 @@ def replace_identifier_expressions(scope, scope_child_index: int, current_node):
 
 def replace_expressions(scope: CParser.ScopeContext, scope_child_index: int, current_node):
     replace_identifier_expressions(scope, scope_child_index, current_node)
+    reorganize_assignment_expressions(scope, scope_child_index, current_node)
     replace_assignment_expressions(scope, scope_child_index, current_node)
 
 
 def replace_assignment_expressions(scope: CParser.ScopeContext, scope_child_index: int,
                                    current_node):
-    """
-    Recursively finds identifiers csts and replaces it with already existing expressions.
-    E.g. i++ becomes i within the expression that it was found, and another expression i + i will be inserted as next
-    statement in the scope (right after the statement which included the increment).
-    """
-
     if isinstance(current_node, TerminalNodeImpl):
         return
 

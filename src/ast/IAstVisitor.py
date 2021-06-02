@@ -39,7 +39,7 @@ class IASTVisitor(abc.ABC):
     def visit_ast_binary_arithmetic_expression(self, ast):
         pass
 
-    def visit_ast_binary_compare_expression(self, ast):
+    def visit_ast_relational_expression(self, ast):
         pass
 
     def visit_ast_assignment_expression(self, ast):

@@ -341,7 +341,7 @@ class ASTRelationalExpression(ASTBinaryExpression, IHasToken):
         return self.token
 
     def accept(self, visitor: IASTVisitor):
-        visitor.visit_ast_binary_compare_expression(self)
+        visitor.visit_ast_relational_expression(self)
 
 
 class ASTLogicalExpression(ASTBinaryExpression, IHasToken):
