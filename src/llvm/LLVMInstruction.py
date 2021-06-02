@@ -443,11 +443,21 @@ class LLVMCompareInstruction(LLVMBinaryAssignInstruction):
                 return 'sgt'
             else:
                 return 'ogt'
+        elif self.operation == ASTTokens.RelationalExprToken.GREATER_THAN_OR_EQUALS:
+            if self.comparison_type == LLVMUtils.ComparisonDataType.INT:
+                return 'sge'
+            else:
+                return 'oge'
         elif self.operation == ASTTokens.RelationalExprToken.LESS_THAN:
             if self.comparison_type == LLVMUtils.ComparisonDataType.INT:
                 return 'slt'
             else:
                 return 'olt'
+        elif self.operation == ASTTokens.RelationalExprToken.LESS_THAN_OR_EQUALS:
+            if self.comparison_type == LLVMUtils.ComparisonDataType.INT:
+                return 'sle'
+            else:
+                return 'ole'
         else:
             raise NotImplementedError
 
