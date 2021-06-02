@@ -50,7 +50,16 @@ class CSTVisitorToDot(CVisitor):
     def visitControlFlowStatement(self, ctx: CParser.ControlFlowStatementContext):
         self.visit_node(ctx)
 
-    def visitVarDeclaration(self, ctx: CParser.VarDeclarationContext):
+    def visitMultiVarDeclaration(self, ctx: CParser.MultiVarDeclarationContext):
+        self.visit_node(ctx)
+
+    def visitSingleVarDeclaration(self, ctx: CParser.SingleVarDeclarationContext):
+        self.visit_node(ctx)
+
+    def visitArrayDeclaration(self, ctx: CParser.ArrayDeclarationContext):
+        self.visit_node(ctx)
+
+    def visitVarInitialization(self, ctx: CParser.VarInitializationContext):
         self.visit_node(ctx)
 
     def visitTypeDeclaration(self, ctx: CParser.TypeDeclarationContext):

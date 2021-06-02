@@ -43,7 +43,6 @@ def get_rule_context_function(rule_context_index):
 
         CParser.RULE_dataType: from_data_type,
         CParser.RULE_typeAttributes: from_type_attributes,
-        CParser.RULE_varDeclaration: from_var_declaration,
         CParser.RULE_scope: from_scope,
 
         CParser.RULE_statement: from_statement,
@@ -67,6 +66,8 @@ def get_rule_context_function(rule_context_index):
         CParser.RULE_normalVarDeclaration: from_normal_var_declaration,
         CParser.RULE_arrayVarDeclaration: from_array_var_declaration,
 
+        CParser.RULE_multiVarDeclaration: from_multi_var_declaration,
+        CParser.RULE_singleVarDeclaration: from_single_var_declaration,
         CParser.RULE_varDeclarationAndInit: from_var_declaration_and_init,
         CParser.RULE_normalVarDeclarationAndInit: from_normal_var_declaration_and_init,
         CParser.RULE_arrayVarDeclarationAndInit: from_array_var_declaration_and_init,
@@ -151,7 +152,8 @@ def from_rule_context(cst: RuleContext):
     assert isinstance(cst, RuleContext)
 
     if get_rule_context_function(cst.getRuleIndex()) is None:
-        raise NotImplementedError(f"RuleContext Node '{str(type(cst).__name__)}' not supported yet")
+        raise NotImplementedError(
+            f"RuleContext Node '{str(type(cst).__name__)}' not supported yet (not mapped to function)")
     else:
 
         rule_context_function = get_rule_context_function(cst.getRuleIndex())
@@ -160,6 +162,12 @@ def from_rule_context(cst: RuleContext):
 
 def from_value(cst):
     return create_ast_from_cst(cst.children[0])
+
+
+def from_multi_var_declaration(cst):
+    print(
+        "[CSTToAST] Ignoring multi var declaration as it should have been splitted in the "
+        "preparsing step into multiple singele var declarations")
 
 
 def from_normal_var_declaration_and_init(cst):
@@ -609,7 +617,95 @@ def replace_identifier_expressions(scope, scope_child_index: int, current_node, 
                                   assignment_cst)
 
 
-def replace_expressions(scope: CParser.ScopeContext, scope_child_index: int, current_node):
+def from_single_var_declaration(cst):
+    """
+    Single var declaration already splitted by the split_multi_var_declarations function.
+    Difference here is that the first child is now also a typeDeclaration, instead of just assignment and stuff.
+    """
+
+    cst_type_declaration = cst.children[0]
+    cst_identifier = cst.children[1]
+    cst_array_declaration = None
+    cst_var_initialization = None
+
+    # Might be only array declaration, no initialization or only var initialization, no array declaration
+    if len(cst.children) == 3:
+        if isinstance(cst.children[2], CParser.ArrayDeclarationContext):
+            cst_array_declaration = cst.children[2]
+        else:
+            cst_var_initialization = cst.children[2]
+    elif len(cst.children) == 4:
+        cst_array_declaration = cst.children[2]
+        cst_var_initialization = cst.children[3]
+    elif len(cst.children) > 4:
+        raise AssertionError(
+            f"A single var declaration shouldn't have {len(cst.children)} children unless and update happened to the grammar")
+
+    data_type_and_attributes = create_ast_from_cst(cst_type_declaration)
+    ast_var_declaration = None
+
+    assert isinstance(data_type_and_attributes, list)
+
+    dereferenced_identifier = create_ast_from_cst(cst_identifier)
+    assert isinstance(dereferenced_identifier, ASTDereference)
+    ast_identifier = dereferenced_identifier.get_value_to_dereference()
+
+    if cst_array_declaration is None:
+        ast_var_declaration = ASTVarDeclaration(data_type_and_attributes, ast_identifier)
+    else:
+        size = create_ast_from_cst(cst_array_declaration.children[3])
+        ast_var_declaration = ASTArrayVarDeclaration(data_type_and_attributes, ast_identifier, size)
+
+    if cst_var_initialization is None:
+        return ast_var_declaration
+    else:
+
+        if cst_array_declaration is None:
+            initialized_value = create_ast_from_cst(cst_var_initialization.children[1])
+
+            return ASTVarDeclarationAndInit(ast_var_declaration, initialized_value)
+
+        else:
+            raise NotImplementedError('Not implemented yet')
+
+
+def split_multi_var_declarations(scope, scope_child_index: int, current_node):
+    """
+    Belongs to the PreParsing step. Recursively splits the multi var declarations and adds them to the given scope
+    into several single var declarations. The MultiVar declaration node is left but will be ignored when converting into AST
+    """
+
+    if isinstance(current_node, TerminalNodeImpl):
+        return
+
+    if isinstance(current_node, CParser.MultiVarDeclarationContext):
+
+        insertion_index = 0
+        for child in current_node.children:
+
+            if isinstance(child, CParser.SingleVarDeclarationContext):
+                # Add the typeDeclaration node to the singleVarDeclaration context as it will be necessary
+                # To create the correct ASTs
+                child.children.insert(0, current_node.children[0])
+                scope.children.insert(scope_child_index + insertion_index, child)
+                insertion_index += 1
+
+    elif isinstance(current_node, CParser.ScopeContext):
+        for index in range(len(current_node.children)):
+            split_multi_var_declarations(current_node, index, current_node.children[index])
+    else:
+        for child in current_node.children:
+            split_multi_var_declarations(scope, scope_child_index, child)
+
+
+def pre_parse(scope: CParser.ScopeContext, scope_child_index: int, current_node):
+    """
+    Must be run before everything else.
+    Preparses the current concrete syntax tree to already get rid of some redundant nodes and to make life easier
+    to convert into an AST. This puts similar cst nodes into the proper format so that it can easily be converted into the corresponding
+    AST nodes.
+    """
+    split_multi_var_declarations(scope, scope_child_index, current_node)
     replace_identifier_expressions(scope, scope_child_index, current_node)
     reorganize_assignment_expressions(scope, scope_child_index, current_node)
     replace_assignment_expressions(scope, scope_child_index, current_node)
@@ -667,7 +763,7 @@ def __from_program(cst):
     Returns the first (global) scope
     """
     for child_index in range(len(cst.children)):
-        replace_expressions(cst, child_index, cst.children[child_index])
+        pre_parse(cst, child_index, cst.children[child_index])
 
     ast_scope = create_ast_scope(cst)
     ast_scope.content = 'global scope'

@@ -169,7 +169,7 @@ class ASTTypeAttribute(ASTLeaf, IHasToken):
 
     def accept(self, visitor: IASTVisitor):
         assert isinstance(visitor, IASTVisitor)
-        visitor.visit_ast_data_type(self)
+        visitor.visit_ast_type_attribute(self)
 
 
 class ASTInternal(AST):
@@ -453,11 +453,11 @@ class ASTVarDeclaration(AST):
 
     def __init__(self, data_type_and_attributes: list, name: ASTIdentifier):
         super().__init__('variable declaration')
-        data_type, data_type_and_attributes = self.__divide_type_attributes(data_type_and_attributes)
+        data_type, type_attributes = self.__divide_type_attributes(data_type_and_attributes)
 
         self.data_type_ast = data_type
         self.data_type_ast.parent = self
-        self.type_attributes = list()
+        self.type_attributes = type_attributes
         for attribute in self.type_attributes:
             attribute.parent = self
         self.var_name_ast = name

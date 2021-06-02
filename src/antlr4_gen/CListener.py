@@ -143,12 +143,39 @@ class CListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CParser#varDeclaration.
-    def enterVarDeclaration(self, ctx:CParser.VarDeclarationContext):
+    # Enter a parse tree produced by CParser#multiVarDeclaration.
+    def enterMultiVarDeclaration(self, ctx:CParser.MultiVarDeclarationContext):
         pass
 
-    # Exit a parse tree produced by CParser#varDeclaration.
-    def exitVarDeclaration(self, ctx:CParser.VarDeclarationContext):
+    # Exit a parse tree produced by CParser#multiVarDeclaration.
+    def exitMultiVarDeclaration(self, ctx:CParser.MultiVarDeclarationContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#singleVarDeclaration.
+    def enterSingleVarDeclaration(self, ctx:CParser.SingleVarDeclarationContext):
+        pass
+
+    # Exit a parse tree produced by CParser#singleVarDeclaration.
+    def exitSingleVarDeclaration(self, ctx:CParser.SingleVarDeclarationContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#arrayDeclaration.
+    def enterArrayDeclaration(self, ctx:CParser.ArrayDeclarationContext):
+        pass
+
+    # Exit a parse tree produced by CParser#arrayDeclaration.
+    def exitArrayDeclaration(self, ctx:CParser.ArrayDeclarationContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#varInitialization.
+    def enterVarInitialization(self, ctx:CParser.VarInitializationContext):
+        pass
+
+    # Exit a parse tree produced by CParser#varInitialization.
+    def exitVarInitialization(self, ctx:CParser.VarInitializationContext):
         pass
 
 

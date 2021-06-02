@@ -473,7 +473,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         assert isinstance(ast, ASTVarDeclaration)
         symbol_table = self.get_last_symbol_table()
 
-        if ast.is_const():
+        if ast.is_const() and not isinstance(ast.parent, ASTVarDeclarationAndInit):
             raise SemanticError(
                 f"Variable '{ast.var_name_ast.get_content()}' declared const must be initialized with its declaration")
 

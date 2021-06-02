@@ -71,6 +71,8 @@ class ASTBaseVisitor(IASTVisitor):
         for value in ast.get_values():
             value.accept(self)
 
+
+
     def visit_ast_var_declaration(self, ast: ASTVarDeclaration):
         assert isinstance(ast, ASTVarDeclaration)
         ast.data_type_ast.accept(self)

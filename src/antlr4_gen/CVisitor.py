@@ -84,8 +84,23 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#varDeclaration.
-    def visitVarDeclaration(self, ctx:CParser.VarDeclarationContext):
+    # Visit a parse tree produced by CParser#multiVarDeclaration.
+    def visitMultiVarDeclaration(self, ctx:CParser.MultiVarDeclarationContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#singleVarDeclaration.
+    def visitSingleVarDeclaration(self, ctx:CParser.SingleVarDeclarationContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#arrayDeclaration.
+    def visitArrayDeclaration(self, ctx:CParser.ArrayDeclarationContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#varInitialization.
+    def visitVarInitialization(self, ctx:CParser.VarInitializationContext):
         return self.visitChildren(ctx)
 
 

@@ -5,7 +5,7 @@ program:
     statement*
 ;
 
-functionDeclaration: dataType ID '(' ((fullVarDeclaration ',')* fullVarDeclaration)? ')';
+functionDeclaration: dataType ID '(' ((multiVarDeclaration ',')* multiVarDeclaration)? ')';
 functionDefinition: functionDeclaration scope ;
 
 includeStdio: '#include <stdio.h>';
@@ -22,8 +22,8 @@ statement:
 // Single line
 singleLineStatement:
     functionDeclaration |
-    fullVarDeclaration |
-    varDeclarationAndInit |
+    multiVarDeclaration |
+    //varDeclarationAndInit |
     controlFlowStatement |
     expression
     ;
@@ -45,7 +45,7 @@ loop:
     ;
 
 whileLoop: WHILE enclosedExpression scope ;
-forLoop: FOR '(' (expression | varDeclarationAndInit) ';' expression ';' expression ')' scope ;
+forLoop: FOR '(' (expression | singleVarDeclaration) ';' expression ';' expression ')' scope ;
 
 ifStatement:
     IF enclosedExpression scope |
@@ -63,9 +63,9 @@ scope: '{' statement* '}' ;
  * Declarations and initializations
  */
 
-fullVarDeclaration: typeDeclaration (',' singleVarDeclaration)* singleVarDeclaration ;
+multiVarDeclaration: typeDeclaration (singleVarDeclaration ',')* singleVarDeclaration ;
 
-singleVarDeclaration: (ID (arrayDeclaration?) varInitialization?) ;
+singleVarDeclaration: ID arrayDeclaration? varInitialization? ;
 arrayDeclaration: '[' INT_LITERAL ']' ;
 varInitialization: '=' expression ;
 

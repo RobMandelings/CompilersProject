@@ -20,6 +20,8 @@ features are:
 - Constant Folding (see optimizations)
 - Constant Propagation (see optimizations)
 - Identifier Expressions (i++, --i,...)
+- Fully sophisticated comparisons: <=, >= !=, < and >
+- Multi variable declaration and initialization in one line / statement (see benchmark prime.c for example)
 
 ### Optimization
 
