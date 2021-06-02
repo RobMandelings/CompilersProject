@@ -566,7 +566,7 @@ def replace_identifier_expressions(scope, scope_child_index: int, current_node, 
             # So this must identifier expression must be placed within the body of the while loop
             # The seemingly 'random' indices come from the children of the tree from the grammar
             replace_identifier_expressions(child.children[2], 1, child.children[1], always_before=True)
-            replace_identifier_expressions(child, 0, child.children[2], always_before)
+            replace_identifier_expressions(child.children[2], 0, child.children[2], always_before)
         elif not isinstance(child, CParser.IdentifierExpressionContext):
             replace_identifier_expressions(scope, scope_child_index, child, always_before)
         elif len(child.children) == 1:
@@ -669,7 +669,7 @@ def from_single_var_declaration(cst):
             raise NotImplementedError('Not implemented yet')
 
 
-def split_multi_var_declarations(scope, scope_child_index: int, current_node):
+def split_multi_var_declarations(scope, scope_child_index: int, current_node, multivars_visited: set):
     """
     Belongs to the PreParsing step. Recursively splits the multi var declarations and adds them to the given scope
     into several single var declarations. The MultiVar declaration node is left but will be ignored when converting into AST
@@ -678,24 +678,29 @@ def split_multi_var_declarations(scope, scope_child_index: int, current_node):
     if isinstance(current_node, TerminalNodeImpl):
         return
 
-    if isinstance(current_node, CParser.MultiVarDeclarationContext):
+    if isinstance(current_node, CParser.MultiVarDeclarationContext) and current_node not in multivars_visited:
 
         insertion_index = 0
-        for child in current_node.children:
+        for single_var_child in current_node.children:
 
-            if isinstance(child, CParser.SingleVarDeclarationContext):
+            if isinstance(single_var_child, CParser.SingleVarDeclarationContext):
                 # Add the typeDeclaration node to the singleVarDeclaration context as it will be necessary
                 # To create the correct ASTs
-                child.children.insert(0, current_node.children[0])
-                scope.children.insert(scope_child_index + insertion_index, child)
+                single_var_child.children.insert(0, current_node.children[0])
+                scope.children.insert(scope_child_index + insertion_index, single_var_child)
                 insertion_index += 1
 
+        multivars_visited.add(current_node)
+
     elif isinstance(current_node, CParser.ScopeContext):
-        for index in range(len(current_node.children)):
-            split_multi_var_declarations(current_node, index, current_node.children[index])
+
+        for child_index in range(len(current_node.children)):
+            split_multi_var_declarations(current_node, child_index, current_node.children[child_index],
+                                         multivars_visited)
+
     else:
         for child in current_node.children:
-            split_multi_var_declarations(scope, scope_child_index, child)
+            split_multi_var_declarations(scope, scope_child_index, child, multivars_visited)
 
 
 def pre_parse(scope: CParser.ScopeContext, scope_child_index: int, current_node):
@@ -705,7 +710,7 @@ def pre_parse(scope: CParser.ScopeContext, scope_child_index: int, current_node)
     to convert into an AST. This puts similar cst nodes into the proper format so that it can easily be converted into the corresponding
     AST nodes.
     """
-    split_multi_var_declarations(scope, scope_child_index, current_node)
+    split_multi_var_declarations(scope, scope_child_index, current_node, set())
     replace_identifier_expressions(scope, scope_child_index, current_node)
     reorganize_assignment_expressions(scope, scope_child_index, current_node)
     replace_assignment_expressions(scope, scope_child_index, current_node)

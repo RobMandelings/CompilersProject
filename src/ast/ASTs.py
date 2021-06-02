@@ -384,6 +384,7 @@ class ASTConditionalStatement(AST):
         super().__init__(content)
         self.condition = condition
         self.execution_body = execution_body
+        assert isinstance(self.execution_body, ASTScope)
 
     def accept(self, visitor: IASTVisitor):
         raise NotImplementedError
