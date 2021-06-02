@@ -277,7 +277,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         assert self.current_function is None or isinstance(self.current_function, FunctionSymbol)
         return self.current_function
 
-    def check_resulting_data_type(self, ast: AST):
+    def check_resulting_data_type(self, ast: AST) -> DataType.DataType:
         """
         Calculates the resulting data type using a visitor for the AST. This is necessary because some variables
         need to be looked up in a symbol table for it to determine the resulting (richest) data type
@@ -322,12 +322,14 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                     f'{declared_data_type.get_name()} are incompatible')
 
     def check_r_value_assignment(self, bin_expr: ASTAssignmentExpression):
-        # TODO Needs to be improved with derefencing and all that stuff
 
-        if isinstance(bin_expr.left, ASTLiteral):
+        data_type = self.check_resulting_data_type(bin_expr.left)
+
+        # Pointer level one just means something with a memory location (e.g. variables)
+        # If this is not the case, its an actual literal value which is not a pointer
+        if not data_type.is_pointer():
             raise SemanticError(
-                f"Assignment to an R-VALUE of type {bin_expr.left.get_data_type_token().token_name} "
-                f"(value is {bin_expr.left.get_content()})")
+                f"Assignment to an R-VALUE of type {data_type.get_name()} ")
 
     def check_undeclared_variable_usage(self, ast: AST):
 
@@ -486,10 +488,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         else:
 
-            data_type = self.check_resulting_data_type(ast.get_left())
-
-            # if not data_type.is_pointer():
-            #     raise SemanticError('Cannot assign value: too many dereferences')
+            self.check_r_value_assignment(ast)
 
     def visit_ast_var_declaration(self, ast: ASTVarDeclaration):
         assert isinstance(ast, ASTVarDeclaration)
