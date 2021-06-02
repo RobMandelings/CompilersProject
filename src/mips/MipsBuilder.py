@@ -745,6 +745,7 @@ class MipsBuilder:
             MipsInstruction.MoveInstruction(register_to_move_in=MipsValue.MipsRegister.FRAME_POINTER,
                                             register_to_move_from=MipsValue.MipsRegister.STACK_POINTER))
 
+
         # Store the return address on the stack
         entry_basic_block.add_instruction(
             MipsInstruction.StoreWordInstruction(register_to_store=MipsValue.MipsRegister.RETURN_ADDRESS,

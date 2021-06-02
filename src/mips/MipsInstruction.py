@@ -208,12 +208,12 @@ class ArithmeticInstruction(MipsInstruction):
     This class is an abstract class for all arithmetic mips instructions
     """
 
-    def __init__(self, first_register: MipsValue.MipsRegister, second_register: MipsValue.MipsValue,
+    def __init__(self, first_operand: MipsValue.MipsRegister, second_operand: MipsValue.MipsValue,
                  resulting_register: MipsValue.MipsRegister = None):
         super().__init__()
         self.resulting_register = resulting_register
-        self.first_register = first_register
-        self.second_register = second_register
+        self.first_operand = first_operand
+        self.second_operand = second_operand
 
 
 class ArithmeticBinaryInstruction(ArithmeticInstruction):
@@ -248,9 +248,9 @@ class ArithmeticBinaryInstruction(ArithmeticInstruction):
 
         operation_string = ""
         if self.token == ASTTokens.BinaryArithmeticExprToken.ADD:
-            if isinstance(self.second_register, MipsValue.MipsRegister):
+            if isinstance(self.second_operand, MipsValue.MipsRegister):
                 operation_string = "add"
-            elif isinstance(self.second_register, MipsValue.MipsLiteral):
+            elif isinstance(self.second_operand, MipsValue.MipsLiteral):
                 operation_string = "addi"
             else:
                 raise NotImplementedError
@@ -261,16 +261,16 @@ class ArithmeticBinaryInstruction(ArithmeticInstruction):
             operation_string = "mul"
         elif self.token == ASTTokens.BinaryArithmeticExprToken.DIV:
             operation_string = "div"
-            return operation_string + f" {self.resulting_register.get_name()}, {self.first_register.get_name()}"
+            return operation_string + f" {self.first_operand.get_name()}, {self.second_operand.get_content()}"
         else:
             raise NotImplementedError
 
         # We have asserted before that if the first register is floating point, the second must be as well
         # So its enough to check the first register. We add '.s' to the instruction
-        if MipsValue.MipsRegister.is_floating_point_register(self.first_register):
+        if MipsValue.MipsRegister.is_floating_point_register(self.first_operand):
             operation_string += '.s'
 
-        return operation_string + f" {self.resulting_register.get_name()}, {self.first_register.get_name()}, {self.second_register.get_content()}"
+        return operation_string + f" {self.resulting_register.get_name()}, {self.first_operand.get_name()}, {self.second_operand.get_content()}"
 
 
 class ArithmeticMultiplyOverflowInstruction(ArithmeticInstruction):
