@@ -97,6 +97,9 @@ class DataType:
         Checks which data type is the richest, returns None if the two data types are incompatible
         """
 
+        if self.is_array() != other.is_array():
+            return None
+
         if self.get_pointer_level() == other.get_pointer_level():
 
             if self.get_pointer_level() == 0:
@@ -121,8 +124,8 @@ class DataType:
         """
         Returns the name of the data type, taking in account the pointer level as well (e.g. bool**)
         """
-        array_str = ''
-        return self.__data_type_token.get_name() + ('*' * self.__pointer_level) + array_str
+        array_str = '[]' if self.is_array() else ''
+        return self.__data_type_token.get_name() + array_str + ('*' * self.__pointer_level)
 
     def get_pointer_level(self):
         assert self.__pointer_level >= 0, "Pointer level must be at least 0"

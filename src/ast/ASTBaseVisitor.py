@@ -29,7 +29,8 @@ class ASTBaseVisitor(IASTVisitor):
 
     def visit_ast_access_element(self, ast: ASTAccessArrayVarExpression):
         assert isinstance(ast, ASTAccessArrayVarExpression)
-        self.visit_ast_leaf(ast)
+        ast.get_variable_accessed().accept(self)
+        ast.get_index_accessed().accept(self)
 
     def visit_ast_internal(self, ast: ASTInternal):
         assert isinstance(ast, ASTInternal)

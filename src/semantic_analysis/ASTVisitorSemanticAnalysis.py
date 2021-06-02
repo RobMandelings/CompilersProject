@@ -47,13 +47,7 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
                     f'{self.resulting_data_type.get_name()} and '
                     f'{other_data_type.get_name()} are incompatible')
 
-            else:
-
-                if self.resulting_data_type.is_array() != other_data_type.is_array():
-                    raise SemanticError(
-                        f'Cannot get resulting data type: arrays can"t be compared with non arrays ')
-
-                self.resulting_data_type = other_data_type
+            self.resulting_data_type = other_data_type
 
     def visit_ast_literal(self, ast: ASTLiteral):
         if ast.get_data_type() == DataType.NORMAL_CHAR:
@@ -102,7 +96,9 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
 
     def visit_ast_access_element(self, ast: ASTAccessArrayVarExpression):
         access_element = self.last_symbol_table.lookup_variable(ast.get_content())
-        self.update_current_data_type(access_element.data_type)
+        self.update_current_data_type(
+            DataType.DataType(access_element.data_type.get_token(), access_element.data_type.get_pointer_level(),
+                              array=False))
 
 
 class ASTVisitorUndeclaredVariableUsed(ASTBaseVisitor):
@@ -120,6 +116,9 @@ class ASTVisitorUndeclaredVariableUsed(ASTBaseVisitor):
         table_element = self.last_symbol_table.lookup(ast.get_content())
         if not table_element:
             self.undeclared_variables_used.append(ast)
+
+    def visit_ast_access_element(self, ast: ASTAccessArrayVarExpression):
+        super().visit_ast_access_element(ast)
 
 
 class ASTVisitorUninitializedVariableUsed(ASTBaseVisitor):
@@ -382,7 +381,6 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         self.check_undeclared_variable_usage(ast)
         self.check_uninitialized_variable_usage(ast)
-
         self.check_resulting_data_type(ast)
 
         left = ast.left
@@ -392,36 +390,6 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         right = ast.right
         while isinstance(right, ASTDereference):
             right = right.get_value_to_dereference()
-
-        lookup_left = None
-        if isinstance(left, ASTIdentifier):
-            lookup_left = self.get_last_symbol_table().lookup(left.get_name())
-        elif isinstance(left, ASTAccessArrayVarExpression):
-            lookup_left = self.get_last_symbol_table().lookup(left.get_variable_accessed().get_name())
-
-        lookup_right = None
-        if isinstance(right, ASTIdentifier):
-            lookup_right = self.get_last_symbol_table().lookup(right.get_name())
-        elif isinstance(right, ASTAccessArrayVarExpression):
-            lookup_right = self.get_last_symbol_table().lookup(right.get_variable_accessed().get_name())
-
-        if lookup_left is not None or lookup_right is not None:
-
-            if not type(lookup_left) == type(lookup_right):
-
-                if isinstance(lookup_left, ArraySymbol):
-                    left_name = "array"
-                else:
-                    left_name = "value"
-
-                if isinstance(lookup_right, ArraySymbol):
-                    right_name = "array"
-                else:
-                    right_name = "value"
-
-                raise SemanticError(
-                    f'Relational expression "{ast.get_token().token_name}": cannot compare types '
-                    f'{left_name} and {right_name}')
 
         if isinstance(ast.left, ASTIdentifier) and isinstance(ast.right, ASTIdentifier):
             lookup_left = self.get_last_symbol_table().lookup(ast.left.get_name())
