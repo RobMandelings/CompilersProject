@@ -106,6 +106,9 @@ def create_ast_from_cst(cst):
 
 
 def from_identifier_expression(cst):
+    if len(cst.children) == 1:
+        return create_ast_from_cst(cst.children[0])
+
     raise NotImplementedError('The identifier expression should already have been replaced within the scope cst')
 
 
@@ -559,11 +562,11 @@ def replace_identifier_expressions(scope, scope_child_index: int, current_node):
                      child.children[0].getSymbol().type == CLexer.DECREMENT):
                 identifier_cst = child.children[1]
                 increment = child.children[0].getSymbol().type == CLexer.INCREMENT
-                after = True
+                after = False
             else:
                 identifier_cst = child.children[0]
                 increment = child.children[1].getSymbol().type == CLexer.INCREMENT
-                after = False
+                after = True
 
             # Just some custom cst nodes created so they can be used in the conversion later on
             # Not everything might be initialized just like the parser would do it, but it works

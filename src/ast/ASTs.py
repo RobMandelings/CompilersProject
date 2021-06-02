@@ -745,7 +745,7 @@ class ASTControlFlowStatement(AST):
         visitor.visit_ast_control_flow_statement(self)
 
 
-class ASTDereference(AST):
+class ASTDereference(ASTExpression):
 
     def __init__(self, value_to_dereference):
         super().__init__('deref')
