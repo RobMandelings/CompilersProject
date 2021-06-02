@@ -5,7 +5,7 @@ program:
     statement*
 ;
 
-functionDeclaration: dataType ID '(' ((varDeclaration ',')* varDeclaration)? ')';
+functionDeclaration: dataType ID '(' ((fullVarDeclaration ',')* fullVarDeclaration)? ')';
 functionDefinition: functionDeclaration scope ;
 
 includeStdio: '#include <stdio.h>';
@@ -22,7 +22,7 @@ statement:
 // Single line
 singleLineStatement:
     functionDeclaration |
-    varDeclaration |
+    fullVarDeclaration |
     varDeclarationAndInit |
     controlFlowStatement |
     expression
@@ -63,9 +63,11 @@ scope: '{' statement* '}' ;
  * Declarations and initializations
  */
 
-varDeclaration:
-    normalVarDeclaration |
-    arrayVarDeclaration ;
+fullVarDeclaration: typeDeclaration (',' singleVarDeclaration)* singleVarDeclaration ;
+
+singleVarDeclaration: (ID (arrayDeclaration?) varInitialization?) ;
+arrayDeclaration: '[' INT_LITERAL ']' ;
+varInitialization: '=' expression ;
 
 normalVarDeclaration: typeDeclaration ID ;
 arrayVarDeclaration: typeDeclaration ID '[' INT_LITERAL ']' ;
