@@ -161,17 +161,18 @@ class MoveFromHiInstruction(MipsInstruction):
         return f"mfhi {self.register_to_move_in}"
 
 
-class MoveFromLoInstruction(MipsInstruction):
+class MoveFromInstruction(MipsInstruction):
     """
     This class corresponds to the move from lo mips instruction
     """
 
-    def __init__(self, register_to_move_in: MipsValue.MipsRegister):
+    def __init__(self, register_to_move_in: MipsValue.MipsRegister, move_from_low: bool):
         super().__init__()
         self.register_to_move_in = register_to_move_in
+        self.move_from_low = move_from_low
 
     def to_mips(self):
-        return f"mflo {self.register_to_move_in}"
+        return f"{'mflo' if self.move_from_low else 'mfhi'} {self.register_to_move_in}"
 
 
 class MoveInstruction(MipsInstruction):
@@ -259,7 +260,10 @@ class ArithmeticBinaryInstruction(ArithmeticInstruction):
             operation_string = "sub"
         elif self.token == ASTTokens.BinaryArithmeticExprToken.MUL:
             operation_string = "mul"
-        elif self.token == ASTTokens.BinaryArithmeticExprToken.DIV:
+        # The only difference is that you either use 'move from low' or 'move from high' depending on
+        # Whether or not its division or remainder
+        elif self.token == ASTTokens.BinaryArithmeticExprToken.DIV or \
+                self.token == ASTTokens.BinaryArithmeticExprToken.MOD:
             operation_string = "div"
             return operation_string + f" {self.first_operand.get_name()}, {self.second_operand.get_content()}"
         else:

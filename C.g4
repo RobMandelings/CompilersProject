@@ -129,7 +129,8 @@ addExpression:
     | multExpression
     ;
 multExpression:
-    multExpression '*' unaryExpression
+    multExpression '%' unaryExpression
+    | multExpression '*' unaryExpression
     | multExpression '/' unaryExpression
     | unaryExpression
     ;
@@ -146,10 +147,10 @@ pointerExpression:
 
 enclosedExpression: '(' expression ')';
 finalExpression:
-    enclosedExpression |
-    identifierExpression |
-    accessArrayVarExpression |
-    functionCallExpression
+    enclosedExpression
+    | identifierExpression
+    | accessArrayVarExpression
+    | functionCallExpression
     ;
 identifierExpression:
     value |

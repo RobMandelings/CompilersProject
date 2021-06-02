@@ -295,6 +295,9 @@ class LLVMBinaryArithmeticInstruction(LLVMBinaryAssignInstruction):
                          operation, operand1, operand2)
         self.operation_type = self.get_operation_type()
 
+    def get_operation(self) -> ASTTokens.BinaryArithmeticExprToken:
+        return self.operation
+
     def get_operation_type(self):
         if self.operand1.get_data_type() == DataType.NORMAL_INT and self.operand2.get_data_type() == DataType.NORMAL_INT:
             return 'i32'
@@ -317,6 +320,8 @@ class LLVMBinaryArithmeticInstruction(LLVMBinaryAssignInstruction):
                 operation_string = 'mul nsw'
             elif self.operation == ASTTokens.BinaryArithmeticExprToken.DIV:
                 operation_string = 'sdiv'
+            elif self.operation == ASTTokens.BinaryArithmeticExprToken.MOD:
+                operation_string = 'srem'
             else:
                 raise NotImplementedError
         elif self.operation_type == 'float':

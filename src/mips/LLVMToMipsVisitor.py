@@ -386,6 +386,10 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
             # With floating points, this must always be 'all registers' as there is no immediate option for this
             all_registers = True
+        # There does not exist an immediate operation for the division instructions
+        elif instruction.get_operation() == ASTTokens.BinaryArithmeticExprToken.DIV or \
+                instruction.get_operation() == ASTTokens.BinaryArithmeticExprToken.MOD:
+            all_registers = True
         else:
 
             # Either no literal operands or one, mips can handle this
@@ -400,14 +404,21 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
         current_function = self.get_mips_builder().get_current_function()
 
-        if instruction.operation == ASTTokens.BinaryArithmeticExprToken.DIV:
+        if instruction.operation == ASTTokens.BinaryArithmeticExprToken.DIV or \
+                instruction.operation == ASTTokens.BinaryArithmeticExprToken.MOD:
             mips_division_instruction = MipsInstruction.ArithmeticBinaryInstruction(mips_operands[0], mips_operands[1],
                                                                                     instruction.operation,
                                                                                     mips_resulting_register)
-            mips_mflo_instruction = MipsInstruction.MoveFromLoInstruction(mips_resulting_register)
+
+            # The remainder of the division resides in the 'hi' register, the quotient in the 'lo' register
+            move_from_low = True if instruction.operation == ASTTokens.BinaryArithmeticExprToken.DIV else False
+
+            mips_move_from_instruction = \
+                MipsInstruction.MoveFromInstruction(mips_resulting_register,
+                                                    move_from_low=move_from_low)
 
             current_function.add_instruction(mips_division_instruction)
-            current_function.add_instruction(mips_mflo_instruction)
+            current_function.add_instruction(mips_move_from_instruction)
         else:
 
             if isinstance(mips_operands[0], MipsValue.MipsLiteral):
