@@ -440,7 +440,7 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
                     .get_assigned_register_for_mips_reg(current_mips_reg)
 
                 if current_assigned_llvm_reg is not None:
-                    self.get_mips_builder().store_in_memory(current_assigned_llvm_reg)
+                    self.get_mips_builder().store_in_memory(current_mips_reg)
 
             # Now load the current llvm argument into the argument register for usage
             # We need to generate the correct instructions for loading,
