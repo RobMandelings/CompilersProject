@@ -108,9 +108,9 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         for alloca_instruction in llvm_defined_function.get_alloca_instructions():
             assert isinstance(alloca_instruction, LLVMInstruction.LLVMAllocaInstruction)
             mips_function.descriptors.add_allocated_register(alloca_instruction.get_resulting_register())
-            mips_function.descriptors.assign_address_location_to_llvm_reg(alloca_instruction.get_resulting_register(),
-                                                                          mips_function.get_new_fp_offset(
-                                                                              initial_instructions=False))
+            mips_function.descriptors.assign_offset_to_llvm_reg(alloca_instruction.get_resulting_register(),
+                                                                mips_function.get_new_fp_offset(
+                                                                    initial_instructions=False))
 
         self.get_mips_builder().add_function(mips_function)
 
@@ -197,7 +197,7 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         # First load the address in the mips register if it isn't already
         if not self.get_mips_builder().get_current_descriptors().loaded_in_mips_reg(instruction.resulting_reg,
                                                                                     address_reg):
-            address_location = self.get_mips_builder().get_current_descriptors().get_address_location(
+            address_location = self.get_mips_builder().get_current_descriptors().get_assigned_offset_for_llvm_reg(
                 instruction.resulting_reg)
 
             assert address_location is not None, "Should either be in a register or have a location. " \
@@ -333,7 +333,7 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
                 arg_type = llvm_arg.get_data_type().get_token()
 
-                fp_offset = self.get_mips_builder().get_current_descriptors().get_address_location(llvm_arg)
+                fp_offset = self.get_mips_builder().get_current_descriptors().get_assigned_offset_for_llvm_reg(llvm_arg)
 
                 if arg_type == DataType.DataTypeToken.INT:
                     load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0,

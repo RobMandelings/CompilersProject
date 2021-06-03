@@ -165,9 +165,21 @@ def from_value(cst):
 
 
 def from_multi_var_declaration(cst):
-    print(
-        "[CSTToAST] Ignoring multi var declaration as it should have been splitted in the "
-        "preparsing step into multiple singele var declarations")
+    """
+    Special case: returns a list of var declaration ASTS
+    """
+
+    # More than one single var declaration context
+    if len(cst.children) > 2:
+        ast_var_declarations = list()
+
+        for child in cst.children:
+            if isinstance(child, CParser.SingleVarDeclarationContext):
+                ast_var_declarations.append(from_single_var_declaration(child))
+
+        return ast_var_declarations
+    else:
+        return from_single_var_declaration(cst.children[1])
 
 
 def from_normal_var_declaration_and_init(cst):
@@ -478,7 +490,12 @@ def create_ast_scope(cst: CParser.ScopeContext):
     for child in cst.children:
         ast_child = create_ast_from_cst(child)
         if ast_child is not None:
-            ast_scope.add_child(ast_child)
+
+            if isinstance(ast_child, list):
+                for subchild in ast_child:
+                    ast_scope.add_child(subchild)
+            else:
+                ast_scope.add_child(ast_child)
 
     return ast_scope
 
@@ -623,21 +640,26 @@ def from_single_var_declaration(cst):
     Difference here is that the first child is now also a typeDeclaration, instead of just assignment and stuff.
     """
 
-    cst_type_declaration = cst.children[0]
-    cst_identifier = cst.children[1]
+    assert isinstance(cst.parentCtx, CParser.MultiVarDeclarationContext)
+
+    cst_type_declaration = cst.parentCtx.children[0]
+
+    assert isinstance(cst_type_declaration, CParser.TypeDeclarationContext)
+
+    cst_identifier = cst.children[0]
     cst_array_declaration = None
     cst_var_initialization = None
 
     # Might be only array declaration, no initialization or only var initialization, no array declaration
-    if len(cst.children) == 3:
-        if isinstance(cst.children[2], CParser.ArrayDeclarationContext):
-            cst_array_declaration = cst.children[2]
+    if len(cst.children) == 2:
+        if isinstance(cst.children[1], CParser.ArrayDeclarationContext):
+            cst_array_declaration = cst.children[1]
         else:
-            cst_var_initialization = cst.children[2]
-    elif len(cst.children) == 4:
-        cst_array_declaration = cst.children[2]
-        cst_var_initialization = cst.children[3]
-    elif len(cst.children) > 4:
+            cst_var_initialization = cst.children[1]
+    elif len(cst.children) == 3:
+        cst_array_declaration = cst.children[1]
+        cst_var_initialization = cst.children[2]
+    elif len(cst.children) > 3:
         raise AssertionError(
             f"A single var declaration shouldn't have {len(cst.children)} children unless and update happened to the grammar")
 
@@ -653,7 +675,7 @@ def from_single_var_declaration(cst):
     if cst_array_declaration is None:
         ast_var_declaration = ASTVarDeclaration(data_type_and_attributes, ast_identifier)
     else:
-        size = create_ast_from_cst(cst_array_declaration.children[3])
+        size = create_ast_from_cst(cst_array_declaration.children[2])
         ast_var_declaration = ASTArrayVarDeclaration(data_type_and_attributes, ast_identifier, size)
 
     if cst_var_initialization is None:
@@ -669,40 +691,6 @@ def from_single_var_declaration(cst):
             raise NotImplementedError('Not implemented yet')
 
 
-def split_multi_var_declarations(scope, scope_child_index: int, current_node, multivars_visited: set):
-    """
-    Belongs to the PreParsing step. Recursively splits the multi var declarations and adds them to the given scope
-    into several single var declarations. The MultiVar declaration node is left but will be ignored when converting into AST
-    """
-
-    if isinstance(current_node, TerminalNodeImpl):
-        return
-
-    if isinstance(current_node, CParser.MultiVarDeclarationContext) and current_node not in multivars_visited:
-
-        insertion_index = 0
-        for single_var_child in current_node.children:
-
-            if isinstance(single_var_child, CParser.SingleVarDeclarationContext):
-                # Add the typeDeclaration node to the singleVarDeclaration context as it will be necessary
-                # To create the correct ASTs
-                single_var_child.children.insert(0, current_node.children[0])
-                scope.children.insert(scope_child_index + insertion_index, single_var_child)
-                insertion_index += 1
-
-        multivars_visited.add(current_node)
-
-    elif isinstance(current_node, CParser.ScopeContext):
-
-        for child_index in range(len(current_node.children)):
-            split_multi_var_declarations(current_node, child_index, current_node.children[child_index],
-                                         multivars_visited)
-
-    else:
-        for child in current_node.children:
-            split_multi_var_declarations(scope, scope_child_index, child, multivars_visited)
-
-
 def pre_parse(scope: CParser.ScopeContext, scope_child_index: int, current_node):
     """
     Must be run before everything else.
@@ -710,7 +698,6 @@ def pre_parse(scope: CParser.ScopeContext, scope_child_index: int, current_node)
     to convert into an AST. This puts similar cst nodes into the proper format so that it can easily be converted into the corresponding
     AST nodes.
     """
-    split_multi_var_declarations(scope, scope_child_index, current_node, set())
     replace_identifier_expressions(scope, scope_child_index, current_node)
     reorganize_assignment_expressions(scope, scope_child_index, current_node)
     replace_assignment_expressions(scope, scope_child_index, current_node)
