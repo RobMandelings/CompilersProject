@@ -545,6 +545,13 @@ class MipsBuilder:
                 elif not is_operand and auto_assign_result_reg_in_descriptor:
                     # If its not an operand, this means its a register for result. Update the descriptor accordingly
                     # So that the 'result' llvm register gets assigned to the mips register
+
+                    if self.get_current_descriptors().get_assigned_register_for_mips_reg(
+                            mips_value) is not None and \
+                            self.get_current_descriptors().get_assigned_register_for_mips_reg(
+                                mips_value) != llvm_value:
+                        self.store_in_memory(mips_value)
+
                     self.get_current_function().descriptors.assign_to_mips_reg(llvm_value, mips_value)
 
                 # TODO Add these registers to saved registers used and temporary registers used
@@ -627,7 +634,7 @@ class MipsBuilder:
                     else:
 
                         instruction = MipsInstruction.LoadWordInstruction(register_to_load_into=store_in_reg,
-                                                                          register_address=MipsValue.MipsRegister.STACK_POINTER,
+                                                                          register_address=MipsValue.MipsRegister.FRAME_POINTER,
                                                                           offset=address_location)
 
 
@@ -683,7 +690,7 @@ class MipsBuilder:
             offset = self.get_current_descriptors().get_assigned_offset_for_llvm_reg(assigned_llvm_reg)
 
         sw_instruction = MipsInstruction.StoreWordInstruction(register_to_store=mips_register,
-                                                              register_address=MipsValue.MipsRegister.STACK_POINTER,
+                                                              register_address=MipsValue.MipsRegister.FRAME_POINTER,
                                                               offset=offset)
 
         self.get_current_function().add_instruction(sw_instruction)
@@ -814,7 +821,8 @@ class MipsBuilder:
                 MipsInstruction.StoreWordInstruction(register_to_store=temporary_reg,
                                                      register_address=MipsValue.MipsRegister.FRAME_POINTER,
                                                      offset=offset_to_store_in))
-            self.get_current_descriptors().assign_offset_to_llvm_reg(self.get_current_descriptors().get_assigned_register_for_mips_reg(temporary_reg), offset_to_store_in)
+            self.get_current_descriptors().assign_offset_to_llvm_reg(
+                self.get_current_descriptors().get_assigned_register_for_mips_reg(temporary_reg), offset_to_store_in)
 
     def load_temporary_registers(self):
         """

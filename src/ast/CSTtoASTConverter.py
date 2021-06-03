@@ -558,80 +558,83 @@ def replace_identifier_expressions(scope, scope_child_index: int, current_node, 
     if isinstance(current_node, TerminalNodeImpl):
         return
 
-    for cur_child_index in range(len(current_node.children)):
+    if isinstance(current_node, CParser.ScopeContext):
+        for sub_scope_child_index in range(len(current_node.children)):
+            replace_identifier_expressions(current_node, sub_scope_child_index,
+                                           current_node.children[sub_scope_child_index],
+                                           always_before=False)
+    else:
 
-        child = current_node.children[cur_child_index]
+        for cur_child_index in range(len(current_node.children)):
 
-        if isinstance(child, CParser.ScopeContext):
-            for sub_scope_child_index in range(len(child.children)):
-                replace_identifier_expressions(child, sub_scope_child_index, child.children[sub_scope_child_index],
-                                               always_before=False)
-        elif isinstance(child, CParser.ForLoopContext):
-            # For loops have a special case, as the update step is different from the function body
-            # This is for compatibility with the continue control flow statement, so that the update step
-            # Gets executed properly
-            replace_identifier_expressions(scope, scope_child_index, child.children[2], always_before)
-            replace_identifier_expressions(child, 4, child.children[4], always_before)
-            replace_identifier_expressions(child, 6, child.children[6], always_before)
+            child = current_node.children[cur_child_index]
 
-            # This is a special case: the current scope at which to add the instruction children
-            # Is the loop context itself, not the body this loop is defined in
-            replace_identifier_expressions(child, 8, child.children[8], always_before)
-        elif isinstance(child, CParser.WhileLoopContext):
+            if isinstance(child, CParser.ForLoopContext):
+                # For loops have a special case, as the update step is different from the function body
+                # This is for compatibility with the continue control flow statement, so that the update step
+                # Gets executed properly
+                replace_identifier_expressions(scope, scope_child_index, child.children[2], always_before)
+                replace_identifier_expressions(child, 4, child.children[4], always_before)
+                replace_identifier_expressions(child, 6, child.children[6], always_before)
 
-            # Special case: the condition here that is checked must be updated accordingly each time
-            # So this must identifier expression must be placed within the body of the while loop
-            # The seemingly 'random' indices come from the children of the tree from the grammar
-            replace_identifier_expressions(child.children[2], 1, child.children[1], always_before=True)
-            replace_identifier_expressions(child.children[2], 0, child.children[2], always_before)
-        elif not isinstance(child, CParser.IdentifierExpressionContext):
-            replace_identifier_expressions(scope, scope_child_index, child, always_before)
-        elif len(child.children) == 1:
-            current_node.children[cur_child_index] = child.children[0]
-            replace_identifier_expressions(scope, scope_child_index, current_node.children[cur_child_index],
-                                           always_before)
-        else:
+                # This is a special case: the current scope at which to add the instruction children
+                # Is the loop context itself, not the body this loop is defined in
+                replace_identifier_expressions(child, 8, child.children[8], always_before)
+            elif isinstance(child, CParser.WhileLoopContext):
 
-            if isinstance(child.children[0], TerminalNodeImpl) and \
-                    (child.children[0].getSymbol().type == CLexer.INCREMENT or \
-                     child.children[0].getSymbol().type == CLexer.DECREMENT):
-                identifier_cst = child.children[1]
-                increment = child.children[0].getSymbol().type == CLexer.INCREMENT
-                after = False
+                # Special case: the condition here that is checked must be updated accordingly each time
+                # So this must identifier expression must be placed within the body of the while loop
+                # The seemingly 'random' indices come from the children of the tree from the grammar
+                replace_identifier_expressions(child.children[2], 1, child.children[1], always_before=True)
+                replace_identifier_expressions(child.children[2], 0, child.children[2], always_before)
+            elif not isinstance(child, CParser.IdentifierExpressionContext):
+                replace_identifier_expressions(scope, scope_child_index, child, always_before)
+            elif len(child.children) == 1:
+                current_node.children[cur_child_index] = child.children[0]
+                replace_identifier_expressions(scope, scope_child_index, current_node.children[cur_child_index],
+                                               always_before)
             else:
-                identifier_cst = child.children[0]
-                increment = child.children[1].getSymbol().type == CLexer.INCREMENT
-                after = True
 
-            # Just some custom cst nodes created so they can be used in the conversion later on
-            # Not everything might be initialized just like the parser would do it, but it works
-            literal_token = CommonToken(type=CLexer.INT_LITERAL, start=CLexer.INT_LITERAL, stop=CLexer.INT_LITERAL)
-            literal_token.text = '1'
-            one_cst = TerminalNodeImpl(literal_token)
+                if isinstance(child.children[0], TerminalNodeImpl) and \
+                        (child.children[0].getSymbol().type == CLexer.INCREMENT or \
+                         child.children[0].getSymbol().type == CLexer.DECREMENT):
+                    identifier_cst = child.children[1]
+                    increment = child.children[0].getSymbol().type == CLexer.INCREMENT
+                    after = False
+                else:
+                    identifier_cst = child.children[0]
+                    increment = child.children[1].getSymbol().type == CLexer.INCREMENT
+                    after = True
 
-            assignment_cst = CParser.AssignmentExpressionContext(CParser)
-            assignment_cst.children = []
+                # Just some custom cst nodes created so they can be used in the conversion later on
+                # Not everything might be initialized just like the parser would do it, but it works
+                literal_token = CommonToken(type=CLexer.INT_LITERAL, start=CLexer.INT_LITERAL, stop=CLexer.INT_LITERAL)
+                literal_token.text = '1'
+                one_cst = TerminalNodeImpl(literal_token)
 
-            assignment_token = CommonToken(type=CLexer.T__0)
-            assignment_token.text = '='
-            assignment_terminal = TerminalNodeImpl(assignment_token)
+                assignment_cst = CParser.AssignmentExpressionContext(CParser)
+                assignment_cst.children = []
 
-            operation_cst = create_operation_cst('+' if increment else '-', identifier_cst, one_cst)
+                assignment_token = CommonToken(type=CLexer.T__0)
+                assignment_token.text = '='
+                assignment_terminal = TerminalNodeImpl(assignment_token)
 
-            assignment_cst.children.append(identifier_cst)
-            assignment_cst.children.append(assignment_terminal)
-            assignment_cst.children.append(operation_cst)
+                operation_cst = create_operation_cst('+' if increment else '-', identifier_cst, one_cst)
 
-            current_node.children[cur_child_index] = identifier_cst
+                assignment_cst.children.append(identifier_cst)
+                assignment_cst.children.append(assignment_terminal)
+                assignment_cst.children.append(operation_cst)
 
-            # Sometimes (such as in while loops) you always want to execute at an absolute given index (scope index)
-            # Disregarding before / after increment
-            index_to_insert_at = scope_child_index
-            if not always_before and after:
-                index_to_insert_at += 1
+                current_node.children[cur_child_index] = identifier_cst
 
-            scope.children.insert(index_to_insert_at,
-                                  assignment_cst)
+                # Sometimes (such as in while loops) you always want to execute at an absolute given index (scope index)
+                # Disregarding before / after increment
+                index_to_insert_at = scope_child_index
+                if not always_before and after:
+                    index_to_insert_at += 1
+
+                scope.children.insert(index_to_insert_at,
+                                      assignment_cst)
 
 
 def from_single_var_declaration(cst):
