@@ -426,7 +426,8 @@ class MipsBuilder:
 
             result_found = False
 
-            if isinstance(pair[0], LLVMValue.LLVMLiteral) and not all_registers:
+            if isinstance(pair[0], LLVMValue.LLVMLiteral) and not all_registers and \
+                    pair[0].get_data_type().get_token() != DataType.DataTypeToken.FLOAT:
                 chosen_values.append(self.convert_to_mips_literal(pair[0]))
                 result_found = True
 
