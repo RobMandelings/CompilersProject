@@ -10,11 +10,8 @@
    6.1. Declaration<br>
    6.2. Definition<br>
    6.3. Assignments<br>
-
-6.4. Identifiers appearing in expressions
-
+   6.4. Identifiers appearing in expressions
 7.Pointer operations: *, &
-
 8. Comments: single-line, multi-line
 9. Printf and Scanf functions
 10. Scoping
