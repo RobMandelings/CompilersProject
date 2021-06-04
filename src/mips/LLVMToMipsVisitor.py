@@ -22,10 +22,12 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         basic block as well as some other useful information
         mips_builder: the builder used to generate mips code
         basic_block_mapper: maps LLVMBasicBlocks to their corresponding MipsBasicBocks
+        array_mapper: maps LLVMRegister of array data type to array identifier from data segment
         function_basic_block_mapper: maps the name of the Function to an actual basic block
                 """
         self.mips_builder = None
         self.basic_block_mapper = dict()
+        self.array_mapper = dict()
         self.function_basic_block_entry_mapper = dict()
 
     def update_basic_block_references(self):
@@ -105,14 +107,13 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         mips_function = MipsBuilder.MipsFunction(llvm_defined_function.get_identifier(),
                                                  nr_params=len(llvm_defined_function.params), nr_return_values=1)
 
+        self.get_mips_builder().add_function(mips_function)
+
         for alloca_instruction in llvm_defined_function.get_alloca_instructions():
             assert isinstance(alloca_instruction, LLVMInstruction.LLVMAllocaInstruction)
             mips_function.descriptors.add_allocated_register(alloca_instruction.get_resulting_register())
-            mips_function.descriptors.assign_offset_to_llvm_reg(alloca_instruction.get_resulting_register(),
-                                                                mips_function.get_new_fp_offset(
-                                                                    initial_instructions=False))
-
-        self.get_mips_builder().add_function(mips_function)
+            fp_offset = mips_function.get_new_fp_offset(initial_instructions=False)
+            mips_function.descriptors.assign_offset_to_llvm_reg(alloca_instruction.get_resulting_register(), fp_offset)
 
         # We need to update the descriptors to point the argument llvm registers to their respective $a
         # mips registers or memory locations (if more than 4 registers are specified)
@@ -205,8 +206,8 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
 
             self.get_mips_builder().get_current_function().add_instruction(
                 MipsInstruction.LoadAddressWithOffsetInstruction(register_to_load=address_reg,
-                                                                 register_address=MipsValue.MipsRegister.FRAME_POINTER,
-                                                                 fp_offset=address_location)
+                                                                 base_address=MipsValue.MipsRegister.FRAME_POINTER,
+                                                                 offset=address_location)
             )
 
             self.get_mips_builder().get_current_descriptors().assign_to_mips_reg(instruction.resulting_reg, address_reg)
@@ -541,6 +542,43 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
                                                 register_to_move_from=MipsValue.MipsRegister.V0)
             )
 
+    def visit_llvm_alloca_array_instruction(self, instruction: LLVMInstruction.LLVMAllocaArrayInstruction):
+        array_declared = self.get_mips_builder().get_data_segment().add_array(instruction.size.get_value())
+        self.array_mapper[instruction.get_resulting_register()] = array_declared
+
+    def visit_llvm_get_elementptr_instruction(self, instruction: LLVMInstruction.LLVMGetElementPtrInstruction):
+
+        # Could be optimized so that the llvm register which stands for this array is automatically loaded using
+        # Load address, but we will do it here manually.
+        loaded_value, operands = self.get_mips_builder().get_mips_values(instruction,
+                                                                         instruction.get_resulting_register(),
+                                                                         [instruction.index,
+                                                                          LLVMValue.LLVMRegister(DataType.NORMAL_INT)],
+                                                                         all_registers=True,
+                                                                         load_pointers_as_address=False)
+
+        index_accessed = operands[0]
+
+        # Index access multiplied by 4
+        byte_index_accessed = operands[1]
+
+        self.get_mips_builder().get_current_function().add_instruction(
+            MipsInstruction.ArithmeticBinaryInstruction(
+                first_operand=index_accessed,
+                second_operand=MipsValue.MipsLiteral(4),
+                token=ASTTokens.BinaryArithmeticExprToken.MUL,
+                resulting_register=byte_index_accessed,
+            )
+        )
+
+        self.get_mips_builder().get_current_function().add_instruction(
+            MipsInstruction.LoadAddressWithOffsetInstruction(
+                register_to_load=loaded_value,
+                base_address=byte_index_accessed,
+                offset=self.array_mapper[instruction.array_register]
+            )
+        )
+
     def visit_llvm_return_instruction(self, instruction: LLVMInstruction.LLVMReturnInstruction):
 
         # We assert there is only one or zero return value and this will be placed in v0
@@ -563,4 +601,12 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
             MipsInstruction.MoveInstruction(resulting_reg, old_reg))
 
     def visit_llvm_sext_instruction(self, instruction: LLVMInstruction.LLVMSextInstruction):
-        pass
+
+        resulting_reg, old_reg = self.get_mips_builder().get_mips_values(instruction,
+                                                                         instruction.get_resulting_register(),
+                                                                         [instruction.old_register])
+
+        old_reg = old_reg[0]
+
+        self.get_mips_builder().get_current_function().add_instruction(
+            MipsInstruction.MoveInstruction(resulting_reg, old_reg))

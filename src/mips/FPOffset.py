@@ -8,6 +8,9 @@ class FPOffset:
         self.value = None
         self.index = index
 
+    def __str__(self):
+        return super().__str__() if self.value is None else str(self.value)
+
     def set_value(self, value):
         self.value = value
 

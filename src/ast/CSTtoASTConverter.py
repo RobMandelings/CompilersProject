@@ -682,7 +682,7 @@ def from_single_var_declaration(cst):
     if cst_array_declaration is None:
         ast_var_declaration = ASTVarDeclaration(data_type_and_attributes, ast_identifier)
     else:
-        size = create_ast_from_cst(cst_array_declaration.children[2])
+        size = create_ast_from_cst(cst_array_declaration.children[1])
         ast_var_declaration = ASTArrayVarDeclaration(data_type_and_attributes, ast_identifier, size)
 
     if cst_var_initialization is None:

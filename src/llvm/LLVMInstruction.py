@@ -499,6 +499,8 @@ class LLVMGetElementPtrInstruction(LLVMAssignInstruction):
         self.index = index
         self.size = size
         self.array_register = array_register
+        if isinstance(index, LLVMValue.LLVMValue):
+            assert index.data_type is not None
         assert isinstance(size, LLVMValue.LLVMLiteral)
         assert isinstance(array_register, LLVMValue.LLVMRegister)
 

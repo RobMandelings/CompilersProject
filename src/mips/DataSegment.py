@@ -7,6 +7,7 @@ class DataSegment:
         """
         self.ascii_data = list()
         self.floating_point_data = list()
+        self.arrays_data = list()
         self.call_f_strings = dict()
 
     def get_call_f_string(self, key):
@@ -14,6 +15,11 @@ class DataSegment:
 
     def add_call_f_string(self, key, value: list):
         self.call_f_strings[key] = value
+
+    def add_array(self, nr_elems):
+        identifier = f'array{len(self.arrays_data)}'
+        self.arrays_data.append(f'{identifier}: .space {nr_elems * 4}')
+        return identifier
 
     def add_ascii_data(self, string_element: str, last_element: bool = False):
         identifier = f'ascii_word{len(self.ascii_data)}'
@@ -33,6 +39,9 @@ class DataSegment:
 
     def to_mips(self):
         mips_code = ".data\n\n"
+
+        for current_line in self.arrays_data:
+            mips_code += f" {current_line}\n"
 
         for current_line in self.ascii_data:
             mips_code += f"  {current_line}\n"

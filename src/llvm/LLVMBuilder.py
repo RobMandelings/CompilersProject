@@ -212,7 +212,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         computed_index = self.compute_expression(ast.get_index_accessed())
 
         if isinstance(computed_index, LLVMValue.LLVMRegister):
-            index_llvm_value = LLVMValue.LLVMRegister()
+            index_llvm_value = LLVMValue.LLVMRegister(DataType.NORMAL_INT)
 
             self.get_current_function().add_instruction(
                 LLVMInstructions.LLVMSextInstruction(
@@ -301,10 +301,12 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
             instruction_parts.append(')')
 
             if printf_instruction:
-                instruction = LLVMInstructions.LLVMPrintfInstruction(LLVMValues.LLVMRegister(), instruction_parts,
+                instruction = LLVMInstructions.LLVMPrintfInstruction(LLVMValues.LLVMRegister(DataType.NORMAL_INT),
+                                                                     instruction_parts,
                                                                      global_string_created, args_llvm_value)
             else:
-                instruction = LLVMInstructions.LLVMScanfInstruction(LLVMValues.LLVMRegister(), instruction_parts,
+                instruction = LLVMInstructions.LLVMScanfInstruction(LLVMValues.LLVMRegister(DataType.NORMAL_INT),
+                                                                    instruction_parts,
                                                                     global_string_created, args_llvm_value)
             self.get_current_function().add_instruction(instruction)
 
@@ -424,7 +426,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         return resulting_register
 
     def declare_and_init_array(self, ast: ASTs.ASTArrayVarDeclarationAndInit):
-        allocated_reg = self.declare_array(ast)
+        allocated_reg = self.declare_array(ast.get_array_declaration_ast())
         if ast.get_data_type() == DataType.NORMAL_CHAR:
             # TODO semantic check for more values than capacity
             # TODO semantic check for more values than capacity

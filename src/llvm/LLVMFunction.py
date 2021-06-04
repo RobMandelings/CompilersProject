@@ -106,6 +106,7 @@ class LLVMDefinedFunction(LLVMFunction):
         return self.basic_blocks.get(id(basic_block)) is not None
 
     def get_current_basic_block(self):
+        assert len(self.basic_blocks) != 0
         return self.basic_blocks.get(next(reversed(self.basic_blocks)))
 
     def add_instruction(self, instruction: LLVMInstruction.LLVMInstruction):
@@ -186,13 +187,7 @@ class LLVMDefinedFunction(LLVMFunction):
                 self.add_instruction(LLVMInstruction.LLVMReturnInstruction(loaded_reg))
 
     def to_llvm(self):
-
-        # Remove the last 'empty' basic block in case there is one
-        # When generating terminator instructions, another basic block is already added for convenience
-        # But sometimes we don't know whether the newly created basic block will be filled or not
-        if self.get_current_basic_block().is_empty():
-            self.basic_blocks.pop(next(reversed(self.basic_blocks)))
-
+        
         self._add_ret_if_necessary()
 
         # This is the counter that will be used to give names to the definitive registers and labels of the basic blocks

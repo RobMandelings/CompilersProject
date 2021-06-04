@@ -27,10 +27,15 @@ class LLVMBaseVisitor(ILLVMVisitor.ILLVMVisitor):
         pass
 
     def visit_llvm_defined_function(self, llvm_defined_function: LLVMFunction.LLVMDefinedFunction):
+
+        for alloca_instruction in llvm_defined_function.get_alloca_instructions():
+            alloca_instruction.accept(self)
+
         for basic_block in llvm_defined_function.basic_blocks.values():
             basic_block.accept(self)
 
     def visit_llvm_basic_block(self, llvm_basic_block: LLVMBasicBlock.LLVMBasicBlock):
+
         for instruction in llvm_basic_block.instructions:
             instruction.accept(self)
 

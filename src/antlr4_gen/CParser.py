@@ -86,7 +86,7 @@ def serializedATN():
         buf.write("\u008f\3\2\2\2\u0091\u0090\3\2\2\2\u0092\25\3\2\2\2\u0093")
         buf.write("\u0094\7$\2\2\u0094\u0095\5J&\2\u0095\u0096\5\36\20\2")
         buf.write("\u0096\27\3\2\2\2\u0097\u0098\7%\2\2\u0098\u009b\7\3\2")
-        buf.write("\2\u0099\u009c\58\35\2\u009a\u009c\5\"\22\2\u009b\u0099")
+        buf.write("\2\u0099\u009c\58\35\2\u009a\u009c\5 \21\2\u009b\u0099")
         buf.write("\3\2\2\2\u009b\u009a\3\2\2\2\u009c\u009d\3\2\2\2\u009d")
         buf.write("\u009e\7\7\2\2\u009e\u009f\58\35\2\u009f\u00a0\7\7\2\2")
         buf.write("\u00a0\u00a1\58\35\2\u00a1\u00a2\7\5\2\2\u00a2\u00a3\5")
@@ -1132,8 +1132,8 @@ class CParser ( Parser ):
             return self.getTypedRuleContext(CParser.ScopeContext,0)
 
 
-        def singleVarDeclaration(self):
-            return self.getTypedRuleContext(CParser.SingleVarDeclarationContext,0)
+        def multiVarDeclaration(self):
+            return self.getTypedRuleContext(CParser.MultiVarDeclarationContext,0)
 
 
         def getRuleIndex(self):
@@ -1168,17 +1168,17 @@ class CParser ( Parser ):
             self.match(CParser.T__0)
             self.state = 153
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,10,self._ctx)
-            if la_ == 1:
+            token = self._input.LA(1)
+            if token in [CParser.T__0, CParser.T__20, CParser.T__21, CParser.T__23, CParser.T__25, CParser.INCREMENT, CParser.DECREMENT, CParser.ID, CParser.STRING, CParser.CHAR_LITERAL, CParser.INT_LITERAL, CParser.DOUBLE_LITERAL]:
                 self.state = 151
                 self.expression()
                 pass
-
-            elif la_ == 2:
+            elif token in [CParser.CONST, CParser.CHAR, CParser.INT, CParser.FLOAT, CParser.VOID]:
                 self.state = 152
-                self.singleVarDeclaration()
+                self.multiVarDeclaration()
                 pass
-
+            else:
+                raise NoViableAltException(self)
 
             self.state = 155
             self.match(CParser.T__4)

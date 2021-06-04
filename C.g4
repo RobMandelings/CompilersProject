@@ -45,7 +45,7 @@ loop:
     ;
 
 whileLoop: WHILE enclosedExpression scope ;
-forLoop: FOR '(' (expression | singleVarDeclaration) ';' expression ';' expression ')' scope ;
+forLoop: FOR '(' (expression | multiVarDeclaration) ';' expression ';' expression ')' scope ;
 
 ifStatement:
     IF enclosedExpression scope |

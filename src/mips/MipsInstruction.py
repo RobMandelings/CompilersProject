@@ -44,7 +44,7 @@ class LoadWordInstruction(MipsInstruction):
     """
 
     def __init__(self, register_to_load_into: MipsValue.MipsRegister, register_address: MipsValue.MipsRegister,
-                 offset: FPOffset.FPOffset or int):
+                 offset: FPOffset.FPOffset or int or str):
         super().__init__()
         self.register_to_load_into = register_to_load_into
         self.register_address = register_address
@@ -123,15 +123,15 @@ class LoadAddressInstruction(MipsInstruction):
 
 class LoadAddressWithOffsetInstruction(MipsInstruction):
 
-    def __init__(self, register_to_load: MipsValue.MipsRegister, register_address: MipsValue.MipsRegister,
-                 fp_offset: FPOffset.FPOffset):
+    def __init__(self, register_to_load: MipsValue.MipsRegister, base_address: MipsValue.MipsRegister,
+                 offset: FPOffset.FPOffset or MipsValue.MipsLiteral or str):
         super().__init__()
         self.register_to_load = register_to_load
-        self.register_address = register_address
-        self.fp_offset = fp_offset
+        self.register_address = base_address
+        self.offset = offset
 
     def to_mips(self):
-        return f"la {self.register_to_load},{self.fp_offset.get_value()}({self.register_address})"
+        return f"la {self.register_to_load},{self.offset}({self.register_address})"
 
 
 class LoadImmediateInstruction(MipsInstruction):

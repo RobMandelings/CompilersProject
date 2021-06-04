@@ -74,21 +74,24 @@ class LLVMLiteral(LLVMValue):
 
 class LLVMRegister(LLVMValue):
 
-    def __init__(self, data_type=None):
+    def __init__(self, data_type):
         """
         By default, sets the data type to none (usually the data type of the newly created register is not known immediately)
         """
-        assert data_type is None or isinstance(data_type, DataType.DataType)
+        assert isinstance(data_type, DataType.DataType)
         super().__init__(None, data_type)
+
+    def __str__(self):
+        return super().__str__() if self.value is not None else self.to_llvm()
 
     def get_value(self):
         """
         Returns the number of this register. Still None if the numbers have not been updated (using update_numbering)
         """
-        assert isinstance(self.value, int)
         return self.value
 
     def to_llvm(self):
+        assert isinstance(self.get_value(), int), "Cannot output to llvm: not given a value yet!"
         return f'%{self.get_value()}'
 
     def get_llvm_value_token(self):

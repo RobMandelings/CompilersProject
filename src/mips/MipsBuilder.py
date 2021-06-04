@@ -106,7 +106,7 @@ class Descriptors:
         # Mips registers can only be assigned to one llvm register at a time
         assigned_register = self.get_assigned_register_for_mips_reg(mips_register)
         if assigned_register is not None:
-            self.__reg_descriptor[assigned_register] = None
+            self.__reg_descriptor.pop(assigned_register)
 
         self.__reg_descriptor[llvm_register] = mips_register
 
@@ -389,7 +389,8 @@ class MipsBuilder:
 
     def get_mips_values(self, llvm_instruction: LLVMInstruction.LLVMInstruction,
                         resulting_reg: LLVMValue.LLVMRegister or None,
-                        operands: list, all_registers=False, auto_assign_result_reg_in_descriptor=True):
+                        operands: list, all_registers=False, auto_assign_result_reg_in_descriptor=True,
+                        load_pointers_as_address=True):
         """
 
         Returns the corresponding mips registers and values from the given instruction with resulting register
@@ -413,7 +414,7 @@ class MipsBuilder:
         llvm_values = list()
 
         # List of mips registers or mips literals returned from the instruction
-        chosen_values = list()
+        chosen_values = dict()
 
         if resulting_reg is not None:
             llvm_values.append((resulting_reg, False))
@@ -423,12 +424,26 @@ class MipsBuilder:
             llvm_values.append((is_operand, True))
 
         for pair in llvm_values:
+            llvm_value = pair[0]
+
+            if not isinstance(llvm_value, LLVMValue.LLVMRegister):
+                continue
+
+            currently_assigned_mips_reg = self.get_current_descriptors().get_mips_reg_for_llvm_reg(llvm_value)
+
+            if currently_assigned_mips_reg is not None:
+                chosen_values[llvm_value] = currently_assigned_mips_reg
+
+        for pair in llvm_values:
+
+            if pair[0] in chosen_values.keys():
+                continue
 
             result_found = False
 
             if isinstance(pair[0], LLVMValue.LLVMLiteral) and not all_registers and \
                     pair[0].get_data_type().get_token() != DataType.DataTypeToken.FLOAT:
-                chosen_values.append(self.convert_to_mips_literal(pair[0]))
+                chosen_values[pair[0]] = self.convert_to_mips_literal(pair[0])
                 result_found = True
 
             if result_found:
@@ -456,14 +471,15 @@ class MipsBuilder:
                         llvm_value) else self.reg_pool.get_temporary_registers()
 
             mips_registers_to_choose_from = [mips_reg for mips_reg in
-                                             mips_registers_to_choose_from if mips_reg not in chosen_values]
+                                             mips_registers_to_choose_from if mips_reg not in chosen_values.values()]
 
             # The load and store operations from llvm (not required anymore)
 
             current_mips_reg = self.get_current_descriptors().get_mips_reg_for_llvm_reg(llvm_value)
 
             if current_mips_reg is not None and current_mips_reg in mips_registers_to_choose_from:
-                chosen_values.append(self.get_current_function().descriptors.get_mips_reg_for_llvm_reg(llvm_value))
+                chosen_values[llvm_value] = (
+                    self.get_current_function().descriptors.get_mips_reg_for_llvm_reg(llvm_value))
                 result_found = True
 
             if result_found:
@@ -475,7 +491,7 @@ class MipsBuilder:
             if not is_operand:
                 for mips_value in mips_registers_to_choose_from:
                     if self.get_current_descriptors().get_assigned_register_for_mips_reg(mips_value) == llvm_value:
-                        chosen_values.append(mips_value)
+                        chosen_values[llvm_value] = mips_value
                         result_found = True
                         break
 
@@ -484,7 +500,7 @@ class MipsBuilder:
 
             for mips_value in mips_registers_to_choose_from:
                 if self.get_current_descriptors().is_empty(mips_value):
-                    chosen_values.append(mips_value)
+                    chosen_values[llvm_value] = mips_value
                     result_found = True
                     break
 
@@ -500,7 +516,7 @@ class MipsBuilder:
                 # If the only variable whose descriptor says their value is in r is x
                 # and x not y or z, then return r. (We will overwrite it anyways!)
                 if assigned_llvm_reg == llvm_value:
-                    chosen_values.append(mips_value)
+                    chosen_values[llvm_value] = mips_value
                     result_found = True
                     break
 
@@ -510,7 +526,7 @@ class MipsBuilder:
                 # Worst case: the chosen register has an llvm register assigned to it, so we will need to spill into memory
                 if instruction_information is None or instruction_information.get_register_information(
                         assigned_llvm_reg).is_live():
-                    chosen_values.append(mips_value)
+                    chosen_values[llvm_value] = mips_value
                     result_found = True
                     break
 
@@ -521,12 +537,17 @@ class MipsBuilder:
 
         assert len(chosen_values) == len(llvm_values)
 
+        chosen_values_list = list()
+
+        for llvm_value in llvm_values:
+            chosen_values_list.append(chosen_values[llvm_value[0]])
+
         # Load the given llvm values into mips registers and updates the descriptors if necessary
         for i in range(0, len(chosen_values)):
 
             llvm_value = llvm_values[i][0]
             is_operand = llvm_values[i][1]
-            mips_value = chosen_values[i]
+            mips_value = chosen_values[llvm_value]
 
             # No need to update the descriptors as literals will never be re-used afterwards
             # But we need to load the value into the corresponding mips register
@@ -542,7 +563,9 @@ class MipsBuilder:
 
                 # We only need to update information if it has to be updated
                 if is_operand and not self.get_current_descriptors().loaded_in_mips_reg(llvm_value, mips_value):
-                    self.load_in_reg(llvm_value, store_in_reg=mips_value)
+                    self.load_in_reg(llvm_value,
+                                     store_in_reg=mips_value,
+                                     load_pointers_as_address=True)
                 elif not is_operand and auto_assign_result_reg_in_descriptor:
                     # If its not an operand, this means its a register for result. Update the descriptor accordingly
                     # So that the 'result' llvm register gets assigned to the mips register
@@ -563,7 +586,7 @@ class MipsBuilder:
 
                 raise NotImplementedError('Not supported!')
 
-        for mips_value in chosen_values:
+        for mips_value in chosen_values.values():
             if isinstance(mips_value, MipsValue.MipsRegister):
                 if MipsValue.MipsRegister.is_temporary_register(mips_value):
                     if mips_value not in self.get_current_function().temporary_registers_used:
@@ -575,12 +598,12 @@ class MipsBuilder:
         # Return tuple of <mips_result, mips_operands>
 
         if resulting_reg is None:
-            chosen_values.insert(0, None)
+            chosen_values_list.insert(0, None)
 
-        return chosen_values[0], chosen_values[1:]
+        return chosen_values_list[0], chosen_values_list[1:]
 
     def load_in_reg(self, llvm_value: LLVMValue.LLVMValue, store_in_reg: MipsValue.MipsRegister,
-                    update_reg_descriptor=True):
+                    update_reg_descriptor=True, load_pointers_as_address=True):
 
         # TODO what happens when the register to be assigned neither in a mips register or address?
         """
@@ -608,15 +631,15 @@ class MipsBuilder:
 
             if current_mips_reg is None:
 
-                if llvm_value.get_data_type().is_pointer():
+                if llvm_value.get_data_type().is_pointer() and load_pointers_as_address:
 
                     fp_offset = self.get_current_descriptors().get_assigned_offset_for_llvm_reg(llvm_value)
                     assert fp_offset is not None, "The offset to load from must already be assigned"
 
                     instruction = MipsInstruction \
                         .LoadAddressWithOffsetInstruction(register_to_load=store_in_reg,
-                                                          register_address=MipsValue.MipsRegister.FRAME_POINTER,
-                                                          fp_offset=fp_offset)
+                                                          base_address=MipsValue.MipsRegister.FRAME_POINTER,
+                                                          offset=fp_offset)
 
                 else:
 
@@ -625,7 +648,7 @@ class MipsBuilder:
                     if address_location is None:
 
                         print(
-                            f'LLVMRegister {llvm_value} not found in either the address or register descriptor. Initializing with value 0')
+                            f'LLVMRegister {llvm_value if llvm_value.get_value() is not None else "<not numbered>"} not found in either the address or register descriptor. Initializing with value 0')
 
                         instruction = MipsInstruction.ArithmeticBinaryInstruction(
                             first_operand=MipsValue.MipsRegister.ZERO,
@@ -818,13 +841,15 @@ class MipsBuilder:
                                                             resulting_register=MipsValue.MipsRegister.STACK_POINTER))
 
         for temporary_reg in self.get_current_function().temporary_registers_used:
-            offset_to_store_in = self.get_current_function().get_new_fp_offset(False)
-            self.get_current_function().add_instruction(
-                MipsInstruction.StoreWordInstruction(register_to_store=temporary_reg,
-                                                     register_address=MipsValue.MipsRegister.FRAME_POINTER,
-                                                     offset=offset_to_store_in))
-            self.get_current_descriptors().assign_offset_to_llvm_reg(
-                self.get_current_descriptors().get_assigned_register_for_mips_reg(temporary_reg), offset_to_store_in)
+            if not self.get_current_descriptors().is_empty(temporary_reg):
+                offset_to_store_in = self.get_current_function().get_new_fp_offset(False)
+                self.get_current_function().add_instruction(
+                    MipsInstruction.StoreWordInstruction(register_to_store=temporary_reg,
+                                                         register_address=MipsValue.MipsRegister.FRAME_POINTER,
+                                                         offset=offset_to_store_in))
+                self.get_current_descriptors().assign_offset_to_llvm_reg(
+                    self.get_current_descriptors().get_assigned_register_for_mips_reg(temporary_reg),
+                    offset_to_store_in)
 
     def load_temporary_registers(self):
         """
@@ -832,13 +857,15 @@ class MipsBuilder:
         """
 
         for temporary_reg in reversed(self.get_current_function().temporary_registers_used):
-            offset_to_load_from = self.get_current_descriptors().get_currently_assigned_offset_for_mips_reg(
-                temporary_reg)
-            assert offset_to_load_from is not None
-            self.get_current_function().add_instruction(
-                MipsInstruction.LoadWordInstruction(register_to_load_into=temporary_reg,
-                                                    register_address=MipsValue.MipsRegister.FRAME_POINTER,
-                                                    offset=offset_to_load_from))
+
+            if not self.get_current_descriptors().is_empty(temporary_reg):
+                offset_to_load_from = self.get_current_descriptors().get_currently_assigned_offset_for_mips_reg(
+                    temporary_reg)
+                assert offset_to_load_from is not None
+                self.get_current_function().add_instruction(
+                    MipsInstruction.LoadWordInstruction(register_to_load_into=temporary_reg,
+                                                        register_address=MipsValue.MipsRegister.FRAME_POINTER,
+                                                        offset=offset_to_load_from))
 
         amount_of_words_to_increase = len(self.get_current_function().temporary_registers_used)
         if amount_of_words_to_increase > 0:
