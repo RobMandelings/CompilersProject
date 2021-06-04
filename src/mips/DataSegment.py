@@ -6,6 +6,7 @@ class DataSegment:
         floating_point_lines: lines in the data segment which have a .float as data type
         """
         self.ascii_data = list()
+        self.global_variables = list()
         self.floating_point_data = list()
         self.arrays_data = list()
         self.call_f_strings = dict()
@@ -37,6 +38,11 @@ class DataSegment:
         self.floating_point_data.append(f'{identifier}: .float {value}')
         return identifier
 
+    def add_global_variable(self, value):
+        identifier = f"global{len(self.global_variables)}"
+        self.global_variables.append(f'{identifier}: .word {value}')
+        return identifier
+
     def to_mips(self):
         mips_code = ".data\n\n"
 
@@ -48,6 +54,9 @@ class DataSegment:
 
         for current_line in self.floating_point_data:
             mips_code += f"  {current_line}\n"
+
+        for current_line in self.global_variables:
+            mips_code += f" {current_line}\n"
 
         mips_code += "\n"
 
