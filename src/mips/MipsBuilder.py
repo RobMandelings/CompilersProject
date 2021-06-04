@@ -389,8 +389,7 @@ class MipsBuilder:
 
     def get_mips_values(self, llvm_instruction: LLVMInstruction.LLVMInstruction,
                         resulting_reg: LLVMValue.LLVMRegister or None,
-                        operands: list, all_registers=False, auto_assign_result_reg_in_descriptor=True,
-                        load_pointers_as_address=True):
+                        operands: list, all_registers=False, auto_assign_result_reg_in_descriptor=True):
         """
 
         Returns the corresponding mips registers and values from the given instruction with resulting register
