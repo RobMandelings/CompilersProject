@@ -323,12 +323,17 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                     f'{resulting_data_type.get_name()} and '
                     f'{declared_data_type.get_name()} are incompatible')
 
-    def visit_ast_binary_arithmetic_expression(self, ast: ASTBinaryArithmeticExpression):
-
+    def visit_ast_unary_expression(self, ast: ASTUnaryExpression):
         if self.optimize:
             self.optimize_expression(ast)
 
-        super().visit_ast_binary_arithmetic_expression(ast)
+    def visit_ast_binary_arithmetic_expression(self, ast: ASTBinaryArithmeticExpression):
+        if self.optimize:
+            self.optimize_expression(ast)
+
+    def visit_ast_expression(self, ast: ASTExpression):
+        if self.optimize:
+            self.optimize_expression(ast)
 
     def check_r_value_assignment(self, bin_expr: ASTAssignmentExpression):
 
@@ -581,6 +586,10 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
     def visit_ast_return_statement(self, ast: ASTReturnStatement):
 
+        if self.optimize and ast.get_return_value() is not None:
+            if isinstance(ast.get_return_value(), ASTExpression):
+                ast.return_value = self.optimize_expression(ast.get_return_value())
+
         if self.get_current_function() is None:
             raise SemanticError(f'You cannot put a return value outside of a function')
 
@@ -726,6 +735,12 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                 print("WARN: format array cannot be deduced at compile time, not checking the format")
 
     def visit_ast_function_call(self, ast: ASTFunctionCall):
+
+        if self.optimize:
+            for i in range(len(ast.params)):
+                if isinstance(ast.params[i], ASTExpression):
+                    ast.params[i] = self.optimize_expression(ast.params[i])
+
         function_identifier = ast.get_function_called_id()
 
         is_io_function_call = function_identifier == 'scanf' or function_identifier == 'printf'
