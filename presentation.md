@@ -32,6 +32,9 @@
 4. Comparison operations: <=, >=, !=
 5. Identifier operations: ++, --
 6. (Multiple variable declaration and/or initializations in one line, see benchmark prime.c for example)
+7. Efficient register retrieval<br>
+   7.1. Depending on register and address descriptors<br>
+   7.2. Storing and loading only registers that are used in function
 
 ## Added since intermediate presentation
 
