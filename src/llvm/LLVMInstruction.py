@@ -34,19 +34,21 @@ class LLVMInstruction(LLVMInterfaces.IToLLVM, IVisitable.ILLVMVisitable, Instruc
 
 class LLVMReturnInstruction(LLVMInstruction):
 
-    def __init__(self, return_value: LLVMValue.LLVMValue):
+    def __init__(self, return_value: LLVMValue.LLVMValue or None):
         super().__init__()
         self.return_value = return_value
 
-    def get_return_value(self):
-        assert isinstance(self.return_value, LLVMValue.LLVMValue)
+    def get_return_value(self) -> LLVMValue.LLVMValue or None:
         return self.return_value
 
     def is_terminator(self):
         return True
 
     def to_llvm(self):
-        return f'ret {self.get_return_value().get_data_type().get_llvm_name()} {self.get_return_value().to_llvm()}'
+        ret_val_string = 'void' if self.return_value is None else \
+            f'{self.get_return_value().get_data_type().get_llvm_name()} {self.get_return_value().to_llvm()}'
+
+        return f'ret {ret_val_string}'
 
     def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
         visitor.visit_llvm_return_instruction(self)
@@ -557,9 +559,9 @@ class LLVMScanfInstruction(LLVMRawAssignInstruction):
         visitor.visit_llvm_scanf_instruction(self)
 
 
-class LLVMCallInstruction(LLVMAssignInstruction):
+class LLVMCallInstruction(LLVMInstruction):
 
-    def __init__(self, function_to_call, args: list, infinity_params=False):
+    def __init__(self, function_to_call, args: list, infinity_params=False, has_resulting_reg=True):
         from src.llvm.LLVMFunction import LLVMFunction
         """
         Function to call: should be an LLVMFunction.LLVMFunction instance
@@ -569,10 +571,31 @@ class LLVMCallInstruction(LLVMAssignInstruction):
         self.function_to_call = function_to_call
         self.args = args
         self.infinity_args = infinity_params
-        super().__init__(LLVMValue.LLVMRegister(function_to_call.get_return_type()))
+        self.resulting_reg = LLVMValue.LLVMRegister(function_to_call.get_return_type()) if has_resulting_reg else None
+        super().__init__()
+
+    def is_terminator(self):
+        return False
+
+    def get_resulting_register(self) -> LLVMValue.LLVMRegister or None:
+        return self.resulting_reg
+
+    def update_numbering(self, counter):
+
+        if self.resulting_reg is not None:
+            self.resulting_reg.value = counter.get_value()
+            counter.increase()
+
+    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
+        visitor.visit_llvm_call_instruction(self)
 
     def to_llvm(self):
-        llvm_code = f'{super().to_llvm()}call {self.function_to_call.get_return_type().get_llvm_name()} ' \
+
+        assignment = ''
+        if self.resulting_reg is not None:
+            assignment = self.resulting_reg.to_llvm() + ' = '
+
+        llvm_code = f'{assignment}call {self.function_to_call.get_return_type().get_llvm_name()} ' \
                     f'@{self.function_to_call.get_identifier()}('
 
         for i in range(len(self.args)):
@@ -587,9 +610,6 @@ class LLVMCallInstruction(LLVMAssignInstruction):
         llvm_code += ')'
 
         return llvm_code
-
-    def accept(self, visitor: ILLVMVisitor.ILLVMVisitor):
-        visitor.visit_llvm_call_instruction(self)
 
 
 class LLVMBitcastInstruction(LLVMAssignInstruction):

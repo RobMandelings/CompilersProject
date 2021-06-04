@@ -292,19 +292,25 @@ class ASTVisitorToLLVM(ASTBaseVisitor.ASTBaseVisitor):
 
     def visit_ast_return_statement(self, ast: ASTReturnStatement):
 
-        if isinstance(ast.get_return_value(), ASTs.ASTExpression):
-            return_value = self.builder.compute_expression(ast.get_return_value())
-        elif isinstance(ast.get_return_value(), ASTs.ASTIdentifier):
-            variable_register = self.builder.get_variable_register(ast.get_return_value().get_name())
-            return_value = LLVMValue.LLVMRegister(DataType.DataType(variable_register.get_data_type().get_token(),
-                                                                    variable_register.get_data_type().get_pointer_level() - 1))
-            self.builder.get_current_function().add_instruction(
-                LLVMInstructions.LLVMLoadInstruction(return_value, variable_register))
-        elif isinstance(ast.get_return_value(), ASTs.ASTLiteral):
-            return_value = LLVMValue.LLVMLiteral(ast.get_return_value().get_value(),
-                                                 ast.get_return_value().get_data_type())
+        if ast.get_return_value() is not None:
+
+            if isinstance(ast.get_return_value(), ASTs.ASTExpression):
+                return_value = self.builder.compute_expression(ast.get_return_value())
+            elif isinstance(ast.get_return_value(), ASTs.ASTIdentifier):
+                variable_register = self.builder.get_variable_register(ast.get_return_value().get_name())
+                return_value = LLVMValue.LLVMRegister(DataType.DataType(variable_register.get_data_type().get_token(),
+                                                                        variable_register.get_data_type().get_pointer_level() - 1))
+                self.builder.get_current_function().add_instruction(
+                    LLVMInstructions.LLVMLoadInstruction(return_value, variable_register))
+            elif isinstance(ast.get_return_value(), ASTs.ASTLiteral):
+                return_value = LLVMValue.LLVMLiteral(ast.get_return_value().get_value(),
+                                                     ast.get_return_value().get_data_type())
+            else:
+                raise NotImplementedError
+
         else:
-            raise NotImplementedError
+            
+            return_value = None
 
         self.builder.get_current_function().add_instruction(LLVMInstructions.LLVMReturnInstruction(return_value))
         self.builder.get_current_function().add_basic_block()

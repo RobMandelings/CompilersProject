@@ -172,16 +172,26 @@ class LLVMDefinedFunction(LLVMFunction):
         # Maybe do this in a better way but for now it's good, just append ret to the basic block if it is empty
         # LLVM does this in a weird way
         if not self.get_current_basic_block().has_terminal_instruction():
-            allocated_reg = LLVMValue.LLVMRegister(DataType.DataType(self.get_return_type().get_token(),
-                                                                     self.get_return_type().get_pointer_level() + 1))
-            alloca_instruction = LLVMInstruction.LLVMAllocaInstruction(allocated_reg)
-            self.add_instruction(alloca_instruction)
 
-            loaded_reg = LLVMValue.LLVMRegister(self.get_return_type())
-            self.add_instruction(LLVMInstruction.LLVMLoadInstruction(loaded_reg, allocated_reg))
-            self.add_instruction(LLVMInstruction.LLVMReturnInstruction(loaded_reg))
+            if self.get_return_type() == DataType.NORMAL_VOID:
+                self.add_instruction(LLVMInstruction.LLVMReturnInstruction(None))
+            else:
+                allocated_reg = LLVMValue.LLVMRegister(DataType.DataType(self.get_return_type().get_token(),
+                                                                         self.get_return_type().get_pointer_level() + 1))
+                alloca_instruction = LLVMInstruction.LLVMAllocaInstruction(allocated_reg)
+                self.add_instruction(alloca_instruction)
+
+                loaded_reg = LLVMValue.LLVMRegister(self.get_return_type())
+                self.add_instruction(LLVMInstruction.LLVMLoadInstruction(loaded_reg, allocated_reg))
+                self.add_instruction(LLVMInstruction.LLVMReturnInstruction(loaded_reg))
 
     def to_llvm(self):
+
+        # Remove the last 'empty' basic block in case there is one
+        # When generating terminator instructions, another basic block is already added for convenience
+        # But sometimes we don't know whether the newly created basic block will be filled or not
+        if self.get_current_basic_block().is_empty():
+            self.basic_blocks.pop(next(reversed(self.basic_blocks)))
 
         self._add_ret_if_necessary()
 

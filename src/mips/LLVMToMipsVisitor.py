@@ -481,7 +481,8 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         # In order to store the arguments into memory
         resulting_mips_reg, mips_args_to_be_stored_in_memory = self.get_mips_builder() \
             .get_mips_values(instruction,
-                             instruction.get_resulting_register(),
+                             instruction.get_resulting_register() if
+                             instruction.get_resulting_register() is not None else None,
                              llvm_args_to_be_stored_in_memory,
                              all_registers=True)
 
@@ -533,17 +534,19 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
             self.get_mips_builder().get_current_function().decrease_after_init_fp_offset_index(
                 len(mips_args_to_be_stored_in_memory))
 
-        # Put the v0 in the designated mips resulting register
-        self.get_mips_builder().get_current_function().add_instruction(
-            MipsInstruction.MoveInstruction(register_to_move_in=resulting_mips_reg,
-                                            register_to_move_from=MipsValue.MipsRegister.V0)
-        )
+        if instruction.get_resulting_register() is not None:
+            # Put the v0 in the designated mips resulting register
+            self.get_mips_builder().get_current_function().add_instruction(
+                MipsInstruction.MoveInstruction(register_to_move_in=resulting_mips_reg,
+                                                register_to_move_from=MipsValue.MipsRegister.V0)
+            )
 
     def visit_llvm_return_instruction(self, instruction: LLVMInstruction.LLVMReturnInstruction):
 
         # We assert there is only one or zero return value and this will be placed in v0
 
-        self.get_mips_builder().load_in_reg(instruction.get_return_value(), MipsValue.MipsRegister.V0)
+        if instruction.get_return_value() is not None:
+            self.get_mips_builder().load_in_reg(instruction.get_return_value(), MipsValue.MipsRegister.V0)
         self.get_mips_builder().get_current_function().add_return_instruction_point()
 
         super().visit_llvm_return_instruction(instruction)

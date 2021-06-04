@@ -592,6 +592,7 @@ class MipsBuilder:
         (must be initialized somewhere for the first time)
         """
         assert isinstance(store_in_reg, MipsValue.MipsRegister)
+        assert llvm_value is not None, "Cannot load llvmvalue None into a mips register!"
 
         assigned_llvm_reg = self.get_current_descriptors().get_assigned_register_for_mips_reg(store_in_reg)
 

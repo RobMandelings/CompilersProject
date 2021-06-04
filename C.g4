@@ -29,7 +29,7 @@ singleLineStatement:
     ;
 
 controlFlowStatement: BREAK | CONTINUE | returnStatement ;
-returnStatement: RETURN expression;
+returnStatement: RETURN expression?;
 
 // Scoped statements
 scopedStatement:

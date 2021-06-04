@@ -353,7 +353,11 @@ def from_control_flow_statement(cst):
 
 
 def from_return_statement(cst):
-    return_value = create_ast_from_cst(cst.children[1])
+    # Return value is given as well
+    if len(cst.children) > 1:
+        return_value = create_ast_from_cst(cst.children[1])
+    else:
+        return_value = None
     return ASTReturnStatement(return_value)
 
 

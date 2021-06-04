@@ -650,13 +650,14 @@ class ASTFunctionCall(ASTExpression):
 
 class ASTReturnStatement(AST):
 
-    def __init__(self, return_value: AST):
+    def __init__(self, return_value: AST or None):
         super().__init__(f'return statement')
         self.return_value = return_value
-        self.return_value.parent = self
 
-    def get_return_value(self):
-        assert isinstance(self.return_value, AST)
+        if return_value is not None:
+            self.return_value.parent = self
+
+    def get_return_value(self) -> AST or None:
         return self.return_value
 
     def accept(self, visitor: IASTVisitor):
@@ -680,6 +681,9 @@ class ASTVarDeclarationAndInit(AST):
 
     def get_var_name(self):
         return self.get_var_declaration().get_var_name()
+
+    def get_initial_value(self) -> AST:
+        return self.initial_value
 
     def get_var_declaration(self):
         assert isinstance(self.var_declaration, ASTVarDeclaration)

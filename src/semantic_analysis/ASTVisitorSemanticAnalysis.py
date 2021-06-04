@@ -90,6 +90,9 @@ class ASTVisitorResultingDataType(ASTBaseVisitor):
         if not result_data_type.is_pointer():
             raise SemanticError(f"Cannot dereference a non-pointer ('{result_data_type.get_name()}' invalid)")
 
+        if result_data_type.get_token() == DataType.DataTypeToken.VOID and result_data_type.get_pointer_level() == 1:
+            raise SemanticError(f"Cannot dereference data type {result_data_type.get_name()}")
+
         self.update_current_data_type(
             DataType.DataType(result_data_type.get_token(), result_data_type.get_pointer_level() - 1,
                               array=result_data_type.is_array()))
@@ -473,6 +476,9 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         assert isinstance(ast, ASTVarDeclaration)
         symbol_table = self.get_last_symbol_table()
 
+        if ast.get_data_type() == DataType.NORMAL_VOID:
+            raise SemanticError(f'Cannot declare variable {ast.get_var_name()} of data type void')
+
         if ast.is_const() and not isinstance(ast.parent, ASTVarDeclarationAndInit):
             raise SemanticError(
                 f"Variable '{ast.var_name_ast.get_content()}' declared const must be initialized with its declaration")
@@ -523,6 +529,14 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         variable_symbol = self.get_last_symbol_table().lookup_variable(
             ast.get_var_declaration().get_var_name_ast().get_content())
 
+        rhs_data_type = self.check_resulting_data_type(ast.get_initial_value())
+
+        if rhs_data_type != ast.get_var_declaration().get_data_type():
+            raise SemanticError(
+                'Cannot declare and initialize variable: '
+                f'declared data type ({ast.get_var_declaration().get_data_type()}) does not match datatype'
+                f' from the initalized value / expression ({rhs_data_type})')
+
         # Do some semantic checks
         self.check_undeclared_variable_usage(ast.initial_value)
         self.check_uninitialized_variable_usage(ast.initial_value)
@@ -565,11 +579,22 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
         return_value = ast.get_return_value()
 
-        if self.get_current_function().get_return_type() != self.check_resulting_data_type(return_value):
-            raise SemanticError(
-                f"The return type of the function '{self.get_current_function().symbol_name}' "
-                f"(data type '{self.get_current_function().get_return_type()}') and "
-                f"return type of the return value (data type '{return_value.get_data_type()}') aren't equal")
+        if return_value is not None:
+            resulting_data_type = self.check_resulting_data_type(return_value)
+        else:
+            resulting_data_type = DataType.NORMAL_VOID
+
+        if self.get_current_function().get_return_type() != resulting_data_type:
+
+            if resulting_data_type == DataType.NORMAL_VOID and self.get_current_function().get_return_type() != DataType.NORMAL_VOID:
+                raise SemanticError(
+                    f'Return type of function {self.get_current_function().get_name()} is {self.get_current_function().get_return_type()}. You cannot return nothing (void)')
+
+            else:
+                raise SemanticError(
+                    f"The return type of the function '{self.get_current_function().symbol_name}' "
+                    f"(data type '{self.get_current_function().get_return_type()}') and "
+                    f"return type of the return value (data type '{resulting_data_type}') aren't equal")
 
         super().visit_ast_return_statement(ast)
 

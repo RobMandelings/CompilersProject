@@ -318,7 +318,8 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
             function = self.get_function_holder().get_function(ast.get_function_called_id())
 
-            call_instruction = LLVMInstructions.LLVMCallInstruction(function, args_llvm_value)
+            call_instruction = LLVMInstructions.LLVMCallInstruction(function, args_llvm_value,
+                                                                    has_resulting_reg=function.get_return_type() != DataType.NORMAL_VOID)
 
             self.get_current_function().add_instruction(call_instruction)
 

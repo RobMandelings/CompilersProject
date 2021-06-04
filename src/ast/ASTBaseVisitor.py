@@ -71,8 +71,6 @@ class ASTBaseVisitor(IASTVisitor):
         for value in ast.get_values():
             value.accept(self)
 
-
-
     def visit_ast_var_declaration(self, ast: ASTVarDeclaration):
         assert isinstance(ast, ASTVarDeclaration)
         ast.data_type_ast.accept(self)
@@ -137,7 +135,9 @@ class ASTBaseVisitor(IASTVisitor):
         ast.get_execution_body().accept(self)
 
     def visit_ast_return_statement(self, ast: ASTReturnStatement):
-        ast.return_value.accept(self)
+
+        if ast.return_value is not None:
+            ast.return_value.accept(self)
 
     def visit_ast_include(self, ast: ASTInclude):
         pass
