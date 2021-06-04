@@ -323,6 +323,13 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                     f'{resulting_data_type.get_name()} and '
                     f'{declared_data_type.get_name()} are incompatible')
 
+    def visit_ast_binary_arithmetic_expression(self, ast: ASTBinaryArithmeticExpression):
+
+        if self.optimize:
+            self.optimize_expression(ast)
+
+        super().visit_ast_binary_arithmetic_expression(ast)
+
     def check_r_value_assignment(self, bin_expr: ASTAssignmentExpression):
 
         data_type = self.check_resulting_data_type(bin_expr.left)
