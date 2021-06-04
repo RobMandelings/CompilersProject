@@ -18,8 +18,8 @@ class LLVMGlobalContainer(LLVMInterfaces.IToLLVM):
     def __init__(self):
         self.global_strings = dict()
         self.global_declaration_instructions = list()
-        self.global_array_declaration_instructions = list()
-        self.global_variable_declaration_instructions = list()
+        self.global_array_declaration_instructions = dict()
+        self.global_variable_declaration_instructions = dict()
         self.__printf_type_strings = dict()
         self.__memcpy_declaration_added = False
         self.__printf_declaration_added = False
@@ -44,14 +44,17 @@ class LLVMGlobalContainer(LLVMInterfaces.IToLLVM):
             self.__memcpy_declaration_added = True
 
     def add_variable_declaration(self, key: str, datatype: DataType.DataType):
-        self.global_variable_declaration_instructions.append(f'@{key} = common dso_local global {datatype.get_llvm_name()} 0, align 4')
+        self.global_variable_declaration_instructions[
+            key] = f'@{key} = common dso_local global {datatype.get_llvm_name()} 0, align 4'
 
     def add_variable_declaration_and_init(self, key: str, datatype: DataType.DataType, value: str):
-        self.global_variable_declaration_instructions.append(f'@{key} = dso_local global {datatype.get_llvm_name()} {value}, align 4')
+        self.global_variable_declaration_instructions[
+            key] = f'@{key} = dso_local global {datatype.get_llvm_name()} {value}, align 4'
 
     def add_global_string(self, length, string):
         string_created = f"@.str.{len(self.global_strings)}"
-        self.global_strings[string_created] = f"{string_created} = private unnamed_addr constant [{length} x i8] c\"{string}\", align 1"
+        self.global_strings[
+            string_created] = f"{string_created} = private unnamed_addr constant [{length} x i8] c\"{string}\", align 1"
         return string_created
 
     def has_printf_type_string(self):
@@ -108,8 +111,8 @@ class LLVMGlobalContainer(LLVMInterfaces.IToLLVM):
             string_to_return += global_string + "\n"
         for global_declaration in self.global_declaration_instructions:
             string_to_return += global_declaration + "\n"
-        for array_declaration in self.global_array_declaration_instructions:
+        for array_declaration in self.global_array_declaration_instructions.values():
             string_to_return += array_declaration + "\n"
-        for variable_declaration in self.global_variable_declaration_instructions:
+        for variable_declaration in self.global_variable_declaration_instructions.values():
             string_to_return += variable_declaration + "\n"
         return string_to_return
