@@ -89,7 +89,7 @@ class LLVMRegister(LLVMValue):
         """
         Returns the number of this register. Still None if the numbers have not been updated (using update_numbering)
         """
-        assert isinstance(self.value, int)
+        assert isinstance(self.value, int) or isinstance(self.value, str)
         return self.value
 
     def to_llvm(self):

@@ -404,7 +404,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
     def declare_global_variable(self, ast: ASTs.ASTVarDeclaration):
         self.get_global_container().add_variable_declaration(ast.get_var_name(), ast.get_data_type())
-        resulting_register = self.get_global_container().get_new_register(ast.get_data_type(), ast.get_var_name())
+        resulting_register = self.get_global_container().get_new_register(DataType.DataType(ast.get_data_type().get_token(), ast.get_data_type().get_pointer_level() + 1), ast.get_var_name())
         self.get_last_symbol_table().insert_variable(ast.get_var_name(), resulting_register)
 
         return resulting_register
@@ -418,7 +418,7 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
     def declare_and_init_global_variable(self, ast: ASTs.ASTVarDeclarationAndInit):
         value_to_store = self.compute_expression(ast.initial_value)
         self.get_global_container().add_variable_declaration_and_init(ast.get_var_declaration().get_var_name(), ast.get_data_type(), value_to_store.get_value())
-        resulting_register = self.get_global_container().get_new_register(ast.get_data_type(), ast.get_var_declaration().get_var_name())
+        resulting_register = self.get_global_container().get_new_register(DataType.DataType(ast.get_data_type().get_token(), ast.get_data_type().get_pointer_level() + 1), ast.get_var_declaration().get_var_name())
         self.get_last_symbol_table().insert_variable(ast.get_var_declaration().get_var_name_ast().get_content(),
                                                      resulting_register)
 
