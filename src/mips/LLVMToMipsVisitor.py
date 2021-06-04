@@ -592,8 +592,7 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
                                                                          instruction.get_resulting_register(),
                                                                          [instruction.index,
                                                                           LLVMValue.LLVMRegister(DataType.NORMAL_INT)],
-                                                                         all_registers=True,
-                                                                         load_pointers_as_address=False)
+                                                                         all_registers=True)
 
         index_accessed = operands[0]
 
