@@ -382,7 +382,18 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
 
     def declare_variable(self, ast: ASTs.ASTVarDeclaration):
         """
-        Declares a variable in LLVM using an Alloca instruction
+        Declares a variable in LLVM
+
+        returns: the LLVMRegister created for this variable
+        """
+        if ast.parent.content == 'global scope':
+            return self.declare_global_variable(ast)
+        else:
+            return self.declare_local_variable(ast)
+
+    def declare_local_variable(self, ast: ASTs.ASTVarDeclaration):
+        """
+        Declares a local variable in LLVM using an Alloca instruction
 
         returns: the LLVMRegister created for this variable
         """
@@ -394,7 +405,27 @@ class LLVMBuilder(LLVMInterfaces.IToLLVM):
         self.get_current_function().add_instruction(instruction)
         return resulting_register
 
+    def declare_global_variable(self, ast: ASTs.ASTVarDeclaration):
+        self.get_global_container().add_variable_declaration(ast.get_var_name(), ast.get_data_type())
+        resulting_register = self.get_global_container().get_new_register(DataType.DataType(ast.get_data_type().get_token(), ast.get_data_type().get_pointer_level() + 1), ast.get_var_name())
+        self.get_last_symbol_table().insert_variable(ast.get_var_name(), resulting_register)
+
+        return resulting_register
+
     def declare_and_init_variable(self, ast: ASTs.ASTVarDeclarationAndInit):
+        if ast.parent.content == 'global scope':
+            return self.declare_and_init_global_variable(ast)
+        else:
+            return self.declare_and_init_local_variable(ast)
+
+    def declare_and_init_global_variable(self, ast: ASTs.ASTVarDeclarationAndInit):
+        value_to_store = self.compute_expression(ast.initial_value)
+        self.get_global_container().add_variable_declaration_and_init(ast.get_var_declaration().get_var_name(), ast.get_data_type(), value_to_store.get_value())
+        resulting_register = self.get_global_container().get_new_register(DataType.DataType(ast.get_data_type().get_token(), ast.get_data_type().get_pointer_level() + 1), ast.get_var_declaration().get_var_name())
+        self.get_last_symbol_table().insert_variable(ast.get_var_declaration().get_var_name_ast().get_content(),
+                                                     resulting_register)
+
+    def declare_and_init_local_variable(self, ast: ASTs.ASTVarDeclarationAndInit):
         """
         Declares and initializes a variable using LLVM instructions. Computes expressions if necessary
         Adds the corresponding instructions to the current basic block
