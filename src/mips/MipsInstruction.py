@@ -44,14 +44,27 @@ class LoadWordInstruction(MipsInstruction):
     """
 
     def __init__(self, register_to_load_into: MipsValue.MipsRegister, register_address: MipsValue.MipsRegister,
-                 offset: FPOffset.FPOffset or int or str):
+                 offset: FPOffset.FPOffset or int or str or None):
         super().__init__()
         self.register_to_load_into = register_to_load_into
         self.register_address = register_address
         self.offset = offset
 
     def to_mips(self):
-        return f"{'lw' if not MipsValue.MipsRegister.is_floating_point_register(self.register_to_load_into) else 'lwc1'} {self.register_to_load_into}, {self.offset.get_value() if isinstance(self.offset, FPOffset.FPOffset) else self.offset}({self.register_address})"
+
+        if isinstance(self.offset, FPOffset.FPOffset):
+            offset = self.offset.get_value()
+        elif isinstance(self.offset, int):
+            offset = self.offset
+        else:
+            offset = None
+
+        if offset is not None:
+            address = f'{offset}({self.register_address})'
+        else:
+            address = f'{self.register_address}'
+
+        return f"{'lw' if not MipsValue.MipsRegister.is_floating_point_register(self.register_to_load_into) else 'lwc1'} {self.register_to_load_into}, {address}"
 
 
 class LoadWordCoProcDataInstruction(MipsInstruction):
@@ -77,20 +90,26 @@ class StoreWordInstruction(MipsInstruction):
     """
 
     def __init__(self, register_to_store: MipsValue.MipsRegister, register_address: MipsValue.MipsRegister,
-                 offset: FPOffset.FPOffset or int):
+                 offset: FPOffset.FPOffset or int or None):
         super().__init__()
         self.register_to_store = register_to_store
         self.register_address = register_address
         self.offset = offset
-        assert offset is not None
 
     def to_mips(self):
         if isinstance(self.offset, FPOffset.FPOffset):
             offset = self.offset.get_value()
-        else:
+        elif isinstance(self.offset, int):
             offset = self.offset
+        else:
+            offset = None
 
-        return f"{'sw' if not MipsValue.MipsRegister.is_floating_point_register(self.register_to_store) else 'swc1'} {self.register_to_store}, {offset}({self.register_address})"
+        if offset is not None:
+            address = f'{offset}({self.register_address})'
+        else:
+            address = f'{self.register_address}'
+
+        return f"{'sw' if not MipsValue.MipsRegister.is_floating_point_register(self.register_to_store) else 'swc1'} {self.register_to_store}, {address}"
 
 
 class LoadUpperImmediateInstruction(MipsInstruction):

@@ -16,15 +16,18 @@ class LLVMGlobalContainer(LLVMInterfaces.IToLLVM):
         visitor.visit_llvm_global_container(self)
 
     def __init__(self):
+        """
+        global variables: key: llvm reg, value: initial value (none if not any)
+        """
         self.global_strings = dict()
         self.global_declaration_instructions = list()
         self.global_array_declaration_instructions = dict()
         self.global_variable_declaration_instructions = dict()
+        self.global_registers = dict()
         self.__printf_type_strings = dict()
         self.__memcpy_declaration_added = False
         self.__printf_declaration_added = False
         self.__scanf_declaration_added = False
-        pass
 
     def add_printf_declaration(self):
         if not self.__printf_declaration_added:
