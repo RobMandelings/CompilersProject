@@ -577,10 +577,6 @@ class MipsBuilder:
 
                     self.get_current_function().descriptors.assign_to_mips_reg(llvm_value, mips_value)
 
-                # TODO Add these registers to saved registers used and temporary registers used
-                # if mips_reg.name.startswith('t'):
-                # elif mips_reg.name.startswith('s'):
-
             else:
 
                 raise NotImplementedError('Not supported!')
@@ -603,8 +599,6 @@ class MipsBuilder:
 
     def load_in_reg(self, llvm_value: LLVMValue.LLVMValue, store_in_reg: MipsValue.MipsRegister,
                     update_reg_descriptor=True, load_pointers_as_address=True):
-
-        # TODO what happens when the register to be assigned neither in a mips register or address?
         """
         Generates the instructions to load the given value (literal/register) in a designated mips register,
         from memory if this is necessary, else uses assignment instructions.
