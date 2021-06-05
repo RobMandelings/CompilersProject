@@ -30,8 +30,3 @@ In order to facilitate the optimization feature, run the previous command but wi
 The command would look like this:
 
 python main.py "input file" true
-
-# Bugs to solve
-
-Float initialized with integer literal gives no semantical error anymore, and an integer is stored into floating point
-variable. MIPS doesn't output anything for this.
