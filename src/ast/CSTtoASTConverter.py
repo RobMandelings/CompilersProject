@@ -423,6 +423,9 @@ def from_pointer_expression(cst):
 
         if cst.children[0].getSymbol().text == '&':
             # Undo the dereference
+            if not isinstance(value_to_apply, ASTDereference):
+                raise SemanticError('Cannot dereference a non-dereferencable object')
+
             assert isinstance(value_to_apply, ASTDereference)
             return value_to_apply.get_value_to_dereference()
         else:

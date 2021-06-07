@@ -324,14 +324,17 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
                     f'{declared_data_type.get_name()} are incompatible')
 
     def visit_ast_unary_expression(self, ast: ASTUnaryExpression):
+        super().visit_ast_unary_expression(ast)
         if self.optimize:
             self.optimize_expression(ast)
 
     def visit_ast_binary_arithmetic_expression(self, ast: ASTBinaryArithmeticExpression):
+        super().visit_ast_binary_arithmetic_expression(ast)
         if self.optimize:
             self.optimize_expression(ast)
 
     def visit_ast_expression(self, ast: ASTExpression):
+        super().visit_ast_expression(ast)
         if self.optimize:
             self.optimize_expression(ast)
 
@@ -394,6 +397,7 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
     def visit_ast_relational_expression(self, ast: ASTRelationalExpression):
 
+        super().visit_ast_relational_expression(ast)
         self.check_undeclared_variable_usage(ast)
         self.check_uninitialized_variable_usage(ast)
         self.check_resulting_data_type(ast)
@@ -406,15 +410,15 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         while isinstance(right, ASTDereference):
             right = right.get_value_to_dereference()
 
-        if isinstance(ast.left, ASTIdentifier) and isinstance(ast.right, ASTIdentifier):
-            lookup_left = self.get_last_symbol_table().lookup(ast.left.get_name())
-            lookup_right = self.get_last_symbol_table().lookup(ast.right.get_name())
+        if isinstance(left, ASTIdentifier) and isinstance(right, ASTIdentifier):
+            lookup_left = self.get_last_symbol_table().lookup(left.get_name())
+            lookup_right = self.get_last_symbol_table().lookup(right.get_name())
 
             if isinstance(lookup_left, ArraySymbol) and isinstance(lookup_right, ArraySymbol):
-                print("Warning: array comparison always evaluates to false")
+                raise SemanticError(f"Cannot compare two arrays ({left.get_name()} and {right.get_name()})")
             elif isinstance(lookup_left, ArraySymbol) or isinstance(lookup_right, ArraySymbol):
-                print(
-                    f"Warning: comparison between {lookup_left.get_data_type().get_name()} and {lookup_right.get_data_type().get_token().get_name()}")
+                raise SemanticError(
+                    f"Cannot compare {lookup_left.get_data_type().get_name()} with {lookup_right.get_data_type().get_token().get_name()}")
             elif isinstance(lookup_left, VariableSymbol) and isinstance(lookup_right, VariableSymbol):
                 self.check_resulting_data_type(ast)
             else:
@@ -576,6 +580,10 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         # Only the global scope will directly visit ast scope
         self.on_scope_entered(SymbolTable.ScopeType.GLOBAL)
         super().visit_ast_scope(ast)
+
+        main_symbol = self.get_last_symbol_table().lookup('main')
+        if not isinstance(main_symbol, FunctionSymbol):
+            raise SemanticError('Main function not found!')
         self.on_scope_exit()
 
     def on_function_entered(self, function_symbol: FunctionSymbol):
