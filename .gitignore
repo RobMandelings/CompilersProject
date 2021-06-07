@@ -6,6 +6,10 @@ output/*
 test.ll
 input.ll
 *.jar
+benchmark/CorrectCode/asts/
+benchmark/CorrectCode/compiled_code/
+benchmark/SemanticErrors/asts/
+benchmark/SemanticErrors/compiled_code/
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/pycharm

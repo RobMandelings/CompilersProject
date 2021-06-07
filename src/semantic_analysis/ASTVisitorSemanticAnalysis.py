@@ -728,7 +728,8 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
 
                     resulting_data_type = self.check_resulting_data_type(ast.get_arguments()[i])
 
-                    if symbol_type_specification != resulting_data_type:
+                    if symbol_type_specification != resulting_data_type and not (
+                            symbol_type_specification == DataType.NORMAL_INT and resulting_data_type == DataType.NORMAL_FLOAT):
 
                         if (symbol_type_specification.get_token().is_floating_point() and
                                 resulting_data_type.get_token().is_floating_point()):

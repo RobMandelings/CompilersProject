@@ -8,6 +8,11 @@ the following:
 - LLVM Output (.ll extension)
 - MIPS Output (.asm extension)
 
+## Removed from benchmark
+
+comparisons1.c floatToIntConversion.c intToFloatConversion.c if.c: replaced && 1 with a nested if statement, as we don't
+support logical operators ifElse.c: replaced && 1 with a nested if as we don't support logical operators
+
 ## Features
 
 We have implemented everything of the mandatory features, except support for arrays in MIPS. Due to lack of time,

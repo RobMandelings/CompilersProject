@@ -424,6 +424,9 @@ class LLVMCompareInstruction(LLVMBinaryAssignInstruction):
         elif data_type_to_compare == DataType.NORMAL_CHAR:
             print("WARN: data type to compare is char, returning comparison data type INT. Not tested yet")
             return LLVMUtils.ComparisonDataType.INT
+        elif data_type_to_compare == DataType.NORMAL_BOOL:
+            # Bool is also compared with int
+            return LLVMUtils.ComparisonDataType.INT
         else:
             raise NotImplementedError
 

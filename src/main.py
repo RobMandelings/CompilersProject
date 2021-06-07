@@ -7,6 +7,7 @@ from src.semantic_analysis.ASTVisitorSemanticAnalysis import ASTVisitorSemanticA
 from src.syntacticalAnalysis import CSTErrorListener
 from src.mips.LLVMToMipsVisitor import LLVMToMipsVisitor
 import enum
+import traceback
 
 
 def log(file, log_string):
@@ -65,17 +66,23 @@ def run_benchmarks(semantic_errors, optimized: bool):
                     f"[Compiler] something went wrong running {benchmark_type} benchmark file {filename}. "
                     f"Compiler might not support certain features in the file.")
                 print(e)
+                benchmark_log_file.write('OTHER ERROR:\n')
+                benchmark_log_file.write(f"{e}\n\n")
                 other_errors += 1
+                traceback.print_exc(e)
 
         else:
             print(f"[Compiler] Skipping file {filename} (doesn't have the .c extension)")
 
     summary_log_file.write('COMPILE SUMMARY:\n')
     summary_log_file.write(f'Total files attempted to compile: {total}\n')
-    summary_log_file.write(f'Successful compilations: {success} ({success / total}%)\n')
-    summary_log_file.write(f'Syntax error compilations: {syntax_errors} ({syntax_errors / total}%)\n')
-    summary_log_file.write(f'Syntax error compilations: {semantic_errors} ({semantic_errors / total}%)\n\n')
-    summary_log_file.write(f'Other error compilations: {other_errors} ({other_errors / total}%)\n\n')
+    summary_log_file.write(f'Successful compilations: {success} ({"{:.2f}".format(success / total * 100)}%)\n')
+    summary_log_file.write(
+        f'Syntax error compilations: {syntax_errors} ({"{:.2f}".format(syntax_errors / total * 100)}%)\n')
+    summary_log_file.write(
+        f'Semantic error compilations: {semantic_errors} ({"{:.2f}".format(semantic_errors / total * 100)}%)\n\n')
+    summary_log_file.write(
+        f'Other error compilations: {other_errors} ({"{:.2f}".format(other_errors / total * 100)}%)\n\n')
 
 
 def run_benchmark(filename: str, optimized: bool, base_filedir=None, benchmark_log_file=None):
