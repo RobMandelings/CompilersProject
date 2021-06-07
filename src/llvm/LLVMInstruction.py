@@ -406,6 +406,9 @@ class LLVMCompareInstruction(LLVMBinaryAssignInstruction):
         self.operation = operation
         self.comparison_type = self.get_comparison_type()
 
+    def get_operation(self) -> ASTTokens.RelationalExprToken:
+        return self.operation
+
     def get_resulting_data_type(self):
         return self.get_resulting_register().get_data_type()
 

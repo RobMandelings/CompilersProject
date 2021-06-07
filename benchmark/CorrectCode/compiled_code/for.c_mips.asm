@@ -26,7 +26,8 @@
     j main_1
   main_1:
     lw $t0, 0($s0)
-    slti $t1,$t0,10
+    li $t2, 10 
+    slt $t1,$t0,$t2
     bne $t1, $zero, main_3
   main_2:
     beq $t1, $zero, main_4

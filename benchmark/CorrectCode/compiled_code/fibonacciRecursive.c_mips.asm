@@ -27,7 +27,8 @@
     j f_1
   f_1:
     lw $t0, 0($s0)
-    slti $t1,$t0,2
+    li $t2, 2 
+    slt $t1,$t0,$t2
     bne $t1, $zero, f_3
   f_2:
     beq $t1, $zero, f_5

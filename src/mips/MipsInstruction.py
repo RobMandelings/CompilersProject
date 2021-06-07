@@ -506,32 +506,58 @@ class CompareInstruction(MipsInstruction):
     def __init__(self, resulting_register: MipsValue.MipsRegister, first_operand: MipsValue.MipsRegister,
                  second_operand: MipsValue.MipsValue, token: ASTTokens.RelationalExprToken):
         super().__init__()
+        assert isinstance(first_operand, MipsValue.MipsRegister)
+        assert isinstance(second_operand, MipsValue.MipsValue)
+        assert isinstance(resulting_register, MipsValue.MipsRegister)
+
+        if MipsValue.MipsRegister.is_floating_point_register(first_operand):
+            assert MipsValue.MipsRegister.is_floating_point_register(second_operand)
+        elif MipsValue.MipsRegister.is_floating_point_register(second_operand):
+            assert MipsValue.MipsRegister.is_floating_point_register(first_operand)
+
         self.resulting_register = resulting_register
         self.first_operand = first_operand
         self.second_operand = second_operand
         self.token = token
 
     def to_mips(self):
+
+        # If integer / bool => true, if floating point => false
+        integral = not MipsValue.MipsRegister.is_floating_point_register(self.first_operand)
+
         operation_string = ""
         if self.token == ASTTokens.RelationalExprToken.EQUALS:
-            operation_string = "seq"
+            operation_string = "seq" if integral else "c.eq.s"
         elif self.token == ASTTokens.RelationalExprToken.NOT_EQUALS:
-            operation_string = "sne"
+            operation_string = "sne" if integral else "c.ne.s"
         elif self.token == ASTTokens.RelationalExprToken.LESS_THAN:
             if isinstance(self.second_operand, MipsValue.MipsRegister):
-                operation_string = "slt"
-            elif isinstance(self.second_operand, MipsValue.MipsLiteral):
+                operation_string = "slt" if integral else "c.lt.s"
+            elif isinstance(self.second_operand, MipsValue.MipsLiteral) and integral:
                 operation_string = "slti"
+            else:
+                raise AssertionError('This should not be possible')
         elif self.token == ASTTokens.RelationalExprToken.GREATER_THAN:
-            operation_string = "sgt"
+            operation_string = "sgt" if integral else "c.gt.s"
         elif self.token == ASTTokens.RelationalExprToken.LESS_THAN_OR_EQUALS:
-            operation_string = "sle"
+            operation_string = "sle" if integral else "c.le.s"
         elif self.token == ASTTokens.RelationalExprToken.GREATER_THAN_OR_EQUALS:
-            operation_string = "sge"
+            operation_string = "sge" if integral else "c.ge.s"
         else:
             raise NotImplementedError
 
         return f"{operation_string} {self.resulting_register.get_name()},{self.first_operand.get_name()},{self.second_operand.get_content()}"
+
+
+class NotInstruction(MipsInstruction):
+
+    def __init__(self, resulting_register: MipsValue.MipsRegister, operand: MipsValue.MipsRegister):
+        super().__init__()
+        self.resulting_register = resulting_register
+        self.operand = operand
+
+    def to_mips(self):
+        return f"not {self.resulting_register}, {self.operand}"
 
 
 class SyscallInstruction(MipsInstruction):

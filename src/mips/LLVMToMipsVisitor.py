@@ -344,6 +344,9 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
                 elif arg_type == DataType.DataTypeToken.CHAR:
                     load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0,
                                                                                         MipsValue.MipsLiteral(11))
+                elif arg_type == DataType.DataTypeToken.BOOL:
+                    load_syscall_instruction = MipsInstruction.LoadImmediateInstruction(MipsValue.MipsRegister.V0,
+                                                                                        MipsValue.MipsLiteral(1))
                 else:
                     raise NotImplementedError
 
@@ -404,15 +407,41 @@ class LLVMToMipsVisitor(LLVMBaseVisitor.LLVMBaseVisitor):
         super().visit_llvm_compare_instruction(instruction)
 
         mips_values = self.get_mips_builder().get_mips_values(instruction, instruction.get_resulting_register(),
-                                                              [instruction.operand1, instruction.operand2])
+                                                              [instruction.operand1, instruction.operand2],
+                                                              all_registers=True)
 
         mips_resulting_register = mips_values[0]
         mips_operands = mips_values[1]
 
-        mips_instruction = MipsInstruction.CompareInstruction(mips_resulting_register, mips_operands[0],
-                                                              mips_operands[1], instruction.operation)
+        floating_point = MipsValue.MipsRegister.is_floating_point_register(mips_operands[0])
 
-        self.get_mips_builder().get_current_function().add_instruction(mips_instruction)
+        if instruction.get_operation() == ASTTokens.RelationalExprToken.GREATER_THAN and floating_point:
+
+            self.get_mips_builder().get_current_function().add_instruction(
+                MipsInstruction.CompareInstruction(mips_resulting_register, mips_operands[0],
+                                                   mips_operands[1],
+                                                   ASTTokens.RelationalExprToken.LESS_THAN_OR_EQUALS))
+
+            self.get_mips_builder().get_current_function().add_instruction(
+                MipsInstruction.NotInstruction(mips_resulting_register, mips_resulting_register)
+            )
+
+        elif instruction.get_operation() == ASTTokens.RelationalExprToken.GREATER_THAN_OR_EQUALS and floating_point:
+
+            self.get_mips_builder().get_current_function().add_instruction(
+                MipsInstruction.CompareInstruction(mips_resulting_register, mips_operands[0],
+                                                   mips_operands[1],
+                                                   ASTTokens.RelationalExprToken.LESS_THAN))
+
+            self.get_mips_builder().get_current_function().add_instruction(
+                MipsInstruction.NotInstruction(mips_resulting_register, mips_resulting_register)
+            )
+
+        else:
+
+            self.get_mips_builder().get_current_function().add_instruction(
+                MipsInstruction.CompareInstruction(mips_resulting_register, mips_operands[0],
+                                                   mips_operands[1], instruction.operation))
 
     def visit_llvm_binary_arithmetic_instruction(self, instruction: LLVMInstruction.LLVMBinaryArithmeticInstruction):
         super().visit_llvm_binary_arithmetic_instruction(instruction)

@@ -40,7 +40,8 @@
   main_1:
     la $s1,-28($fp)
     lw $t0, 0($s1)
-    sge $t1,$t0,1
+    li $t2, 1 
+    sge $t1,$t0,$t2
     bne $t1, $zero, main_3
   main_2:
     beq $t1, $zero, main_4
@@ -97,7 +98,9 @@
     div $t2, $t0
     mfhi $t1
     sw $t0, -64($fp)
-    seq $t0,$t1,0
+    sw $t2, -52($fp)
+    li $t2, 0 
+    seq $t0,$t1,$t2
     bne $t0, $zero, main_13
   main_12:
     beq $t0, $zero, main_15
