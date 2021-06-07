@@ -21,7 +21,7 @@ class LLVMFunctionHolder(LLVMInterfaces.IToLLVM):
         self.current_function = function
 
     def get_current_function(self):
-        assert isinstance(self.current_function, LLVMFunction.LLVMDefinedFunction)
+        assert isinstance(self.current_function, LLVMFunction.LLVMDefinedFunction), "Not within function"
         return self.current_function
 
     def get_function(self, function_identifier):

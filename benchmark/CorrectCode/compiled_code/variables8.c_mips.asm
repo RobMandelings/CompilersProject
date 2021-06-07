@@ -45,7 +45,8 @@
     j main_1
   main_1:
     lw $t5, 0($s0)
-    slti $t7,$t5,4
+    li $t8, 4 
+    slt $t7,$t5,$t8
     bne $t7, $zero, main_3
   main_2:
     beq $t7, $zero, main_4

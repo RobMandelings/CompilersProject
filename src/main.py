@@ -69,7 +69,7 @@ def run_benchmarks(semantic_errors, optimized: bool):
                 benchmark_log_file.write('OTHER ERROR:\n')
                 benchmark_log_file.write(f"{e}\n\n")
                 other_errors += 1
-                traceback.print_exc(e)
+                traceback.print_exc()
 
         else:
             print(f"[Compiler] Skipping file {filename} (doesn't have the .c extension)")
@@ -160,7 +160,7 @@ def run_benchmark(filename: str, optimized: bool, base_filedir=None, benchmark_l
 
         if benchmark_log_file is not None:
             benchmark_log_file.write(f"SYNTAX ERROR with file {filename}:\n")
-            benchmark_log_file.write(f'{e}\n\n')
+            benchmark_log_file.write(f'{e.msg}\n\n')
         print(f"A syntax error occurred with file {filename}")
         print(e)
         return CompileResult.SYNTAX_ERROR
