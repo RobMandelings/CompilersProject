@@ -14,6 +14,28 @@ def log(file, log_string):
     f.close()
 
 
+def run_benchmarks(semantic_errors, optimized: bool):
+    script_path = os.getcwd()
+
+    benchmark_type = 'SemanticErrors' if semantic_errors else 'CorrectCode'
+    semantic_errors_dir = f'{script_path}/benchmark/{benchmark_type}/'
+
+    for filename in os.listdir(semantic_errors_dir):
+        if filename.endswith('.c'):
+
+            filepath = os.path.join(semantic_errors_dir, filename)
+
+            print(f"Compiling '{benchmark_type}' benchmark file {filename}...")
+            try:
+                run_benchmark(filepath, optimized)
+            except Exception as e:
+                print(
+                    f"[Compiler] something went wrong running {benchmark_type} benchmark file {filename}. "
+                    f"Compiler might not support certain features in the file.")
+        else:
+            print(f"[Compiler] Skipping file {filename} (doesn't have the .c extension)")
+
+
 def run_benchmark(filename: str, optimized: bool):
     """
     filename: the filename you need to enter to run the script
@@ -72,16 +94,46 @@ def run_benchmark(filename: str, optimized: bool):
         sys.exit()
 
 
-def main(argv):
-    filename = argv[1]
-    optimized = argv[2]
-
-    if optimized is None:
-        optimized = False
+def get_optimized_bool(arg: str):
+    if arg.lower() == 'true':
+        return True
+    elif arg.lower() == 'false':
+        return False
     else:
-        optimized = optimized == 'true'
+        raise ValueError(f"Could not deduce whether or not optimization is enabled from input '{arg}'")
 
-    run_benchmark(filename, optimized)
+
+def main(argv):
+    if len(argv) == 1:
+        print("[Compiler] parameter 'optimized' not specified (should be true or false)")
+        return
+    elif len(argv) == 2:
+        print("[Compiler] running all 'CorrectCode' and 'SemanticErrors' benchmarks...")
+        try:
+            optimized = get_optimized_bool(argv[1])
+            run_benchmarks(semantic_errors=True, optimized=optimized)
+            run_benchmarks(semantic_errors=False, optimized=optimized)
+        except ValueError as e:
+            print(f"[Compiler] a ValueError occurred: {e}")
+            return
+
+    elif len(argv) == 3:
+
+        filepath = argv[1]
+
+        if not os.path.exists(filepath):
+            print(f"[Compiler] file {filepath} not found")
+            return
+
+        try:
+            optimized = get_optimized_bool(argv[2])
+            run_benchmark(filepath, optimized)
+        except ValueError as e:
+            print(f"[Compiler] a ValueError occurred: {e}")
+            return
+    else:
+        print(f"[Compiler] too many arguments specified (should be 1 or 2; is {len(argv)}")
+        return
 
 
 if __name__ == '__main__':

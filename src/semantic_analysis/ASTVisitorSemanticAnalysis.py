@@ -944,8 +944,14 @@ class ASTVisitorSemanticAnalysis(ASTBaseVisitor):
         if not isinstance(lookup, ArraySymbol):
             raise SemanticError(f'Type mismatch: variable {variable_accessed} trying to access is not an array!')
 
+        index_accessed_data_type = self.check_resulting_data_type(ast.get_index_accessed())
+        if not index_accessed_data_type == DataType.NORMAL_INT:
+            raise SemanticError(
+                f'Array Type Mismatch: index used to access array is of type {index_accessed_data_type} but should be int!')
+
     def visit_ast_dereference(self, ast: ASTDereference):
         self.check_resulting_data_type(ast)
+        ast.get_value_to_dereference().accept(self)
 
     def visit_ast_control_flow_statement(self, ast: ASTControlFlowStatement):
         if not self.get_last_symbol_table().get_scope_type() == SymbolTable.ScopeType.CONDITIONAL:
